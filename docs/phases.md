@@ -21,10 +21,12 @@ Donna answers, on the real server, and every call is accounted for.
 - Sanctum token auth (one user)
 - Laravel AI SDK wired to Anthropic behind a provider-agnostic interface
 - `costs` table — every LLM call records a row
+- `messages` table — every message stored permanently from day one, with its source
 - Message endpoint + `donna:chat` artisan command against the deployed API
+- Start recording — Josh tells Donna about his life, people, and projects as soon as this is live, and imports the seed notes gathered while planning. No Fact or Person tables yet: Phase 1's extraction runs over the backlog, so nothing said in Phase 0 is lost and no memory schema is guessed at early.
 - Personality system prompt (cached) — lives in `api/resources/prompts/donna.md`, written from the vision's Personality section and edited directly from then on; tech docs reference it, never restate it
 
-**Done when:** Josh can chat with Donna from a terminal against production, and every reply has a Cost.
+**Done when:** Josh can chat with Donna from a terminal against production, every message is stored, and every reply has a Cost.
 
 ## Phase 1 — Conversation + Memory
 
@@ -34,8 +36,8 @@ Donna remembers. This is the product; everything after builds on it.
 - Hybrid retrieval — Postgres full-text + pgvector
 - Personal and Social Memory — Facts and People, with provenance
 - "Remember this" writes immediately
-- Daily passive extraction via the Batch API
-- Getting to Know You interview + import of existing context (Claude memory export, notes)
+- Daily passive extraction via the Batch API — first run backfills everything recorded since Phase 0
+- Getting to Know You interview + import of existing context (Claude memory export, notes) — much of it already recorded as Phase 0 messages
 - Time awareness and stale-topic refreshers
 - "What did you cost me this month?"
 - Character profile — written from an interview with Josh, then rewritten by him; lives in the system prompt file
