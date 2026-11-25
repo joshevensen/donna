@@ -95,8 +95,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # Deployment
 
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
+- This app is self-hosted on a DigitalOcean droplet (Postgres on a DO Volume, files in DO Spaces). It is not deployed to Laravel Cloud — don't suggest Cloud. See `docs/vision.md` at the repo root.
 
 === laravel/core rules ===
 
