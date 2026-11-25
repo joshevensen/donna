@@ -38,7 +38,9 @@ Donna remembers. This is the product; everything after builds on it.
 - Getting to Know You interview + import of existing context (Claude memory export, notes)
 - Time awareness and stale-topic refreshers
 - "What did you cost me this month?"
-- Start the personal eval set — save real requests with known good answers from day one, plus personality cases (pushes back, never sycophantic, doesn't pad)
+- Character profile — written from an interview with Josh, then rewritten by him; lives in the system prompt file
+- Shared history — daily extraction also captures moments worth remembering between Josh and Donna (running jokes, calls she got right or wrong), stored as Facts about Donna
+- Start the personal eval set — save real requests with known good answers from day one, plus personality and boundary cases (pushes back, never sycophantic, doesn't pad, no romance, no "I missed you")
 
 **Done when:** Josh talks to Donna daily from the terminal and she recalls things he told her days ago without being prompted.
 
@@ -108,6 +110,7 @@ Unordered until earlier phases make the order obvious.
 - Passive Capture — email (could follow Phase 4), texts (needs Phase 6), wearable
 - Skill learning loop — create, refine, propose, retire
 - Memory curation job
+- Character growth — Donna periodically reviews shared history and proposes edits to her own character profile; Josh approves, versioned and reversible
 - AI-judged nudge timing (once there's outcome data)
 - `DonnaWatch` capture app
 - Travel starter skill

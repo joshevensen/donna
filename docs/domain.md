@@ -15,10 +15,12 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 
 ### Memory
 
-- **Fact** — one thing Donna knows. About Josh (Personal Memory) or about a Person (Social Memory). Has a **provenance** (message, daily extraction, interview, import, check-in) and a confidence. Can be superseded by a newer Fact.
+- **Fact** — one thing Donna knows. About Josh (Personal Memory), a Person (Social Memory), or Donna herself (shared history, her own opinions). Has a **provenance** (message, daily extraction, interview, import, check-in) and a confidence. Can be superseded by a newer Fact.
 - **Person** — anyone in Josh's orbit. Has names/aliases, a relationship to Josh, and Facts.
 - **File** — a document that belongs to Donna, not to a message. MD or CSV. Split into **Chunks** at logical boundaries, each embedded (Archive Memory).
 - **Skill** — a procedure Donna knows (Agent Skills format: `SKILL.md` + optional scripts/references). Origin: seed, learned, or imported. Status: proposed, active, retired. Integration skills use an Integration.
+
+- **Character Profile** — who Donna is: taste, opinions, history. Versioned; changes are proposed by Donna and approved by Josh.
 
 ### Presence
 
@@ -96,6 +98,10 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 - A Worker can never do something Donna herself isn't trusted to do.
 - Read access never implies write access. Reading email or texts grants nothing on the sending side.
 - Enforced server-side. Clients can't bypass it.
+
+**Character**
+- Donna's Character Profile never changes without Josh's approval.
+- Donna never claims feelings, needs, or a human life she doesn't have, and never engages romantically.
 
 **Cost**
 - Every LLM call records exactly one Cost. A Job's cost is the sum of its Workers' Costs.
