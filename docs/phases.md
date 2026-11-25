@@ -7,40 +7,36 @@ Source of truth is [`vision.md`](vision.md); concepts are defined in [`domain.md
 ## How phases work
 
 - **One tech doc at a time** — `docs/tech/phase-N.md` is written just before that phase is built, using what the previous phases taught. Later phases here are intentionally rough.
+- **Built in one shot** — each phase is built from its tech doc in a single pass, no milestones. The tech doc makes reasonable defaults rather than stopping for decisions that are cheap to change later.
+- **Data is disposable early** — schemas can change freely and the database can be wiped and reseeded until Josh starts relying on Donna's memory. From then on, it's the product: migrations, not wipes.
 - **Done means daily use** — a phase is finished when Josh is using it day to day, not when every bullet is checked. Leftover bullets move to a later phase.
-- **API first until the app is needed** — phases 0–1 are tested through `php artisan donna:chat`. The Donna app starts in Phase 2, because Presence can't work without push, Siri, and device context.
+- **API first until the app is needed** — Phase 1 is used through `php artisan donna:chat`. The Donna app starts in Phase 2, because Presence can't work without push, Siri, and device context.
 - **This doc changes** — reorder, split, or cut phases as things are learned. Update it in the same PR as the change.
 
 ---
 
-## Phase 0 — Skeleton
+## Phase 1 — Foundation, Conversation + Memory
 
-Donna answers, on the real server, and every call is accounted for.
+Donna runs on the real server, every call is accounted for, and she remembers. Memory is the product; everything after builds on it.
 
+**Foundation**
 - One Forge-managed droplet with Postgres + pgvector on it; Spaces; droplet backups + database dumps to Spaces
 - Sanctum token auth (one user)
 - Laravel AI SDK wired to Anthropic behind a provider-agnostic interface
 - `costs` table — every LLM call records a row
-- `messages` table — every message stored permanently from day one, with its source
-- Message endpoint + `donna:chat` artisan command against the deployed API
-- Start recording — Josh tells Donna about his life, people, and projects as soon as this is live, and imports the seed notes gathered while planning. No Fact or Person tables yet: Phase 1's extraction runs over the backlog, so nothing said in Phase 0 is lost and no memory schema is guessed at early.
-- Personality system prompt (cached) — lives in `api/resources/prompts/donna.md`, written from the vision's Personality section and edited directly from then on; tech docs reference it, never restate it
+- Messages stored permanently, with their source
+- Message endpoint + `donna:chat` artisan command, run from Josh's Mac against the deployed API
+- System prompt in `api/resources/prompts/donna.md` (cached) — the character profile, written from an interview with Josh and rewritten by him; edited directly from then on. Tech docs reference it, never restate it.
 
-**Done when:** Josh can chat with Donna from a terminal against production, every message is stored, and every reply has a Cost.
-
-## Phase 1 — Conversation + Memory
-
-Donna remembers. This is the product; everything after builds on it.
-
+**Memory**
 - Context rebuilt per message: current date, related messages, Facts, People, Skills (none yet)
 - Hybrid retrieval — Postgres full-text + pgvector
 - Personal and Social Memory — Facts and People, with provenance
 - "Remember this" writes immediately
-- Daily passive extraction via the Batch API — first run backfills everything recorded since Phase 0
-- Getting to Know You interview + import of existing context (Claude memory export, notes) — much of it already recorded as Phase 0 messages
+- Daily passive extraction via the Batch API
+- Getting to Know You interview + import of existing context (Claude memory export, the planning seed notes)
 - Time awareness and stale-topic refreshers
 - "What did you cost me this month?"
-- Character profile — written from an interview with Josh, then rewritten by him; lives in the system prompt file
 - Shared history — daily extraction also captures moments worth remembering between Josh and Donna (running jokes, calls she got right or wrong), stored as Facts about Donna
 - Start the personal eval set — save real requests with known good answers from day one, plus personality and boundary cases (pushes back, never sycophantic, doesn't pad, no romance, no "I missed you")
 
