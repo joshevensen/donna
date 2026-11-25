@@ -21,11 +21,11 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Skills | Agent Skills standard (`SKILL.md`), stored in Spaces and indexed in Postgres |
 | Integrations | Direct APIs via Laravel HTTP client, packaged as skills; Laravel MCP client only as an escape hatch |
 | Code worker | Claude Code (headless) + Orc plugin, on a DigitalOcean droplet |
-| Hosting | DigitalOcean droplet |
-| Database | Postgres on a DO Volume; full-text + pgvector (hybrid retrieval) |
+| Hosting | One DigitalOcean droplet, provisioned and deployed with Laravel Forge |
+| Database | Postgres on the droplet itself (one server, managed by Forge); full-text + pgvector (hybrid retrieval) |
 | File storage | DigitalOcean Spaces |
 | Auth | Laravel Sanctum |
-| Backups | DO Volume snapshots (weekly) + Spaces versioning |
+| Backups | Droplet backups + database dumps to Spaces |
 | Voice | Apple SpeechAnalyzer (dictation) + App Intents (Siri) |
 | Context signals | Calendar, location, Core Motion (driving), device activity — reported from the apps |
 | Push | APNs |

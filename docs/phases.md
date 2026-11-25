@@ -17,7 +17,7 @@ Source of truth is [`vision.md`](vision.md); concepts are defined in [`domain.md
 
 Donna answers, on the real server, and every call is accounted for.
 
-- Droplet, Postgres + pgvector on a DO Volume, Spaces, backups
+- One Forge-managed droplet with Postgres + pgvector on it; Spaces; droplet backups + database dumps to Spaces
 - Sanctum token auth (one user)
 - Laravel AI SDK wired to Anthropic behind a provider-agnostic interface
 - `costs` table — every LLM call records a row
