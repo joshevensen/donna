@@ -11,7 +11,7 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 ### Conversation
 
 - **Message** — one turn in the single, never-ending conversation. Author is Josh or Donna. Has a **source** (keyboard, dictation, Siri, quick capture, watch, notification reply) — Donna treats every source the same. May carry **Attachments**. Embedded for retrieval. There is no Conversation or Thread entity: there is only one.
-- **Topic** — something Josh and Donna talk about over time (Fibermade, a trip, a person). Exists so Donna knows when a topic was last discussed and can open with a refresher.
+- **Topic** — something Josh and Donna talk about over time (Fibermade, a trip, a person). Exists so Donna knows when a topic was last discussed and can open with a refresher. How often Josh comes back to a Topic is what defines his interests — interests are tracked, not declared.
 
 ### Memory
 
@@ -26,7 +26,7 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 
 - **Task** — something Josh (or Donna) needs to do. Comes from a Message (explicit capture or noticed in chat). May involve a Person, have a due date, and carry **act-when** conditions (business hours, at the Mac, at home). Status: open, done, snoozed, dropped.
 - **Goal** — a commitment Josh made to himself, with a target date. Status: active, done, dropped, stalled. A stall has a reason: blocked, deprioritized, or avoided.
-- **Nudge** — one surfacing of a Task or Goal to Josh, at a time and on a channel. Has an **outcome** (acted, snoozed, ignored) so timing can learn.
+- **Nudge** — one surfacing of a Task or Goal to Josh, at a time and on a channel. Has a **tactic** (plain reminder, spark like an article or a pointed question) and an **outcome** (acted, snoozed, ignored) so timing and tactics can learn.
 - **Context Signal** — what Josh is doing right now, reported by a Device: calendar block, location, driving, active device.
 - **Device** — an iPhone, iPad, Mac, Watch, or the Home Node. Holds a push token and reports Context Signals.
 
@@ -116,7 +116,7 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 
 ## Open questions
 
-- **Topic** — explicit entity Donna assigns, or derived from retrieval at query time?
+- **Topic** — how Donna assigns Messages to Topics (at write time, during extraction, or both).
 - **Task vs. Action** — is a Task Donna completes herself just a Task with an Action attached, or something else?
 - **Check-ins and refreshers** — are they Nudges, or their own concept?
 - **Skill trust** — does a new Skill get its own Trust Grants, or inherit from the Action Types it uses?
