@@ -22,7 +22,7 @@ Donna answers, on the real server, and every call is accounted for.
 - Laravel AI SDK wired to Anthropic behind a provider-agnostic interface
 - `costs` table — every LLM call records a row
 - Message endpoint + `donna:chat` artisan command against the deployed API
-- Personality system prompt (cached)
+- Personality system prompt (cached) — lives in `api/resources/prompts/donna.md`, written from the vision's Personality section and edited directly from then on; tech docs reference it, never restate it
 
 **Done when:** Josh can chat with Donna from a terminal against production, and every reply has a Cost.
 
@@ -38,7 +38,7 @@ Donna remembers. This is the product; everything after builds on it.
 - Getting to Know You interview + import of existing context (Claude memory export, notes)
 - Time awareness and stale-topic refreshers
 - "What did you cost me this month?"
-- Start the personal eval set — save real requests with known good answers from day one
+- Start the personal eval set — save real requests with known good answers from day one, plus personality cases (pushes back, never sycophantic, doesn't pad)
 
 **Done when:** Josh talks to Donna daily from the terminal and she recalls things he told her days ago without being prompted.
 
