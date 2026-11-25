@@ -265,7 +265,7 @@ This is not a general-purpose agent harness. Orchestration exists to serve one p
 Donna doesn't write code herself — she runs Claude Code, which does, using the Orc plugin (hexbyte-plugins) for issue-to-PR work. Rebuilding a coding agent in Laravel would mean spending a year recreating something Anthropic ships and improves constantly. Same principle as Orc itself: orchestrate existing coding agents, don't replace them.
 
 - **Josh triggers, Donna tends** — Donna tracks which issues are specced and ready, preps context, and nudges: "#42 is specced — start the build." Josh runs interactive Orc steps (plan, build, walkthru) in Claude Code himself, on his Max subscription.
-- **Unattended runs** — when Josh is away, Donna can run Claude Code headless on a droplet (`claude -p "/orc:build 42"`) with Orc installed. Orc's gates become Donna questions; the run resumes on Josh's answer.
+- **Unattended runs** — when Josh is away, Donna can run Claude Code headless on a droplet with Orc installed. Orc's gates become Donna questions; the run resumes on Josh's answer.
 - **Donna watches GitHub** — PR status, CI, review comments, and Orc's decision records come back through the GitHub integration and are reported in her voice.
 - **Merge stays human** — matches Orc's own rule: Donna never merges, she asks.
 - **No workarounds** — automated runs use only the headless channels Anthropic permits (the subscription's Agent SDK credit, or an API key). Donna never drives the interactive Claude Code interface to make automated use look interactive.
@@ -276,7 +276,7 @@ Donna doesn't write code herself — she runs Claude Code, which does, using the
 
 ## Home Node
 
-Donna's brain lives in the cloud. Her hands and ears inside Josh's Apple world live at home, on an always-on Mac mini. Some of Josh's most useful data — above all, his text messages — only exists on Apple devices he owns. There is no server-side door to iMessage, and there won't be: no server holds the decrypted content. Reaching it takes a Mac signed into his Apple ID.
+Donna's brain lives in the cloud. Her hands and ears inside Josh's Apple world live at home, on an always-on Mac mini, set to restart automatically after power loss. Some of Josh's most useful data — above all, his text messages — only exists on Apple devices he owns. There is no server-side door to iMessage, and there won't be: no server holds the decrypted content. Reaching it takes a Mac signed into his Apple ID.
 
 ### Split of Responsibilities
 
@@ -304,12 +304,6 @@ The cloud is the default home for everything else. Presence depends on Donna bei
 - **Reading** — from the Messages database with Full Disk Access. Reliable, and all Passive Capture needs.
 - **Sending** — Apple has no official API. Open-source servers (BlueBubbles, imessage-rs) send through private Apple APIs that can break after macOS updates. Sending is treated as fragile and stays confirm-first.
 - **Exposure** — the Mac is signed into Josh's Apple ID, so every message he sends or receives lands on it. FileVault on, physically at home, no other users.
-
-### Hardware
-
-- **Base M6 Mac mini** ($899 with 16GB / 256GB), with RAM bumped to 24–32GB for headroom
-- **M5 Pro (up to 64GB)** only if running larger open-weight models locally ever becomes worth it — not needed for this design
-- **Set to restart automatically after power loss**
 
 ### Later
 
@@ -383,16 +377,12 @@ Native SwiftUI across iOS, iPadOS, and macOS. Dark mode only. Chat is the interf
 - Chat history fills the screen, scrolls vertically — one continuous conversation, no thread list
 - Chat input fixed at the bottom — always accessible
 - File viewer opens as a side panel on iPad and Mac (50/50 split), full screen sheet on iPhone when Donna opens a file
-- Max chat width 600px centered on Mac when no panel is open
 - Adapts naturally to each platform — iPhone, iPad, Mac each feel native
 
 ### Chat Input
 
-Three rows:
-
-- **Input** — markdown-enabled text area, max 15 lines visible, scrolls beyond
-- **Controls** — left: settings icon, microphone icon — right: paperclip (attachments), submit button
-- **Attachments** — single line, horizontal scroll, tag per file with × to remove, only visible when attachments exist
+- Markdown-enabled text area, fixed at the bottom
+- Dictation, attachments, and settings within reach of the input
 
 ### Quick Capture
 
@@ -400,8 +390,7 @@ Capture surfaces outside the chat window (see Presence): Mac global hotkey and m
 
 ### Chat History
 
-- Initial load: last 2-3 days of messages
-- Infinite scroll upward loads more in chunks
+- Recent messages load first; scrolling up loads more
 - Messages older than 180 days move to cold storage (compressed archives in Spaces) — retrievable but not in the active DB
 - Memories, skills, and files are never deleted automatically
 - Thinking state: submit disabled, thinking indicator in chat
@@ -442,7 +431,7 @@ Push notifications via APNs are required for Presence — Donna coming to Josh i
 
 Donna is paid for out of Josh's pocket, so cost discipline is a feature, not an afterthought.
 
-- **Subscription credit first** — Josh's Max 5x plan includes a monthly Agent SDK credit ($100, non-rolling, billed at API rates) that covers headless Claude Code and Agent SDK use. Donna spends that first, tracks the balance, and warns before it runs out. An API key is the fallback — never the only option, and nothing in Donna depends on the subscription path, because Anthropic has changed these rules repeatedly.
+- **Subscription credit first** — Josh's Claude plan includes a monthly Agent SDK credit that covers headless Claude Code and Agent SDK use. Donna spends that first, tracks the balance, and warns before it runs out. An API key is the fallback — never the only option, and nothing in Donna depends on the subscription path, because Anthropic has changed these rules repeatedly.
 - **Model routing** — Haiku for simple tasks and workers doing retrieval, formatting, and simple tool calls; Sonnet for conversation and orchestration; Opus sparingly, only when deep reasoning is genuinely needed. Orc builds on small, low-risk issues run on Sonnet.
 - **On-device triage is free** — high-volume classification on the Home Node runs on Apple's on-device model at no per-call cost
 - **Batch API** — passive memory extraction and other non-urgent background work run through Anthropic's batch API
@@ -452,25 +441,12 @@ Donna is paid for out of Josh's pocket, so cost discipline is a feature, not an 
 - **Cost tracking** — every LLM call records one row in the `costs` table: model, tokens in, tokens out, cost in USD, which capability or job triggered it. Every orchestrated job tracks its total across all workers.
 - **Visible to Josh** — "what did you cost me this month?" gets a straight answer
 - **Spend cap** — a hard monthly limit on the Anthropic API key, plus per-job budgets so a runaway autonomous task can't burn money unattended
-- **Hardware** — the Home Node is a one-time purchase (~$900–1,300 depending on RAM); the droplet stays ~$12/month to start
 
 ---
 
 ## Building for Future Models
 
-The long-term goal is a Starfleet computer, a GUPPI, a JARVIS. Most of what separates Donna from that is model capability — and model capability improves without Josh lifting a finger. So Donna's effort goes into what no model ships with, and keeps everything else thin enough to throw away when a better model makes it unnecessary.
-
-*Snapshot as of November 2026 — revisit with every major model generation.*
-
-### Where models are heading
-
-- **Longer autonomous work** — the length of task frontier agents can finish on their own (at 50% reliability) has been doubling fast: about every 7 months over six years, and closer to every 4 months on METR's current post-2023 fit. Multi-hour and multi-day jobs become routine, which is exactly what Orchestration and durable workflows are for.
-- **Much cheaper intelligence** — inference at a fixed capability level has been falling roughly 5–10× per year. Today's careful model routing matters less every year; what costs Opus money today costs Haiku money soon.
-- **Memory moving into the platform** — Anthropic shipped file-based memory for Managed Agents (April 2026) and "dreaming," a background pass where agents review past sessions and consolidate what they learned (May 2026). Generic memory mechanics are becoming a commodity.
-- **Continual learning is still mostly context** — models that genuinely learn after deployment are an active research area, but forecasters expect mid-2027 commercial practice to still be retrieval and memory injection, not weight updates. Donna's memory layer stays load-bearing for the foreseeable future.
-- **Voice is going native** — OpenAI and Google now ship speech-to-speech models with reasoning in the voice loop and sub-second turn-taking. Anthropic offers voice in its own apps but not a speech-to-speech API.
-- **Computer use: short tasks yes, long tasks no** — agents score around 85% on the standard desktop benchmark, but on long, messy real-world workflows the best still finish only about one in five. APIs remain the reliable path; computer use is a fallback for services with no door.
-- **On-device and frontier converging** — Apple's Foundation Models framework now spans its on-device model and server models like Claude behind one Swift API; local-for-private, frontier-for-judgment is becoming a platform feature.
+The long-term goal is a Starfleet computer, a GUPPI, a JARVIS. Most of what separates Donna from that is model capability — and model capability improves without Josh lifting a finger. So Donna's effort goes into what no model ships with, and keeps everything else thin enough to throw away when a better model makes it unnecessary. Where the models currently stand is tracked in [`landscape.md`](landscape.md).
 
 ### What models will absorb — keep it thin
 
@@ -502,60 +478,9 @@ No future model arrives with these. They are the durable assets, and they compou
 
 ---
 
-## Technical Stack
+## Elsewhere
 
-| Layer | Choice |
-|---|---|
-| Backend | Laravel (PHP) — pure API, JSON responses only |
-| Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only) |
-| Home Node | Mac mini (M6) — headless Swift agent, Tailscale, EventKit, Messages database, Foundation Models framework |
-| Durable workflows | Durable Workflow package (`durable-workflow/workflow`) — Presence and Orchestration jobs |
-| AI SDK | Laravel AI SDK (`laravel/ai`) — provider-agnostic, Anthropic by default |
-| LLM provider | Anthropic (Haiku / Sonnet / Opus by task); Apple on-device model for Home Node triage; others only where Anthropic has no offering |
-| Skills | Agent Skills standard (`SKILL.md`), stored in Spaces and indexed in Postgres |
-| Integrations | Direct APIs via Laravel HTTP client, packaged as skills; Apple-side integrations on the Home Node; Laravel MCP client as an optional escape hatch |
-| Code worker | Claude Code (headless) + Orc plugin, on a DigitalOcean Droplet |
-| Hosting | DigitalOcean Droplet ($12/month to start) |
-| Database | Postgres on DO Volume |
-| Search | Postgres full-text + pgvector (hybrid retrieval) |
-| File storage | DigitalOcean Spaces |
-| Auth | Laravel Sanctum |
-| Backups | DO Volume snapshots (weekly automated) + DO Spaces versioning |
-| Voice | Apple SpeechAnalyzer (on-device dictation) + App Intents 2.0 (Siri) |
-| Context signals | Calendar, location, Core Motion (driving), device activity — reported from the native apps |
-| Push notifications | APNs — required for Presence |
-
----
-
-## Inspiration
-
-The personal AI agent space has moved fast. Donna exists because Josh wants one built around him — his memory model, his assistant's personality, native on his devices, on the stack he knows best — not because nothing else exists.
-
-**Hermes Agent** (Nous Research) — the closest thing to Donna, and the first thing to study. Open source (MIT), self-hosted, Python. Persistent agent-curated memory, user modeling across sessions, a closed learning loop that creates skills from experience and refines them during use, isolated subagents for parallel work, programmatic tool calling, built-in cron, MCP support, Agent Skills–compatible, and a gateway to 20+ messaging platforms. Supports Anthropic models.
-
-What to borrow:
-- **The learning loop** — how and when it decides to write a skill, how it refines skills after use, how it nudges itself to persist memory. Port the logic to Laravel; it's the single most valuable idea for Donna.
-- **Skills** — Donna and Hermes share the Agent Skills format, so skills from the Hermes Skills Hub can be imported into Donna directly. Each one still gets reviewed before use.
-- **Session search** — FTS5 full-text search with LLM summarization for cross-session recall. Donna's equivalent is Postgres full-text plus pgvector.
-- **Programmatic tool calling** — collapsing multi-step pipelines into one code-execution step instead of many LLM round-trips.
-- **The code itself** — MIT-licensed, so prompts, heuristics, and logic can be adapted freely with attribution. It's Python, so this means porting, not importing.
-
-**Vellum** — open source, layered persistent memory (semantic + keyword hybrid retrieval), proactive reach-outs, multi-channel, isolated credential handling. Study the memory architecture before designing Donna's retrieval layer.
-
-**Khoj** — open source, self-hostable "second brain." Strong document indexing over your own files, on Postgres + pgvector — same stack as Donna. Directly relevant to Files and Archive Memory.
-
-**OpenClaw** — self-hostable, many messaging channels, large community plugin ecosystem. A reference for extensibility. Honest limitation: credentials live in a flat JSON file with model-level access — a security approach Donna improves on.
-
-**OpenBrain** — open source personal memory database on Postgres/Supabase that exposes memory as an MCP server. A reference for making Personal Memory a queryable, portable layer — and an option for letting other AI tools (Claude, Claude Code) read Donna's memory.
-
-**Mem0** — the leading memory library for AI agents, with published benchmarks (ECAI 2025) and a token-efficient algorithm (April 2026) that improved temporal query accuracy by 29.6 points. Worth understanding when designing passive extraction and curation.
-
-**alfred_** (get-alfred.ai) — reference for proactive scheduling UX patterns in Presence.
-
-**BlueBubbles and imessage-rs** — open-source Mac servers that expose iMessage over a local API. References (or components) for the Home Node's Messages access.
-
-**Bee and Omi** — always-on wearables that turn conversations into reminders and tasks. Bee for the UX of passive capture; Omi (open source) as the likely hardware path for Passive Capture stage 3.
-
-**Anthropic Managed Agents memory and dreaming** — file-based agent memory with change logs and rollback, plus scheduled self-review that consolidates past sessions into long-term memory. A reference for Donna's curation job — and a signal of what the platforms will commoditize.
-
-**AlterEgo** — silent-speech wearable from MIT Media Lab research. The reference for Donna's eventual private input surface.
+- **Stack** — [`CLAUDE.md`](../CLAUDE.md)
+- **Build order** — [`phases.md`](phases.md)
+- **Concepts and invariants** — [`domain.md`](domain.md)
+- **Dated facts** — model trends, prices, hardware, inspiration: [`landscape.md`](landscape.md)

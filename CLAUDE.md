@@ -6,14 +6,29 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 - `api/` — Laravel, pure JSON API (no views, no frontend)
 - `apple/` — one Xcode project: iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
-- `docs/` — vision and design docs; update `docs/vision.md` when a decision changes it
+- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase, written just before it's built), `landscape.md` (dated facts); update the relevant doc when a decision changes it
 
 ## Stack
 
-- **API:** Laravel, Postgres + pgvector (hybrid retrieval with full-text), Sanctum, Laravel AI SDK (`laravel/ai`, Anthropic by default), `durable-workflow/workflow` for Presence and Orchestration jobs
-- **Hosting:** DigitalOcean droplet, Postgres on a DO Volume, files in DO Spaces
-- **Apple:** Swift / SwiftUI, dark mode only, App Intents for Siri, SpeechAnalyzer for dictation, APNs for push
-- **Home Node:** headless Swift agent on a Mac mini, outbound-only over Tailscale
+| Layer | Choice |
+|---|---|
+| Backend | Laravel — pure API, JSON responses only |
+| Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only |
+| Home Node | Mac mini — headless Swift agent, outbound-only over Tailscale, EventKit, Messages database, Foundation Models framework |
+| Durable workflows | `durable-workflow/workflow` — Presence and Orchestration jobs |
+| AI SDK | Laravel AI SDK (`laravel/ai`) — provider-agnostic, Anthropic by default |
+| LLM provider | Anthropic (Haiku / Sonnet / Opus by task); Apple on-device model for Home Node triage |
+| Skills | Agent Skills standard (`SKILL.md`), stored in Spaces and indexed in Postgres |
+| Integrations | Direct APIs via Laravel HTTP client, packaged as skills; Laravel MCP client only as an escape hatch |
+| Code worker | Claude Code (headless) + Orc plugin, on a DigitalOcean droplet |
+| Hosting | DigitalOcean droplet |
+| Database | Postgres on a DO Volume; full-text + pgvector (hybrid retrieval) |
+| File storage | DigitalOcean Spaces |
+| Auth | Laravel Sanctum |
+| Backups | DO Volume snapshots (weekly) + Spaces versioning |
+| Voice | Apple SpeechAnalyzer (dictation) + App Intents (Siri) |
+| Context signals | Calendar, location, Core Motion (driving), device activity — reported from the apps |
+| Push | APNs |
 
 ## Working with Josh
 

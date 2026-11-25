@@ -53,6 +53,7 @@ Donna comes to Josh. The app starts here.
 - Siri via App Intents ("tell Donna…")
 - APNs with actionable notifications (done / snooze / open)
 - Context Signals — calendar, location, driving, active device
+- UI starting points from the original vision draft: max chat width 600px centered on Mac with no panel open; input shows up to 15 lines then scrolls; three input rows (text / controls: settings + mic left, paperclip + submit right / attachment tags, only when present); initial load of the last 2–3 days
 
 **API**
 - Tasks and Goals — captured explicitly or noticed in chat
