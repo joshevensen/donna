@@ -40,7 +40,12 @@ class GenerateReply implements ShouldQueue
      */
     public array $backoff = [5, 30];
 
-    public int $timeout = 330;
+    public int $timeout;
+
+    /**
+     * A reply that runs out of time is not retried: its tool calls may already have happened.
+     */
+    public bool $failOnTimeout = true;
 
     /**
      * What Donna says when the model declines. Her voice, never a raw error.
@@ -52,6 +57,8 @@ class GenerateReply implements ShouldQueue
      */
     public function __construct(public Message $reply)
     {
+        $this->timeout = config('donna.models.reply.job_timeout');
+
         $this->onQueue('replies');
     }
 
@@ -75,9 +82,7 @@ class GenerateReply implements ShouldQueue
 
         $message = $this->reply->inReplyTo;
 
-        if ($message->embedding === null) {
-            $message->update(['embedding' => $embedder->embed($message->body, $message)]);
-        }
+        $this->embed($message, $embedder);
 
         $context = $contexts->build($message);
 
@@ -104,6 +109,25 @@ class GenerateReply implements ShouldQueue
 
         EmbedMessage::dispatch($this->reply);
         TagTopics::dispatch($message, $this->reply);
+    }
+
+    /**
+     * Embed Josh's message for retrieval. If embeddings are down Donna still
+     * answers, from full-text search alone, and the embedding is retried later.
+     */
+    private function embed(Message $message, Embedder $embedder): void
+    {
+        if ($message->embedding !== null) {
+            return;
+        }
+
+        try {
+            $message->update(['embedding' => $embedder->embed($message->body, $message)]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            EmbedMessage::dispatch($message)->delay(now()->addMinutes(5));
+        }
     }
 
     /**

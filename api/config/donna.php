@@ -44,6 +44,7 @@ return [
         'token' => env('DONNA_API_TOKEN'),
         'history' => 10,
         'poll_seconds' => 1,
+        'wait_seconds' => 600,
     ],
 
     /*
@@ -63,7 +64,14 @@ return [
             'effort' => env('DONNA_REPLY_EFFORT', 'medium'),
             'max_tokens' => 16000,
             'max_steps' => 8,
-            'timeout' => 300,
+
+            // Seconds allowed for one model call, and for the whole reply.
+            'timeout' => 120,
+            'job_timeout' => 600,
+
+            // Anthropic's server-side fallback retries some declined requests on
+            // another model. It is a beta; turn it off here if it ever changes.
+            'refusal_fallback' => (bool) env('DONNA_REFUSAL_FALLBACK', true),
         ],
 
         'tagging' => [

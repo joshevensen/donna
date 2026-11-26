@@ -106,7 +106,7 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
             ],
             'output_config' => ['effort' => config('donna.models.reply.effort')],
             // Lets Anthropic retry a declined request on another model before it reaches Josh.
-            'fallbacks' => 'default',
+            ...(config('donna.models.reply.refusal_fallback') ? ['fallbacks' => 'default'] : []),
         ];
     }
 

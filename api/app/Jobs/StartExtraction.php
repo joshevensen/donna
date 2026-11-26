@@ -18,6 +18,13 @@ class StartExtraction implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+
+    /**
+     * @var list<int>
+     */
+    public array $backoff = [300, 1800];
+
     public function handle(BatchClient $batches, ExtractionRequests $requests): void
     {
         if (ExtractionRun::query()->where('status', ExtractionRunStatus::Submitted)->exists()) {

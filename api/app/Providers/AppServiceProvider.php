@@ -10,6 +10,7 @@ use App\Models\Message;
 use App\Models\Person;
 use App\Models\Project;
 use App\Models\Topic;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
@@ -33,8 +34,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::shouldBeStrict(! $this->app->isProduction());
 
-        // What a Fact can be about, and what a Cost can be triggered by.
+        // What a Fact can be about, what a Cost can be triggered by, and who owns a token.
         Relation::enforceMorphMap([
+            'user' => User::class,
             'person' => Person::class,
             'project' => Project::class,
             'topic' => Topic::class,

@@ -10,9 +10,11 @@ use App\Models\Cost;
 use App\Models\Fact;
 use App\Models\Message;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Ai\Embeddings;
+use Laravel\Ai\Prompts\AgentPrompt;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\TextUsage;
 use Laravel\Ai\Responses\Data\ToolCall;
@@ -166,4 +168,23 @@ it('does not reply twice when the job runs again after finishing', function () {
 
     Donna::assertNeverPrompted();
     expect($reply->refresh()->body)->toBe('Already said.');
+});
+
+it('still replies, from full-text memory, when embeddings are down, and retries the embedding later', function () {
+    Queue::fake([EmbedMessage::class, TagTopics::class]);
+    Exceptions::fake();
+    donnaExists();
+    Embeddings::fake(fn () => throw new RuntimeException('Voyage is down.'));
+    Donna::fake(['Tuesdays.']);
+    $earlier = Message::factory()->create(['body' => 'Kristen dyes yarn on Tuesdays.']);
+    config(['donna.context.recent_messages' => 0]);
+    $reply = pendingReplyTo('When does Kristen dye yarn?');
+
+    GenerateReply::dispatchSync($reply);
+
+    expect($reply->refresh()->body)->toBe('Tuesdays.');
+
+    Donna::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->agent->context->memory->exchanges->first()->message->is($earlier));
+    Queue::assertPushed(EmbedMessage::class, fn (EmbedMessage $job): bool => $job->message->is($reply->inReplyTo));
+    Exceptions::assertReported(RuntimeException::class);
 });
