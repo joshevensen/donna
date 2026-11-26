@@ -1,8 +1,8 @@
 # Phase 1 — Foundation, Conversation + Memory
 
-Donna runs on the real server, every call is accounted for, and she remembers. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); her character profile draft in [`api/resources/prompts/donna.md`](../../api/resources/prompts/donna.md).
+Donna runs on the real server, every call is accounted for, and she remembers. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); her character profile lives in the database, seeded as version 1 by [`CharacterProfileSeeder`](../../api/database/seeders/CharacterProfileSeeder.php).
 
-**Status:** user stories approved. Design drafted — awaiting Josh's approval.
+**Status:** built. The Design section below describes what was implemented; where the build departed from the approved draft, the text has been updated and the change is marked *(as built)*.
 
 ---
 
@@ -77,7 +77,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 
 ---
 
-## ## Design
+## Design
 
 The build follows this section. Where it's silent, follow Laravel and Swift best practice, the root and `api/` `CLAUDE.md` files, and the Boost guidelines — and note any notable choice in the PR. If something here turns out to be wrong once you're in the code, deviate, say why in the PR, and update this doc in the same PR.
 
@@ -99,7 +99,8 @@ The build follows this section. Where it's silent, follow Laravel and Swift best
 | Scheduling | Laravel scheduler. Durable workflows aren't needed until Phase 2. |
 
 - **Not DigitalOcean Inference** — it resells the same models at provider rates, but its batch flow is its own, its web search is a third-party service rather than Anthropic's, and it adds a layer for no gain. Revisit only if one bill becomes worth it.
-- **Don't use the SDK's conversation storage** (`RemembersConversations`, `agent_conversations` tables). Donna has exactly one conversation and rebuilds context per message from her own tables. Don't publish those migrations if the install allows it; if it doesn't, leave the tables unused.
+- **Don't use the SDK's conversation storage** (`RemembersConversations`, `agent_conversations` tables). Donna has exactly one conversation and rebuilds context per message from her own tables. *(as built)* The SDK only publishes those migrations on request, so they were never published and the tables don't exist.
+- *(as built)* `laravel/ai` 1.4 sends Anthropic's basic web search tool (`web_search_20250305`), not the newer dynamic-filtering variant. It works on every model; revisit when the SDK moves.
 
 ### Models
 
@@ -111,7 +112,7 @@ All model choices live in `config/donna.php`, one entry per job:
 | Topic tagging | `claude-haiku-5-5` | effort `low`; structured output |
 | Daily extraction | `claude-sonnet-5-5` via Batch API | structured output; judgment-heavy |
 
-Sonnet 5.5 can return `stop_reason: refusal`. If `laravel/ai` exposes provider options, enable Anthropic's server-side fallback (`fallbacks: "default"` with its beta header); otherwise handle a refusal by saving a short in-character "I can't help with that one" reply and logging it. Never surface a raw error as Donna's voice.
+Sonnet 5.5 can return `stop_reason: refusal`. *(as built)* Both halves are in place: replies send Anthropic's server-side fallback (`fallbacks: "default"` with its beta header, switchable with `DONNA_REFUSAL_FALLBACK`), and because that only retries some refusal categories, a refusal that still comes back is saved as a short in-character "I can't help with that one" reply and logged. Never surface a raw error as Donna's voice. Daily extraction also runs at effort `medium`.
 
 ### Data model
 
@@ -135,8 +136,10 @@ All tables use `id` bigint keys unless noted, timestamps, and Postgres-native ty
 | `costs` | One row per model call | `purpose` (reply, tagging, extraction, embedding), `provider`, `model`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `web_search_requests`, `batched` (bool), `usd` (decimal 12,6), `trigger_type`/`trigger_id` (morph: message, extraction_run) |
 
 Rules:
-- Facts are never updated in place. A correction creates a new Fact and sets `superseded_by_id`/`superseded_at` on the old one. "Active" means not superseded.
-- "Forget it" is the one hard delete: Josh's explicit request deletes the Fact and its subject links. Nothing is deleted automatically.
+- Facts are never updated in place. A correction creates a new Fact and sets `superseded_by_id`/`superseded_at` on the old one. "Active" means not superseded (`superseded_at` is null). `notable_change` sits on the new fact.
+- "Forget it" is the one hard delete: Josh's explicit request deletes the Fact and its subject links. Nothing is deleted automatically. *(as built)* Forgetting a fact also deletes every earlier version it superseded — otherwise the thing he asked her to forget would survive as history.
+
+*(as built)* Small additions to the table above: `messages.meta` (jsonb: citations, responding model, declined flag); `extraction_runs.error`; `topics.name` and `projects.name` are unique; `projects.tier` is null while a project is only proposed; `eval_examples.message_id` is unique (flagging again changes the verdict); a partial unique index allows only one `active` character profile; `facts.provenance` also takes `interview` when extraction marks a fact as coming from the interview; the morph map also holds `user` (Sanctum tokens). `costs.input_tokens` is the whole prompt, with the two cache columns as subsets of it. The cost trigger for everything in an exchange — embeddings, each reply step, tagging — is Josh's message.
 - Seed data (a seeder, idempotent, run on first deploy): Josh's user and Person, Donna's Person, Kristen's Person (relationship: wife), character profile v1 = the current text of `api/resources/prompts/donna.md` (copied into the seeder, then delete the file), and interview areas: life story, work, people, interests, how Josh works, goals, and Josh & Donna.
 
 ### Messages and replies
@@ -151,11 +154,11 @@ API (all routes `auth:sanctum`, JSON, versioned under `/api/v1`):
 | `POST /messages/{message}/evaluation` | `{rating, note}` — flag one of Donna's replies |
 
 `GenerateReply` (queue `replies`, one at a time via `WithoutOverlapping`, 2 retries with backoff):
-1. Embed Josh's message (store it).
+1. Embed Josh's message (store it). *(as built)* If the embeddings API is down, Donna still replies from full-text memory and the embedding is retried a few minutes later.
 2. Build context (below).
-3. Prompt the `Donna` agent with tools, max ~8 steps.
+3. Prompt the `Donna` agent with tools, max ~8 steps. *(as built)* On the last allowed step tool use is switched off, so a run that is still calling tools ends with an answer instead of silence.
 4. Save the reply text (and web-search citations in a `meta` jsonb column), mark `complete`; record costs.
-5. On final failure: mark `failed` with a short error. The client shows it; nothing is lost.
+5. On final failure: mark `failed` with a short error. The client shows it; nothing is lost. *(as built)* A reply that hits the job timeout (10 minutes) fails rather than retries, because its tool calls may already have happened; for the same reason `remember` won't write the same statement twice for one message.
 
 After a reply completes, queue `EmbedMessage` for Donna's reply and `TagTopics` for the exchange.
 
@@ -164,7 +167,7 @@ After a reply completes, queue `EmbedMessage` for Donna's reply and `TagTopics` 
 An artisan command in the same app, run from Josh's Mac against the deployed API (`DONNA_API_URL` and `DONNA_API_TOKEN` in his local `.env`). It never touches the database directly.
 
 - On start: fetch the last ~10 messages and print them, including any reply that finished while he was away; if one is still pending, wait for it.
-- Input via Laravel Prompts (multi-line textarea). Send → show a thinking indicator → poll every second until complete or failed.
+- Input via Laravel Prompts (multi-line textarea, sent with Ctrl+D). Send → show a thinking indicator → poll every second until complete or failed. *(as built)* After ten minutes it stops waiting and says the reply will be there next time; the server keeps working on it.
 - Slash commands, handled in code, never sent to Donna: `/good [note]` and `/bad [note]` flag her last reply; `/history [n]`; `/quit`.
 - Plain-text output with light formatting; no markdown renderer needed in Phase 1.
 
@@ -176,16 +179,18 @@ A server-side `php artisan donna:token` command creates Josh's Sanctum token.
 
 1. **System, cached (breakpoint 1):** the active character profile + stable operating instructions (how to use memory and tools, when to bring up stale topics, interests, changed minds, the interview).
 2. **System, cached (breakpoint 2):** Josh's Person summary and the list of active and parked projects with tier and status. Changes rarely.
-3. **Recent conversation:** the last 20 messages verbatim as conversation turns (working memory), capped at ~8k tokens.
+3. **Recent conversation:** the last 20 messages verbatim as conversation turns (working memory), capped at ~8k tokens. *(as built)* Josh's turns are prefixed with their local timestamp so gaps inside the window are visible; Donna's are not, so she doesn't start imitating the prefix. Pending and failed replies are left out, and the window always opens on one of Josh's messages.
 4. **Final user turn:** a `<memory>` block, then Josh's message. The block holds, each with dates:
    - **Related past messages** — hybrid search over messages outside the recent window: top 40 by vector similarity + top 40 by full-text rank, merged with reciprocal rank fusion, top ~12, each shown with the reply it got.
    - **Related facts** — the same hybrid search over active facts, top ~20, plus the superseded predecessors of any fact retrieved (so Donna sees "used to think X, since March thinks Y"; `notable_change` marks the ones worth raising).
    - **People** — anyone whose name or alias appears in the message (string match, code) or who is a subject of a retrieved fact: their summary and top facts.
-   - **Topics** — the topics nearest the message by embedding: summary, `last_discussed_at`, and mention counts over 7/30/90 days. A topic idle for 14+ days is marked stale so Donna opens with a recap. Counts let her comment on rabbit holes.
-   - **Projects boost, never filter** — items linked to a project the message relates to get a fixed score bonus before the final cut.
+   - **Topics** — the topics nearest the message by embedding: summary, `last_discussed_at`, and mention counts over 7/30/90 days. A topic idle for 14+ days is marked stale so Donna opens with a recap. Counts let her comment on rabbit holes. *(as built)* A topic qualifies when the message names it outright or its embedding is within a cosine distance of 0.6, so an unrelated topic is never recapped just for being nearest. Counts are Josh's messages and the distinct days (in his timezone) he brought it up.
+   - **Projects boost, never filter** — items linked to a project the message relates to get a fixed score bonus before the final cut. *(as built)* A message relates to a project it names (name or alias) or that one of its topics belongs to. The memory block also lists every tracked project with when it was last discussed, which is what answers "what am I working on — and what's gone quiet?".
    - **Open interview areas** and any **pending proposals** (character changes, projects she suggested tracking).
    - Current date and time in Josh's timezone (`config('donna.timezone')`, default `America/Chicago`) and time since his last message.
-5. The memory block is capped (~10k tokens) by trimming the lowest-scoring items. Retrieved facts get `retrieval_count`/`last_retrieved_at` bumped (for curation later).
+5. The memory block is capped (~10k tokens) by trimming the lowest-scoring items. Retrieved facts get `retrieval_count`/`last_retrieved_at` bumped (for curation later). Token counts are estimated at four characters each.
+
+*(as built)* Two things worth knowing when tuning: full-text search matches any word of the message rather than all of them (a whole chat message is the query), and vector candidates have no similarity floor — with little history, loosely related memories fill the remaining slots and are the first to go when the block is over budget. Facts below the confidence threshold are shown as unconfirmed.
 
 All counts and thresholds above live in `config/donna.php` so they can be tuned without code changes.
 
@@ -199,35 +204,35 @@ Memory changes happen through tools Donna calls during a reply, so everything st
 | `recall` | Explicit deeper search when the automatic context isn't enough |
 | `what_i_know` | Lists active facts about a person, project, or topic — answers "what do you know about…" |
 | `correct_fact` | Supersedes a fact with a corrected statement |
-| `forget_fact` | Deletes a fact — only when Josh asks |
+| `forget_fact` | Deletes a fact and its earlier versions — only when Josh asks |
 | `save_person` | Creates or updates a Person (name, aliases, relationship, summary) |
-| `propose_project` / `update_project` | Suggests tracking a project; sets tier, status, owner after Josh says so |
-| `propose_character_change` | Saves a proposed new profile version with a change summary |
-| `decide_character_change` | Activates or rejects a proposal — only after Josh has said yes or no in the conversation |
+| `propose_project` / `update_project` | Suggests tracking a project; sets tier, status, owner after Josh says so. *(as built)* `update_project` also creates a project Josh announces outright ("Bad Frog is Kristen's main thing") |
+| `propose_character_change` | Saves a proposed new profile version with a change summary. One proposal at a time |
+| `decide_character_change` | Activates or rejects a proposal — only after Josh has said yes or no in the conversation. *(as built)* Enforced in code: a proposal can't be decided in the same reply that made it |
 | `update_interview` | Marks interview areas in progress or covered, with notes |
 | `cost_report` | Sums `costs` for a period in SQL — no model involved in the maths |
 | Web search | Anthropic's server-side web search through `laravel/ai`, `max_uses` capped in config |
 
 ### Topic tagging
 
-`TagTopics` (Haiku 5.5, structured output) runs after each exchange. It's given the exchange plus the ~10 nearest existing topics and returns which of them apply and any new topic names. Code links the messages, creates new topics (with embeddings), and updates `last_discussed_at`. Topic summaries are refreshed by the daily extraction, not here. This resolves the domain model's open question: topics are assigned at write time and consolidated daily.
+`TagTopics` (Haiku 5.5, structured output) runs after each exchange. It's given the exchange plus the ~10 nearest existing topics (and any topic the exchange names) and returns which of them apply and any new topic names. Code links the messages, creates new topics (with embeddings), and updates `last_discussed_at`. Topic summaries are refreshed by the daily extraction, not here. This resolves the domain model's open question: topics are assigned at write time and consolidated daily.
 
 ### Daily extraction
 
 Scheduled daily at 03:00 Josh's time.
 
 1. Collect messages since the last run's `window_end`. None → done.
-2. Build Batch API requests (split by day if large). Each carries the messages, the People list, active projects, and the active facts most related to that day's topics, with IDs.
+2. Build Batch API requests. *(as built)* Always one request per day of conversation, in Josh's timezone. Each carries the messages, the People list, active projects, and the active facts most related to that day's topics, with IDs — chosen in code: facts about the day's topics, the projects they belong to, the people and projects the day names, Josh, and Donna.
 3. Structured output returns: new facts (statement, kind, confidence, subjects, source message IDs), supersessions (old fact ID → new statement, `notable_change`), people to create or update, topic summary updates, project candidates (become `proposed` projects Donna brings up), shared-history moments (facts about Donna), and interview coverage.
-4. A polling job checks the batch every 10 minutes; when it ends, apply all results in one transaction, embed new facts and topics, and record costs at batch pricing.
+4. A polling job checks the batch every 10 minutes; when it ends, apply all results in one transaction, embed new facts and topics, and record costs at batch pricing. *(as built)* If a day's request fails, the days before it are applied and the run's window ends just before the failed day, so the next run retries from there — nothing is skipped and nothing is extracted twice. If no day succeeds the run is marked `failed` and the next run covers the same window. A new run never starts while one is still in flight.
 5. Only confident results are written as facts; low-confidence ones are saved with their confidence so Donna can confirm them when they come up.
 6. The first run backfills everything since the first message.
 
 ### Cost tracking
 
-- Every model call records a `costs` row — replies (each agent step), tagging, extraction, and embeddings. Use `laravel/ai` agent middleware or its events for agent calls; the batch client records its own. A test asserts that each call path records exactly one row per call.
+- Every model call records a `costs` row — replies (each agent step), tagging, extraction, and embeddings. *(as built)* Agent calls are recorded by a listener on the SDK's `StepCompleted` event; embeddings all go through one `Embedder`, which records its own; batch results are recorded when a run is polled. An architecture test requires every agent to declare what its calls are for.
 - Price input, cache writes, cache reads, and output separately (the SDK reports cache tokens as a subset of input). Batch requests price at 50%.
-- A pricing table in `config/donna.php`, per model, USD per million tokens. As of November 2026 from Anthropic's docs: Sonnet 5.5 $2 in / $10 out / $0.10 cache read; Haiku 5.5 $0.10 in / $0.50 out / $0.01 cache read (up to 100K context). Cache writes are 1.25× input. Confirm these and look up current Voyage and web search prices at build time.
+- A pricing table in `config/donna.php`, per model, USD per million tokens. As of November 2026 from Anthropic's docs: Sonnet 5.5 $2 in / $10 out / $0.10 cache read; Haiku 5.5 $0.10 in / $0.50 out / $0.01 cache read (up to 100K context). Cache writes are 1.25× input. *(as built)* Confirmed against Anthropic's pricing page in November 2026. Also in the table: Haiku 5.5's higher card for prompts over 100K tokens, Sonnet 5 (where a refusal fallback can land), web search at $10 per 1,000 searches, and `voyage-4` at $0.06/M — priced at list even while its first 200M tokens are free. A model missing from the table is still recorded, at $0, and reported.
 - Set a hard monthly spend cap on the Anthropic key in the console (Josh, not code).
 
 ### Deployment
@@ -235,7 +240,7 @@ Scheduled daily at 03:00 Josh's time.
 - Forge-provisioned DigitalOcean droplet, Basic 2 GB / 1 vCPU ($12/mo), with a swap file: PHP 8.4, Postgres with the pgvector extension installed, Nginx, Let's Encrypt for `donna.joshevensen.com`.
 - Queue worker daemon for `replies,default`; scheduler cron.
 - Backups: droplet backups on, plus a nightly database dump to Spaces (Forge database backups, or a scheduled `pg_dump` command if the plan lacks them).
-- Env: `ANTHROPIC_API_KEY`, `VOYAGEAI_API_KEY`, Spaces credentials. Credentials are never logged and never sent to a model.
+- Env: `ANTHROPIC_API_KEY`, `VOYAGEAI_API_KEY`. Credentials are never logged and never sent to a model. *(as built)* Spaces credentials live in Forge's backup configuration, not the app's environment: the app doesn't touch Spaces until Files (Phase 3).
 - A `docs/deploy.md` with the steps Josh runs once in Forge, including when to resize: memory regularly above ~80% or steady swap use → CPU/RAM-only resize (reversible; never grow the disk).
 
 ### Code vs model in this phase

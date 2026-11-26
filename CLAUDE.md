@@ -6,7 +6,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 - `api/` — Laravel, pure JSON API (no views, no frontend)
 - `apple/` — one Xcode project: iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
-- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts); update the relevant doc when a decision changes it
+- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `deploy.md` (server setup); update the relevant doc when a decision changes it
 
 ## Stack
 
