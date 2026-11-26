@@ -39,3 +39,7 @@ php8.4 /home/forge/donna.joshevensen.com/api/artisan schedule:run
 That drives the daily memory extraction (03:00 in `DONNA_TIMEZONE`), the check for its results every ten minutes, and the hourly job that gives any memory saved while embeddings were down its vector.
 
 Next: [backups.md](backups.md).
+
+---
+
+[← All setup instructions](README.md)

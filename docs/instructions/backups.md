@@ -32,3 +32,7 @@ Restore one dump into a scratch database once, so you know the backups are real 
 Spaces credentials never go in the app's environment. The app itself doesn't use Spaces until files arrive in Phase 3.
 
 Next: [terminal-on-mac.md](terminal-on-mac.md).
+
+---
+
+[← All setup instructions](README.md)

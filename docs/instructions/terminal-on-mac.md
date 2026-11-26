@@ -51,3 +51,7 @@ When you open it again it shows the latest exchange, including a reply that fini
 - "Could not reach Donna" means the URL is wrong or the server is down; check `https://donna.joshevensen.com/up`.
 
 Next: [verify-setup.md](verify-setup.md).
+
+---
+
+[← All setup instructions](README.md)

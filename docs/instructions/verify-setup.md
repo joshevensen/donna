@@ -29,3 +29,7 @@ cd /home/forge/donna.joshevensen.com/api && php8.4 artisan queue:failed
 ```
 
 Lists anything that gave up after its retries.
+
+---
+
+[← All setup instructions](README.md)

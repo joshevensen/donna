@@ -25,3 +25,7 @@ Otherwise start with the end of `storage/logs/laravel.log` on the server and `ph
 ## Tuning
 
 Every retrieval count and threshold (how many memories she looks at, when a topic counts as stale, token budgets) is in `api/config/donna.php`. Model choices are there too, each overridable from the environment ([environment-variables.md](environment-variables.md)).
+
+---
+
+[← All setup instructions](README.md)

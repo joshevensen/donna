@@ -57,3 +57,7 @@ Deploy once. Turn on "deploy on push" if you want every push to `main` to ship i
 Then `https://donna.joshevensen.com/up` should answer 200.
 
 Next: [queue-and-scheduler.md](queue-and-scheduler.md).
+
+---
+
+[← All setup instructions](README.md)

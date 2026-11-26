@@ -53,3 +53,7 @@ Add `~/donna-phone.pub` in Forge as above, import `donna-phone` into Blink under
 - **Leaving:** type `/quit`, or just close Blink.
 - **Dropped connections:** iOS can suspend Blink in the background, which can end a plain SSH session. Run `ssh donna` and `donna` again and nothing is lost. [Mosh](https://docs.blink.sh/advanced/advanced-mosh) survives network changes better, and `mosh donna` works the same way once `mosh` is installed on the server (`sudo apt-get install -y mosh`) and its UDP ports (60000 to 61000) are open in the server's firewall. Blink's docs don't say whether either survives the app being backgrounded, so it is optional.
 - **A lost phone:** delete the `iPhone` key in Forge. The phone never holds the API token, which lives in the server's environment, so removing the key cuts off its access.
+
+---
+
+[← All setup instructions](README.md)

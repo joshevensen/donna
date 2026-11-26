@@ -51,6 +51,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 - `docs/instructions/` is the step-by-step setup for everything outside the repo: accounts and API keys, Forge, DNS, environment variables, backups, devices. Josh follows it by hand, so it has to be complete and current.
 - Any change that needs something outside the repo adds or updates the matching file in the same PR: a new environment variable or config key, an API key or account, a Forge daemon, cron or firewall rule, a DNS record, a device setup. A new `env()` in `config/donna.php` or `config/ai.php` needs a row in `environment-variables.md`; a test fails without one.
 - The PR's "Before deploying" section links the instruction files the change touched.
+- Every file in `docs/instructions/` gets a row in its `README.md` and ends with a link back to it, so Josh can work through them in order.
 - Write each step so it can be followed without reading code. Mark anything you couldn't verify *(unverified)* rather than stating it as fact.
 
 ## Testing

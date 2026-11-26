@@ -12,3 +12,7 @@ The key Donna thinks with. Her replies, topic tagging and the daily memory extra
 
 - Donna uses Sonnet 5.5 for replies and extraction and Haiku 5.5 for topic tagging, so the key needs access to both. Daily extraction uses the Batch API, which needs no extra setup.
 - To rotate the key: create a new one, change `ANTHROPIC_API_KEY` in the site's environment, redeploy, then delete the old key.
+
+---
+
+[← All setup instructions](README.md)

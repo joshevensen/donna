@@ -69,3 +69,7 @@ sudo -u postgres psql -d donna -c '\dx'
 The first lists the swap file; the second lists `vector`.
 
 Next: [forge-site.md](forge-site.md).
+
+---
+
+[← All setup instructions](README.md)

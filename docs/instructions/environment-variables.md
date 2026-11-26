@@ -87,3 +87,7 @@ Used by `donna:chat`, on your Mac and, for phone use, on the server.
 | `DONNA_API_URL` | Mac, Server for phone use | | No | `https://donna.joshevensen.com`. |
 | `DONNA_API_TOKEN` | Mac, Server for phone use | | Yes | Made with `php artisan donna:token`. Use a separate token for each place. |
 | `DONNA_SUBMIT_KEY` | Mac, Server for phone use | `f5` | No | The function key that sends a message, besides Ctrl+D: `f1` to `f12`, or blank for none ([blink-iphone.md](blink-iphone.md)). |
+
+---
+
+[← All setup instructions](README.md)

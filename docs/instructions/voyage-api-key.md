@@ -13,3 +13,7 @@ The key Donna's memory searches with. Voyage turns every message and fact into n
 - Donna uses the `voyage-4` model. The first 200 million tokens are free; she prices them at list anyway, so her cost report runs slightly high.
 - The vectors are 1024 numbers long and the database columns are built for that. Changing `DONNA_EMBEDDING_MODEL` to a model with a different length needs a migration, and every existing row needs embedding again.
 - If the key is rejected, check it came from Atlas. `VOYAGEAI_URL` can point the app somewhere else.
+
+---
+
+[← All setup instructions](README.md)
