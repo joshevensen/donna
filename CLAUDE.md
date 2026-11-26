@@ -50,9 +50,11 @@ Tests exist to protect what Donna does, not to maximize coverage. The `testing-b
 - **Don't test** framework behavior, relationships, casts, config values, migrations, simple accessors, or each validation rule one by one.
 - **Don't test prompt wording or model output** — assert what the code does with a response (saved, priced, linked), never the exact prompt text. Whether Donna's answers are good is the eval set's job.
 - **No real network** — every model and external API is faked.
-- **Fast** — runs in parallel against Postgres with transactions; the full suite stays under ~60 seconds. A test slower than a second needs a reason.
+- **Fast** — runs in parallel against Postgres with transactions. No fixed time budget, but a test slower than a second needs a reason, and runtime growing faster than features is a signal to look.
 - **Prune before the PR** — remove tests that catch the same defect as another. The PR lists test count and suite runtime.
 - **Every bug fix adds one regression test.**
+- **When to run** — after each change, only the tests for that change (file or `--filter`); the full suite after finishing each larger area of work; the full suite green before opening a PR. Never save all testing for the end.
+- **CI is the final check** — GitHub Actions runs the full suite on every PR; a PR isn't ready until CI is green.
 
 ## Code or model
 

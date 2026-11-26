@@ -85,6 +85,7 @@ The build follows this section. Where it's silent, follow Laravel and Swift best
 
 - Build on a branch and open one PR against `main`. Never merge — Josh merges.
 - Pest feature tests for every story below, Pint clean, all tests green before the PR.
+- A GitHub Actions workflow that runs Pint (check mode) and the full suite against Postgres with pgvector on every PR.
 - The PR description lists notable decisions and anything that deviates from this doc.
 
 ### Packages and providers
@@ -253,7 +254,7 @@ A tool is called by the model, but what the tool does is always code.
 
 ### Testing
 
-- Follow the Testing rules in the root `CLAUDE.md`: each test maps to a story or invariant, one test per behavior, no prompt-wording tests, suite under ~60 seconds.
+- Follow the Testing rules in the root `CLAUDE.md`: each test maps to a story or invariant, one test per behavior, no prompt-wording tests, run the narrowest tests after each change and the full suite after each larger area.
 - Tests run against Postgres with pgvector (not SQLite) so vector and full-text queries are real.
 - Fake every model: `Donna::fake()`, `Embeddings::fake()`, and a fake batch client. No test calls a real API.
 - Cover: the message lifecycle and polling, reopening after a missed reply, context assembly (recent window, hybrid retrieval, superseded facts, stale topics, project boost never filtering), each tool, supersession vs. forget, character proposal and approval, extraction applying results and backfilling, cost rows for every call path and the cost report, eval flagging, and `donna:chat` against `Http::fake()`.
