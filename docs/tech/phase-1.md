@@ -241,7 +241,7 @@ Scheduled daily at 03:00 Josh's time.
 - Queue worker daemon for `replies,default`; scheduler cron.
 - Backups: droplet backups on, plus a nightly database dump to Spaces (Forge database backups, or a scheduled `pg_dump` command if the plan lacks them).
 - Env: `ANTHROPIC_API_KEY`, `VOYAGEAI_API_KEY`. Credentials are never logged and never sent to a model. *(as built)* Spaces credentials live in Forge's backup configuration, not the app's environment: the app doesn't touch Spaces until Files (Phase 3).
-- A `docs/deploy.md` with the steps Josh runs once in Forge, including when to resize: memory regularly above ~80% or steady swap use → CPU/RAM-only resize (reversible; never grow the disk).
+- Instructions in `docs/instructions/` for everything outside the repo (keys, Forge, DNS, backups, devices), including when to resize: memory regularly above ~80% or steady swap use → CPU/RAM-only resize (reversible; never grow the disk).
 
 ### Code vs model in this phase
 
