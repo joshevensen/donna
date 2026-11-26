@@ -1,13 +1,23 @@
 <?php
 
+use App\Ai\Agents\Donna;
+use App\Jobs\EmbedMessage;
+use App\Jobs\GenerateReply;
+use App\Jobs\TagTopics;
 use App\Models\CharacterProfile;
+use App\Models\Message;
 use App\Models\Person;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Sleep;
 use Laravel\Ai\Embeddings;
+use Laravel\Ai\Events\ToolFailed;
+use Laravel\Ai\Events\ToolInvoked;
 use Laravel\Ai\Prompts\EmbeddingsPrompt;
+use Laravel\Ai\Responses\Data\ToolCall;
 use Tests\TestCase;
 
 /*
@@ -85,4 +95,47 @@ function fakeEmbeddings(array $axes = []): void
 
         return embedding(0);
     }, $prompt->inputs));
+}
+
+/**
+ * A message of Josh's with Donna's pending reply, as POST /messages leaves them.
+ *
+ * @return Message The pending reply; the message it answers is its `inReplyTo`.
+ */
+function pendingReplyTo(string $body): Message
+{
+    return Message::factory()->pending()->create([
+        'in_reply_to_id' => Message::factory()->create(['body' => $body])->id,
+    ]);
+}
+
+/**
+ * Have Donna call her tools while replying to Josh, through the real reply
+ * job, and return what each tool told her.
+ *
+ * @param  list<array{0: string, 1: array<string, mixed>}>  $calls  Tool name and arguments, in order.
+ * @return list<string>
+ */
+function donnaCalls(array $calls, string $said = 'Go ahead.'): array
+{
+    Queue::fake([EmbedMessage::class, TagTopics::class]);
+
+    $results = [];
+
+    Event::listen(ToolInvoked::class, function (ToolInvoked $event) use (&$results): void {
+        $results[] = (string) $event->result;
+    });
+
+    Event::listen(ToolFailed::class, function (ToolFailed $event) use (&$results): void {
+        $results[] = 'FAILED: '.$event->exception->getMessage();
+    });
+
+    Donna::fake([
+        ...array_map(fn (array $call, int $index): ToolCall => new ToolCall("call_{$index}", $call[0], $call[1]), $calls, array_keys($calls)),
+        'Done.',
+    ]);
+
+    GenerateReply::dispatchSync(pendingReplyTo($said));
+
+    return $results;
 }

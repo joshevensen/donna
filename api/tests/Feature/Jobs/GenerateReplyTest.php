@@ -19,16 +19,6 @@ use Laravel\Ai\Responses\Data\ToolCall;
 use Laravel\Ai\Responses\Data\UrlCitation;
 use Laravel\Ai\Responses\TextResponse;
 
-/**
- * Josh's message with Donna's pending reply, as POST /messages leaves them.
- */
-function pendingReplyTo(string $body): Message
-{
-    return Message::factory()->pending()->create([
-        'in_reply_to_id' => Message::factory()->create(['body' => $body])->id,
-    ]);
-}
-
 it('writes Donna\'s reply onto the pending message and queues embedding and tagging', function () {
     Queue::fake([EmbedMessage::class, TagTopics::class]);
     donnaExists();
