@@ -6,7 +6,7 @@ The Laravel app on the droplet, served at `donna.joshevensen.com`.
 
 - [forge-server.md](forge-server.md) is done, and you have the server's IP address.
 - Forge is connected to your GitHub account, so it can pull `joshevensen/donna` *(unverified; where this lives in Forge may differ)*.
-- Both API keys are ready: [Anthropic](anthropic-api-key.md) and [Voyage](voyage-api-key.md).
+- You don't need the API keys yet. The site deploys without them; the next two files add them to its environment.
 
 ## 1. DNS
 
@@ -27,7 +27,7 @@ Issue a **Let's Encrypt** certificate for the domain.
 
 ## 4. Environment
 
-Open the site's environment file and set the values in [environment-variables.md](environment-variables.md#production-environment). Forge fills in `APP_KEY` and the database username and password; leave those as they are.
+Open the site's environment file and set the values in [environment-variables.md](environment-variables.md#production-environment). Forge fills in `APP_KEY` and the database username and password; leave those as they are. Leave out the `ANTHROPIC_API_KEY` and `VOYAGEAI_API_KEY` lines for now.
 
 ## 5. Deploy script
 
@@ -56,7 +56,7 @@ Deploy once. Turn on "deploy on push" if you want every push to `main` to ship i
 
 Then `https://donna.joshevensen.com/up` should answer 200.
 
-Next: [queue-and-scheduler.md](queue-and-scheduler.md).
+Next: [anthropic-api-key.md](anthropic-api-key.md).
 
 ---
 

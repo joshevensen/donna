@@ -4,7 +4,7 @@ Two things run in the background on the server. Without the first Donna never an
 
 ## Before you start
 
-- [forge-site.md](forge-site.md) is done and the site has deployed.
+- [forge-site.md](forge-site.md) is done and the site has deployed, with both API keys in its environment ([Anthropic](anthropic-api-key.md), [Voyage](voyage-api-key.md)).
 
 ## Queue worker
 

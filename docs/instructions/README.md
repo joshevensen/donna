@@ -10,10 +10,10 @@ Each file is one task. Do them in this order the first time. Afterwards they are
 
 | # | File | What it covers |
 |---|---|---|
-| 1 | [`anthropic-api-key.md`](anthropic-api-key.md) | The key Donna thinks with, and the spend limit on it |
-| 2 | [`voyage-api-key.md`](voyage-api-key.md) | The key her memory searches with |
-| 3 | [`forge-server.md`](forge-server.md) | The droplet: Forge, swap, pgvector |
-| 4 | [`forge-site.md`](forge-site.md) | The site: DNS, certificate, environment, deploy script |
+| 1 | [`forge-server.md`](forge-server.md) | The droplet: Forge, swap, pgvector |
+| 2 | [`forge-site.md`](forge-site.md) | The site: DNS, certificate, environment, deploy script. The keys below go into its environment |
+| 3 | [`anthropic-api-key.md`](anthropic-api-key.md) | The key Donna thinks with, and the spend limit on it |
+| 4 | [`voyage-api-key.md`](voyage-api-key.md) | The key her memory searches with |
 | 5 | [`queue-and-scheduler.md`](queue-and-scheduler.md) | The worker that writes her replies and the clock that runs the daily jobs |
 | 6 | [`backups.md`](backups.md) | Droplet backups and database dumps to Spaces |
 | 7 | [`terminal-on-mac.md`](terminal-on-mac.md) | Your token, and talking to her from your Mac |
