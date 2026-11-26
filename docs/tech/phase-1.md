@@ -83,7 +83,7 @@ The build follows this section. Where it's silent, follow Laravel and Swift best
 
 ### Delivery
 
-- Build on a branch and open one PR against `main`. Never merge — Josh merges.
+- Build on a branch and open a draft PR against `main` early, with a progress checklist from this doc's sections. Commit and push after each larger area; tick the checklist as you go. Mark it ready when everything is done and CI is green. Never merge — Josh merges.
 - Pest feature tests for every story below, Pint clean, all tests green before the PR.
 - A GitHub Actions workflow that runs Pint (check mode) and the full suite against Postgres with pgvector on every PR.
 - The PR description lists notable decisions and anything that deviates from this doc.
