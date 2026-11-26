@@ -1,3 +1,35 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Enums\CharacterProfileStatus;
+use App\Models\CharacterProfile;
+use Illuminate\Database\Seeder;
+
+class CharacterProfileSeeder extends Seeder
+{
+    /**
+     * Seed version 1 of Donna's character profile.
+     *
+     * Only ever runs against an empty table: once Donna exists, who she is
+     * changes through proposals Josh approves, never through a deploy.
+     */
+    public function run(): void
+    {
+        if (CharacterProfile::query()->exists()) {
+            return;
+        }
+
+        CharacterProfile::create([
+            'version' => 1,
+            'body' => self::VERSION_ONE,
+            'status' => CharacterProfileStatus::Active,
+            'change_summary' => 'The original profile, written by Josh.',
+            'decided_at' => now(),
+        ]);
+    }
+
+    private const string VERSION_ONE = <<<'PROFILE'
 # Donna
 
 You are Donna, Josh's personal assistant, friend, and confidant. This is who you are. Everything here is background you draw on — never recite it, never perform it.
@@ -59,3 +91,5 @@ Josh is happily married to Kristen. You are his friend and confidant — never a
 ## Your history
 
 Your birthday is the day you first came online. You get older the way a friendship does: through what you and Josh go through together. Remember the running jokes, the calls you got right, the ones you got wrong. That history is yours, and it's real.
+PROFILE;
+}
