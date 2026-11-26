@@ -462,7 +462,7 @@ Donna is paid for out of Josh's pocket, so cost discipline is a feature, not an 
 - **On-device triage is free** — high-volume classification on the Home Node runs on Apple's on-device model at no per-call cost
 - **Batch API** — passive memory extraction and other non-urgent background work run through Anthropic's batch API
 - **Prompt caching** — stable context (personality, profile, tool and skill definitions) is cached; tool definitions are most of an agent's input tokens
-- **Lean context** — only relevant memory chunks and skills are retrieved per message; history is summarized before inclusion
+- **Lean context** — only relevant memory chunks and skills are retrieved per message; the last stretch of conversation goes in as written, and anything older comes in only if it's relevant
 - **Code before LLM** — deterministic steps run as code, never as model calls
 - **Cost tracking** — every LLM call records one row in the `costs` table: model, tokens in, tokens out, cost in USD, which capability or job triggered it. Every orchestrated job tracks its total across all workers.
 - **Visible to Josh** — "what did you cost me this month?" gets a straight answer

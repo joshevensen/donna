@@ -6,7 +6,8 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 - `api/` — Laravel, pure JSON API (no views, no frontend)
 - `apple/` — one Xcode project: iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
-- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts); update the relevant doc when a decision changes it
+- `.github/` — CI (Pint + the full suite on Postgres) and Dependabot; GitHub only reads these from the repo root, never from `api/`
+- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `deploy.md` (server setup); update the relevant doc when a decision changes it
 
 ## Stack
 
@@ -15,8 +16,9 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Backend | Laravel — pure API, JSON responses only |
 | Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only |
 | Home Node | Mac mini — headless Swift agent, outbound-only over Tailscale, EventKit, Messages database, Foundation Models framework |
+| Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive in Phase 2 |
 | Durable workflows | `durable-workflow/workflow` — Presence and Orchestration jobs |
-| AI SDK | Laravel AI SDK (`laravel/ai`) — provider-agnostic, Anthropic by default |
+| AI SDK | Laravel AI SDK (`laravel/ai`) — provider-agnostic, Anthropic by default; the Batch API (daily extraction) uses Anthropic's official PHP SDK, which `laravel/ai` doesn't cover |
 | LLM provider | Anthropic (Haiku / Sonnet / Opus by task), called directly; Anthropic server-side web search; Apple on-device model for Home Node triage |
 | Embeddings | Voyage AI, via a MongoDB Atlas API key (Anthropic has no embeddings model; no MongoDB database) |
 | Skills | Agent Skills standard (`SKILL.md`), stored in Spaces and indexed in Postgres |
@@ -39,6 +41,10 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 - Josh is an expert in Laravel — don't explain Laravel basics
 - Josh is learning Swift/SwiftUI — briefly explain non-obvious Swift choices and platform gotchas
 - Default to the established stack; propose alternatives only with a compelling reason
+
+## Builds
+
+- The draft PR's checklist is the resume point if a session stops, so it must always match the branch. Updating it is part of every push: commit, push, then tick the finished items in the PR description before starting the next area. Never push a finished area with its box unticked.
 
 ## Testing
 

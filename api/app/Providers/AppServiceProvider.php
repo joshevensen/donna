@@ -2,6 +2,17 @@
 
 namespace App\Providers;
 
+use Anthropic\Client;
+use App\Extraction\AnthropicBatchClient;
+use App\Extraction\Contracts\BatchClient;
+use App\Models\ExtractionRun;
+use App\Models\Message;
+use App\Models\Person;
+use App\Models\Project;
+use App\Models\Topic;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(BatchClient::class, fn (): BatchClient => new AnthropicBatchClient(
+            new Client(apiKey: config('ai.providers.anthropic.key')),
+        ));
     }
 
     /**
@@ -19,6 +32,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Model::shouldBeStrict(! $this->app->isProduction());
+
+        // What a Fact can be about, what a Cost can be triggered by, and who owns a token.
+        Relation::enforceMorphMap([
+            'user' => User::class,
+            'person' => Person::class,
+            'project' => Project::class,
+            'topic' => Topic::class,
+            'message' => Message::class,
+            'extraction_run' => ExtractionRun::class,
+        ]);
     }
 }
