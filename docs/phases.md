@@ -8,7 +8,7 @@ Source of truth is [`vision.md`](vision.md); concepts are defined in [`domain.md
 
 - **One tech doc at a time** — `docs/tech/phase-N.md` is written just before that phase is built, using what the previous phases taught. Later phases here are intentionally rough.
 - **Built in one shot** — each phase is built from its tech doc in a single pass, no milestones. The tech doc makes reasonable defaults rather than stopping for decisions that are cheap to change later.
-- **Data is disposable early** — schemas can change freely and the database can be wiped and reseeded until Josh starts relying on Donna's memory. From then on, it's the product: migrations, not wipes.
+- **Data is protected, not precious** — the database is never wiped casually; changes go through migrations. But this is a personal project, not a product with customers: basic backups are enough, and losing data would hurt, not end things.
 - **Done means daily use** — a phase is finished when Josh is using it day to day, not when every bullet is checked. Leftover bullets move to a later phase.
 - **API first until the app is needed** — Phase 1 is used through `php artisan donna:chat`. The Donna app starts in Phase 2, because Presence can't work without push, Siri, and device context.
 - **This doc changes** — reorder, split, or cut phases as things are learned. Update it in the same PR as the change.

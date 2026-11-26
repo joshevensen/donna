@@ -32,6 +32,9 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 ## Working with Josh
 
+- **Josh owns the what, Claude owns the how.** Josh defines what Donna is and does: user stories, the vision, and (later) UI mockups he approves. Every implementation decision — architecture, schema, packages, patterns, naming — is Claude's to make. Don't ask Josh about code choices; decide, follow best practices, and note the decision in the PR.
+- **Build it the best way.** Idiomatic Laravel and Swift, well-tested, optimized where it matters. Use Boost, the skills, and these instruction files rather than shortcuts.
+
 - Josh is an expert in Laravel — don't explain Laravel basics
 - Josh is learning Swift/SwiftUI — briefly explain non-obvious Swift choices and platform gotchas
 - Default to the established stack; propose alternatives only with a compelling reason
