@@ -30,6 +30,14 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 - She comments on my rabbit holes: "That's your third keyboard rabbit hole this month."
 - When a rabbit hole relates to one of my projects, she connects it.
 
+### She knows my projects
+
+- Donna knows what I'm working on — my projects and Kristen's — which ones are main, secondary, or just for fun, and which are active, parked, or dropped.
+- When something new starts looking like a real project, she asks whether to track it. I never fill out a form or manage a list.
+- I change a project's priority or status just by telling her: "Park Storyrift for now," "Bad Frog is Kristen's main thing."
+- Projects never wall anything off. Something I said about Fibermade in a conversation about yarn shows still comes up when it's relevant.
+- I can ask "what am I working on?" and get a short, honest answer — including what's been quiet for a while.
+
 ### She knows what time it is
 
 - Donna always knows today's date and how long it's been since we talked about something.

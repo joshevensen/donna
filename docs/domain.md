@@ -12,6 +12,7 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 
 - **Message** — one turn in the single, never-ending conversation. Author is Josh or Donna. Has a **source** (keyboard, dictation, Siri, quick capture, watch, notification reply) — Donna treats every source the same. May carry **Attachments**. Embedded for retrieval. There is no Conversation or Thread entity: there is only one.
 - **Topic** — something Josh and Donna talk about over time (Fibermade, a trip, a person). Exists so Donna knows when a topic was last discussed and can open with a refresher. How often Josh comes back to a Topic is what defines his interests — interests are tracked, not declared.
+- **Project** — something Josh (or Kristen) is working on, as opposed to just talking about. Has an **owner**, a **tier** (main, secondary, fun), and a **status** (active, parked, dropped). Donna proposes new Projects when she notices one; Josh sets tier and status conversationally. A label, never a fence.
 
 ### Memory
 
@@ -24,8 +25,8 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 
 ### Presence
 
-- **Task** — something Josh (or Donna) needs to do. Comes from a Message (explicit capture or noticed in chat). May involve a Person, have a due date, and carry **act-when** conditions (business hours, at the Mac, at home). Status: open, done, snoozed, dropped.
-- **Goal** — a commitment Josh made to himself, with a target date. Status: active, done, dropped, stalled. A stall has a reason: blocked, deprioritized, or avoided.
+- **Task** — something Josh (or Donna) needs to do. Comes from a Message (explicit capture or noticed in chat). May belong to a Project and involve a Person, have a due date, and carry **act-when** conditions (business hours, at the Mac, at home). Status: open, done, snoozed, dropped.
+- **Goal** — a commitment Josh made to himself, with a target date. Status: active, done, dropped, stalled. May belong to a Project. A stall has a reason: blocked, deprioritized, out of steam, or avoided.
 - **Nudge** — one surfacing of a Task or Goal to Josh, at a time and on a channel. Has a **tactic** (plain reminder, spark like an article or a pointed question) and an **outcome** (acted, snoozed, ignored) so timing and tactics can learn.
 - **Context Signal** — what Josh is doing right now, reported by a Device: calendar block, location, driving, active device.
 - **Device** — an iPhone, iPad, Mac, Watch, or the Home Node. Holds a push token and reports Context Signals.
@@ -53,6 +54,9 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 ```
 Message ──< Attachment
 Message >── Topic (many-to-many)
+Topic >── Project (many-to-many)
+Project >── Person                      (owner)
+Project ──< Goal / Task
 Message ──< Task / Goal / Fact          (where they came from)
 
 Person ──< Fact
@@ -87,6 +91,7 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 - Every input surface produces the same Message. A new surface never changes Memory, Skills, or the conversation model.
 
 **Memory**
+- Projects are labels, not fences. Retrieval never filters by Project; a Project only boosts what's related to it.
 - Facts are superseded, not silently overwritten, so Donna can explain what changed. *(Proposed — confirm in the Phase 1 tech doc.)*
 - Memories, Skills, and Files are never deleted automatically.
 - Messages older than 180 days move to cold storage but stay retrievable.
