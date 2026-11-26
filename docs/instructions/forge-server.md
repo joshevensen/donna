@@ -20,7 +20,7 @@ Note the server's IP address. [forge-site.md](forge-site.md) needs it for DNS.
 
 ## 2. Run the setup recipe
 
-Forge doesn't give the droplet swap, and it doesn't install pgvector, the Postgres extension Donna's memory search needs. One recipe does both.
+The droplet needs a 2 GB swap file as a safety net, and Postgres needs pgvector, the extension Donna's memory search uses. One recipe sets up both.
 
 In Forge, create a new recipe *(unverified; recipes live under your account in Forge)*:
 
@@ -42,15 +42,23 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 echo "==> Swap"
-if [ -n "$(swapon --show --noheadings)" ]; then
-  echo "Swap is already active; leaving it alone."
+SWAP_BYTES=$(( SWAP_SIZE_GB * 1024 * 1024 * 1024 ))
+if [ -n "$(swapon --show --noheadings)" ] && ! swapon --show=NAME --noheadings | grep -qx /swapfile; then
+  echo "The droplet has swap that isn't /swapfile; leaving it alone."
 else
+  if [ -f /swapfile ] && [ "$(stat -c %s /swapfile)" -ne "$SWAP_BYTES" ]; then
+    echo "Resizing /swapfile to ${SWAP_SIZE_GB}G"
+    if swapon --show=NAME --noheadings | grep -qx /swapfile; then
+      swapoff /swapfile
+    fi
+    rm -f /swapfile
+  fi
   if [ ! -f /swapfile ]; then
     fallocate -l "${SWAP_SIZE_GB}G" /swapfile
     chmod 600 /swapfile
     mkswap /swapfile
   fi
-  swapon /swapfile
+  swapon --show=NAME --noheadings | grep -qx /swapfile || swapon /swapfile
   grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
 swapon --show
@@ -71,11 +79,11 @@ sudo -u postgres psql -d "${DB_NAME}" -c '\dx vector'
 echo "==> Done. Safe to run again."
 ```
 
-Then run the recipe on the new server. It can be run again at any time: it leaves existing swap alone and skips what is already installed.
+Then run the recipe on the new server. It can be run again at any time: it changes nothing that is already right.
 
 What it does:
 
-- **Swap.** If the droplet has none, it makes a 2 GB swap file and keeps it across reboots. The droplet has little memory, so this is the safety net.
+- **Swap.** It makes sure `/swapfile` is 2 GB and kept across reboots. If there isn't one it makes it; if one already exists at another size it is replaced at the right size. Swap that isn't `/swapfile` is left alone. The droplet has little memory, so this is the safety net.
 - **pgvector.** It finds which Postgres version is running, installs the matching pgvector package, and turns the extension on in the `donna` database. The extension has to be created by the Postgres superuser, and the migrations assume it is there. If the `donna` database doesn't exist, it stops and says so.
 
 ## 3. Check it
