@@ -6,7 +6,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 - `api/` — Laravel, pure JSON API (no views, no frontend)
 - `apple/` — one Xcode project: iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
-- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase, written just before it's built), `landscape.md` (dated facts); update the relevant doc when a decision changes it
+- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts); update the relevant doc when a decision changes it
 
 ## Stack
 
@@ -32,7 +32,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 ## Working with Josh
 
-- **Josh owns the what, Claude owns the how.** Josh defines what Donna is and does: user stories, the vision, and (later) UI mockups he approves. Every implementation decision — architecture, schema, packages, patterns, naming — is Claude's to make. Don't ask Josh about code choices; decide, follow best practices, and note the decision in the PR.
+- **Josh owns the what, Claude owns the how.** Josh defines what Donna is and does: user stories, the vision, and (later) UI mockups he approves. Every implementation decision — architecture, schema, packages, patterns, naming — is Claude's to make. Don't ask Josh about code choices; decide, follow best practices, and note the decision in the PR. Josh does want to discuss the design while a phase doc is being written — that's where his input on the how happens, not during implementation.
 - **Build it the best way.** Idiomatic Laravel and Swift, well-tested, optimized where it matters. Use Boost, the skills, and these instruction files rather than shortcuts.
 
 - Josh is an expert in Laravel — don't explain Laravel basics
