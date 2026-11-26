@@ -82,7 +82,10 @@ class GenerateReply implements ShouldQueue
 
         $message = $this->reply->inReplyTo;
 
-        $this->embed($message, $embedder);
+        // If embeddings are down Donna still answers, from full-text memory alone.
+        if ($message->embedding === null) {
+            $message->update(['embedding' => $embedder->attempt($message->body, $message)]);
+        }
 
         $context = $contexts->build($message);
 
@@ -109,25 +112,6 @@ class GenerateReply implements ShouldQueue
 
         EmbedMessage::dispatch($this->reply);
         TagTopics::dispatch($message, $this->reply);
-    }
-
-    /**
-     * Embed Josh's message for retrieval. If embeddings are down Donna still
-     * answers, from full-text search alone, and the embedding is retried later.
-     */
-    private function embed(Message $message, Embedder $embedder): void
-    {
-        if ($message->embedding !== null) {
-            return;
-        }
-
-        try {
-            $message->update(['embedding' => $embedder->embed($message->body, $message)]);
-        } catch (Throwable $exception) {
-            report($exception);
-
-            EmbedMessage::dispatch($message)->delay(now()->addMinutes(5));
-        }
     }
 
     /**

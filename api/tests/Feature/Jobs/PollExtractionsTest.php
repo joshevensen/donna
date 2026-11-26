@@ -17,6 +17,7 @@ use App\Models\Person;
 use App\Models\Project;
 use App\Models\Topic;
 use Illuminate\Support\Facades\Exceptions;
+use Laravel\Ai\Embeddings;
 
 use function Pest\Laravel\travelTo;
 
@@ -30,7 +31,7 @@ function extracted(array $parts = []): array
 {
     return $parts + [
         'facts' => [], 'supersessions' => [], 'people' => [], 'topic_summaries' => [],
-        'project_candidates' => [], 'moments' => [], 'interview' => [],
+        'topic_projects' => [], 'project_candidates' => [], 'moments' => [], 'interview' => [],
     ];
 }
 
@@ -113,6 +114,27 @@ it('supersedes a fact the day contradicted and flags the change worth raising', 
         ->and($old->refresh()->superseded_by_id)->not->toBeNull();
 });
 
+it('applies a later day\'s correction to the version an earlier day already wrote', function () {
+    donnaExists();
+    fakeEmbeddings();
+    $original = Fact::factory()->create(['statement' => 'Fibermade pricing is $19 a month.']);
+    $run = ExtractionRun::factory()->create();
+    $correction = fn (string $statement): array => extracted(['supersessions' => [
+        ['fact_id' => $original->id, 'statement' => $statement, 'notable_change' => false, 'source_message_ids' => []],
+    ]]);
+
+    // Both days were shown fact #original; the second must land on the first day's replacement.
+    fakeBatches()->finish($run->batch_id, [
+        new BatchResult('day-2026-11-23', $correction('Fibermade pricing is $25 a month.'), 'claude-sonnet-5-5', 100, 10),
+        new BatchResult('day-2026-11-24', $correction('Fibermade pricing is $29 a month.'), 'claude-sonnet-5-5', 100, 10),
+    ]);
+
+    PollExtractions::dispatchSync();
+
+    expect(Fact::query()->active()->sole()->statement)->toBe('Fibermade pricing is $29 a month.')
+        ->and(Fact::count())->toBe(3);
+});
+
 it('meets new people and fills in the ones Donna knows, without touching Josh', function () {
     ['josh' => $josh] = donnaExists();
     fakeEmbeddings();
@@ -163,6 +185,20 @@ it('turns a project candidate into a proposal for Donna to raise, unless the pro
         ->summary->toBe('Third week of sketches.');
 });
 
+it('files a topic under the project the model says it belongs to', function () {
+    donnaExists();
+    fakeEmbeddings();
+    $topic = Topic::factory()->create(['name' => 'Yarn shows']);
+    $project = Project::factory()->create(['name' => 'Fibermade']);
+
+    applyExtraction(['topic_projects' => [
+        ['topic_id' => $topic->id, 'project' => 'fibermade'],
+        ['topic_id' => $topic->id, 'project' => 'No Such Project'],
+    ]]);
+
+    expect($project->topics->modelKeys())->toBe([$topic->id]);
+});
+
 it('keeps shared-history moments as facts about Donna', function () {
     ['donna' => $donna] = donnaExists();
     fakeEmbeddings();
@@ -201,6 +237,27 @@ it('records each batch request and the embedding call as costs of the run, at ba
         ->trigger_type->toBe('extraction_run')
         ->trigger_id->toBe($run->id)
         ->and(Cost::where('purpose', CostPurpose::Embedding)->sole()->trigger_id)->toBe($run->id);
+});
+
+it('waits and tries again when embeddings are down, without charging the batch twice', function () {
+    donnaExists();
+    $run = ExtractionRun::factory()->create();
+    fakeBatches()->finish($run->batch_id, [
+        new BatchResult('day-2026-11-24', extracted(['moments' => [['statement' => 'A good call.', 'source_message_ids' => []]]]), 'claude-sonnet-5-5', 100, 10),
+    ]);
+
+    Embeddings::fake(fn () => throw new RuntimeException('Voyage is down.'));
+
+    expect(fn () => PollExtractions::dispatchSync())->toThrow(RuntimeException::class, 'Voyage is down.');
+    expect($run->refresh()->status)->toBe(ExtractionRunStatus::Submitted)
+        ->and(Fact::count())->toBe(0);
+
+    fakeEmbeddings();
+    PollExtractions::dispatchSync();
+
+    expect($run->refresh()->status)->toBe(ExtractionRunStatus::Applied)
+        ->and(Fact::sole()->statement)->toBe('A good call.')
+        ->and(Cost::where('purpose', CostPurpose::Extraction)->count())->toBe(1);
 });
 
 it('applies the days before a failed one and ends the run there, so tomorrow retries the rest', function () {

@@ -6,6 +6,7 @@ use App\Costs\CostRecorder;
 use App\Enums\CostPurpose;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Ai\Embeddings;
+use Throwable;
 
 /**
  * The only place embeddings are generated, so each call records its Cost.
@@ -22,6 +23,26 @@ class Embedder
     public function embed(string $text, ?Model $trigger = null): array
     {
         return $this->embedMany([$text], $trigger)[0];
+    }
+
+    /**
+     * Embed one piece of text, or return null if embeddings are unavailable.
+     *
+     * For paths that must not fail because Voyage is down: the row is saved
+     * without a vector, stays findable by full-text search, and is embedded
+     * later by the EmbedMissing job.
+     *
+     * @return list<float>|null
+     */
+    public function attempt(string $text, ?Model $trigger = null): ?array
+    {
+        try {
+            return $this->embed($text, $trigger);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
     }
 
     /**

@@ -17,6 +17,8 @@ You are given the people Donna already knows, Josh's projects, the topics discus
 
 **topic_summaries** — For each of the day's topics where it helps, one or two sentences on where the topic stands now, so Donna can recap it when it comes back up weeks later.
 
+**topic_projects** — When one of the day's topics is clearly part of one of Josh's listed projects — the yarn-show topic belongs to the yarn business — pair them. Only real membership, not a passing mention in the same breath.
+
 **project_candidates** — Something Josh keeps working on, or has started building or planning in earnest, that is not in his projects yet. Donna will ask him whether to track it. Ideas he merely mentioned are not projects.
 
 **moments** — Shared history between Josh and Donna worth remembering as theirs: a running joke, a call Donna got right, one she got wrong, a moment that changed how they work together. Written from Donna's side ("Josh and I…"). Most days have none.

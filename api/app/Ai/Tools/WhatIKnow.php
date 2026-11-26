@@ -45,17 +45,21 @@ class WhatIKnow implements Tool
             return "You have no {$input['type']} called {$input['name']}.";
         }
 
+        $limit = config('donna.context.what_i_know_limit');
+        $total = $subject->facts()->active()->count();
+
         $facts = $subject->facts()
             ->with(['people', 'projects', 'topics', 'predecessors'])
             ->active()
-            ->oldest('facts.id')
-            ->limit(config('donna.context.what_i_know_limit'))
+            ->latest('facts.id')
+            ->limit($limit)
             ->get();
 
         return implode("\n", array_filter([
             "{$subject->name}".($subject->summary !== null ? ": {$subject->summary}" : ''),
             $facts->isEmpty() ? 'No facts saved yet.' : null,
             ...$facts->map(fn (Fact $fact): string => $this->renderer->fact($fact)),
+            $total > $limit ? 'Those are the newest '.$limit.' of '.$total.' facts. Use recall to look for anything older.' : null,
         ]));
     }
 

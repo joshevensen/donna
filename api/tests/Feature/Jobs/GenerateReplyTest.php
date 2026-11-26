@@ -170,7 +170,7 @@ it('does not reply twice when the job runs again after finishing', function () {
     expect($reply->refresh()->body)->toBe('Already said.');
 });
 
-it('still replies, from full-text memory, when embeddings are down, and retries the embedding later', function () {
+it('still replies, from full-text memory, when embeddings are down', function () {
     Queue::fake([EmbedMessage::class, TagTopics::class]);
     Exceptions::fake();
     donnaExists();
@@ -185,6 +185,6 @@ it('still replies, from full-text memory, when embeddings are down, and retries 
     expect($reply->refresh()->body)->toBe('Tuesdays.');
 
     Donna::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->agent->context->memory->exchanges->first()->message->is($earlier));
-    Queue::assertPushed(EmbedMessage::class, fn (EmbedMessage $job): bool => $job->message->is($reply->inReplyTo));
     Exceptions::assertReported(RuntimeException::class);
+    expect($reply->inReplyTo->embedding)->toBeNull();
 });

@@ -5,6 +5,7 @@ use App\Enums\CostPurpose;
 use App\Jobs\TagTopics;
 use App\Models\Cost;
 use App\Models\Message;
+use App\Models\Project;
 use App\Models\Topic;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -71,6 +72,17 @@ it('reuses an existing topic when the model offers its name as new', function ()
 
     expect(Topic::count())->toBe(1)
         ->and($message->topics->modelKeys())->toBe([$existing->id]);
+});
+
+it('files a topic under the project it is named after', function () {
+    fakeEmbeddings();
+    $project = Project::factory()->create(['name' => 'Fibermade', 'aliases' => ['FM']]);
+    [$message, $reply] = exchange('FM signups doubled.', 'Good.');
+    TopicTagger::fake([['existing_topic_ids' => [], 'new_topics' => ['fm', 'Signups']]]);
+
+    TagTopics::dispatchSync($message, $reply);
+
+    expect($project->topics->pluck('name')->all())->toBe(['fm']);
 });
 
 it('ignores a topic id the model was never offered', function () {

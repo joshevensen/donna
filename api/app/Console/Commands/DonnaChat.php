@@ -11,6 +11,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 
 use function Laravel\Prompts\spin;
 use function Laravel\Prompts\textarea;
@@ -187,15 +188,16 @@ class DonnaChat extends Command
         }
 
         if ($message['status'] === 'failed') {
-            $this->line("<fg=yellow>{$message['error']}</>");
+            $this->line('<fg=yellow>'.OutputFormatter::escape($message['error']).'</>');
 
             return;
         }
 
-        $this->line($message['body']);
+        // Her words are printed as written: "<info>" in a reply is text, not styling.
+        $this->line(OutputFormatter::escape($message['body']));
 
         foreach ($message['citations'] as $index => $citation) {
-            $this->line('<fg=gray>  ['.($index + 1).'] '.($citation['title'] ?? $citation['url'])." — {$citation['url']}</>");
+            $this->line('<fg=gray>  ['.($index + 1).'] '.OutputFormatter::escape(($citation['title'] ?? $citation['url']).' — '.$citation['url']).'</>');
         }
 
         if ($message['author'] === 'donna') {

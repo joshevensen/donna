@@ -4,6 +4,7 @@ namespace App\Ai\Tools;
 
 use App\Enums\ProjectStatus;
 use App\Enums\ProjectTier;
+use App\Memory\ProjectLinker;
 use App\Memory\SubjectResolver;
 use App\Models\Project;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -13,7 +14,10 @@ use Laravel\Ai\Tools\Request;
 
 class UpdateProject implements Tool
 {
-    public function __construct(private SubjectResolver $subjects) {}
+    public function __construct(
+        private SubjectResolver $subjects,
+        private ProjectLinker $links,
+    ) {}
 
     public function name(): string
     {
@@ -67,6 +71,8 @@ class UpdateProject implements Tool
 
         $project->save();
         $project->load('owner');
+
+        $this->links->linkProject($project);
 
         return ($created ? 'Now tracking' : 'Updated')." {$project->name} (project #{$project->id}): "
             .implode(', ', array_filter([$project->tier?->value, $project->status->value]))

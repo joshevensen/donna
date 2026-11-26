@@ -38,7 +38,7 @@ class Recall implements Tool
     {
         $input = $request->validate(['query' => ['required', 'string', 'max:2000']]);
 
-        $embedding = $this->embedder->embed($input['query'], $this->message);
+        $embedding = $this->embedder->attempt($input['query'], $this->message);
         $limit = config('donna.context.recall_limit');
 
         $exchanges = $this->recollection->exchanges(

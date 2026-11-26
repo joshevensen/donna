@@ -154,7 +154,7 @@ API (all routes `auth:sanctum`, JSON, versioned under `/api/v1`):
 | `POST /messages/{message}/evaluation` | `{rating, note}` — flag one of Donna's replies |
 
 `GenerateReply` (queue `replies`, one at a time via `WithoutOverlapping`, 2 retries with backoff):
-1. Embed Josh's message (store it). *(as built)* If the embeddings API is down, Donna still replies from full-text memory and the embedding is retried a few minutes later.
+1. Embed Josh's message (store it). *(as built)* If the embeddings API is down, Donna still replies from full-text memory, and her tools still work — a fact she is told to remember is saved without a vector. An hourly `EmbedMissing` job embeds whatever was saved that way.
 2. Build context (below).
 3. Prompt the `Donna` agent with tools, max ~8 steps. *(as built)* On the last allowed step tool use is switched off, so a run that is still calling tools ends with an answer instead of silence.
 4. Save the reply text (and web-search citations in a `meta` jsonb column), mark `complete`; record costs.
@@ -185,7 +185,7 @@ A server-side `php artisan donna:token` command creates Josh's Sanctum token.
    - **Related facts** — the same hybrid search over active facts, top ~20, plus the superseded predecessors of any fact retrieved (so Donna sees "used to think X, since March thinks Y"; `notable_change` marks the ones worth raising).
    - **People** — anyone whose name or alias appears in the message (string match, code) or who is a subject of a retrieved fact: their summary and top facts.
    - **Topics** — the topics nearest the message by embedding: summary, `last_discussed_at`, and mention counts over 7/30/90 days. A topic idle for 14+ days is marked stale so Donna opens with a recap. Counts let her comment on rabbit holes. *(as built)* A topic qualifies when the message names it outright or its embedding is within a cosine distance of 0.6, so an unrelated topic is never recapped just for being nearest. Counts are Josh's messages and the distinct days (in his timezone) he brought it up.
-   - **Projects boost, never filter** — items linked to a project the message relates to get a fixed score bonus before the final cut. *(as built)* A message relates to a project it names (name or alias) or that one of its topics belongs to. The memory block also lists every tracked project with when it was last discussed, which is what answers "what am I working on — and what's gone quiet?".
+   - **Projects boost, never filter** — items linked to a project the message relates to get a fixed score bonus before the final cut. *(as built)* A message relates to a project it names (name or alias) or that one of its topics belongs to. `project_topic` is written in two ways: code links a topic to the project it shares a name with (when either is created), and daily extraction pairs topics with projects where that takes judgment. The memory block also lists every tracked project with when it was last discussed, which is what answers "what am I working on — and what's gone quiet?".
    - **Open interview areas** and any **pending proposals** (character changes, projects she suggested tracking).
    - Current date and time in Josh's timezone (`config('donna.timezone')`, default `America/Chicago`) and time since his last message.
 5. The memory block is capped (~10k tokens) by trimming the lowest-scoring items. Retrieved facts get `retrieval_count`/`last_retrieved_at` bumped (for curation later). Token counts are estimated at four characters each.
@@ -202,7 +202,7 @@ Memory changes happen through tools Donna calls during a reply, so everything st
 |---|---|
 | `remember` | Writes a Fact immediately (`provenance: remember`) with its subjects |
 | `recall` | Explicit deeper search when the automatic context isn't enough |
-| `what_i_know` | Lists active facts about a person, project, or topic — answers "what do you know about…" |
+| `what_i_know` | Lists active facts about a person, project, or topic — answers "what do you know about…". Newest 50, and says so when there are more |
 | `correct_fact` | Supersedes a fact with a corrected statement |
 | `forget_fact` | Deletes a fact and its earlier versions — only when Josh asks |
 | `save_person` | Creates or updates a Person (name, aliases, relationship, summary) |
@@ -221,10 +221,10 @@ Memory changes happen through tools Donna calls during a reply, so everything st
 
 Scheduled daily at 03:00 Josh's time.
 
-1. Collect messages since the last run's `window_end`. None → done.
-2. Build Batch API requests. *(as built)* Always one request per day of conversation, in Josh's timezone. Each carries the messages, the People list, active projects, and the active facts most related to that day's topics, with IDs — chosen in code: facts about the day's topics, the projects they belong to, the people and projects the day names, Josh, and Donna.
-3. Structured output returns: new facts (statement, kind, confidence, subjects, source message IDs), supersessions (old fact ID → new statement, `notable_change`), people to create or update, topic summary updates, project candidates (become `proposed` projects Donna brings up), shared-history moments (facts about Donna), and interview coverage.
-4. A polling job checks the batch every 10 minutes; when it ends, apply all results in one transaction, embed new facts and topics, and record costs at batch pricing. *(as built)* If a day's request fails, the days before it are applied and the run's window ends just before the failed day, so the next run retries from there — nothing is skipped and nothing is extracted twice. If no day succeeds the run is marked `failed` and the next run covers the same window. A new run never starts while one is still in flight.
+1. Collect messages since the last run's `window_end`. None → done. *(as built)* The window stops just short of any exchange Donna is still answering, so its reply is extracted with it next time.
+2. Build Batch API requests. *(as built)* Always one request per day of conversation, in Josh's timezone. Each carries the messages, the People list, active projects, and the active facts most related to that day's topics, with IDs — chosen in code, most specific first: facts about the day's topics, the projects they belong to, and the people and projects the day names; then facts sharing the day's words (full-text); then the newest facts about Josh and Donna, up to 60.
+3. Structured output returns: new facts (statement, kind, confidence, subjects, source message IDs), supersessions (old fact ID → new statement, `notable_change`; applied to the fact's current version, since an earlier day in the same run may already have replaced it), people to create or update, topic summary updates, topic–project pairings, project candidates (become `proposed` projects Donna brings up), shared-history moments (facts about Donna), and interview coverage.
+4. A polling job checks the batch every 10 minutes; when it ends, apply all results in one transaction, embed new facts and topics, and record costs at batch pricing. *(as built)* If a day's request fails, the days before it are applied and the run's window ends just before the failed day, so the next run retries from there — nothing is skipped and nothing is extracted twice. If no day succeeds the run is marked `failed` and the next run covers the same window. A new run never starts while one is still in flight. Embedding happens before the transaction opens; if it fails the run is retried at the next poll, and the batch's cost is only recorded once.
 5. Only confident results are written as facts; low-confidence ones are saved with their confidence so Donna can confirm them when they come up.
 6. The first run backfills everything since the first message.
 
@@ -232,7 +232,7 @@ Scheduled daily at 03:00 Josh's time.
 
 - Every model call records a `costs` row — replies (each agent step), tagging, extraction, and embeddings. *(as built)* Agent calls are recorded by a listener on the SDK's `StepCompleted` event; embeddings all go through one `Embedder`, which records its own; batch results are recorded when a run is polled. An architecture test requires every agent to declare what its calls are for.
 - Price input, cache writes, cache reads, and output separately (the SDK reports cache tokens as a subset of input). Batch requests price at 50%.
-- A pricing table in `config/donna.php`, per model, USD per million tokens. As of November 2026 from Anthropic's docs: Sonnet 5.5 $2 in / $10 out / $0.10 cache read; Haiku 5.5 $0.10 in / $0.50 out / $0.01 cache read (up to 100K context). Cache writes are 1.25× input. *(as built)* Confirmed against Anthropic's pricing page in November 2026. Also in the table: Haiku 5.5's higher card for prompts over 100K tokens, Sonnet 5 (where a refusal fallback can land), web search at $10 per 1,000 searches, and `voyage-4` at $0.06/M — priced at list even while its first 200M tokens are free. A model missing from the table is still recorded, at $0, and reported.
+- A pricing table in `config/donna.php`, per model, USD per million tokens. As of November 2026 from Anthropic's docs: Sonnet 5.5 $2 in / $10 out / $0.10 cache read; Haiku 5.5 $0.10 in / $0.50 out / $0.01 cache read (up to 100K context). Cache writes are 1.25× input. *(as built)* Confirmed against Anthropic's pricing page in November 2026. Also in the table: Haiku 5.5's higher card for prompts over 100K tokens, Sonnet 5 (where a refusal fallback can land), web search at $10 per 1,000 searches, and `voyage-4` at $0.06/M — priced at list even while its first 200M tokens are free. A model missing from the table is still recorded, at $0, and reported. One known gap: when Anthropic's refusal fallback kicks in, only the attempt that produced the answer is recorded; the declined attempt is reported separately by the API and is not yet read.
 - Set a hard monthly spend cap on the Anthropic key in the console (Josh, not code).
 
 ### Deployment

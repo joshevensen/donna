@@ -40,6 +40,20 @@ it('lists what is known about a project by any of its names', function () {
     expect($result)->toContain('Fibermade launched in 2025.');
 });
 
+it('shows the newest facts and says how many more there are when there are too many to list', function () {
+    ['josh' => $josh] = donnaExists();
+    fakeEmbeddings();
+    config(['donna.context.what_i_know_limit' => 1]);
+    Fact::factory()->hasAttached($josh, relationship: 'people')->create(['statement' => 'Josh used to live in Austin.']);
+    Fact::factory()->hasAttached($josh, relationship: 'people')->create(['statement' => 'Josh lives in Houston.']);
+
+    [$result] = donnaCalls([['what_i_know', ['type' => 'person', 'name' => 'Josh']]]);
+
+    expect($result)
+        ->toContain('Josh lives in Houston.', 'newest 1 of 2 facts')
+        ->not->toContain('Josh used to live in Austin.');
+});
+
 it('says so when there is nobody by that name', function () {
     donnaExists();
     fakeEmbeddings();

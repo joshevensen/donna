@@ -39,7 +39,7 @@ class FactWriter
         ?array $embedding = null,
         ?Model $trigger = null,
     ): Fact {
-        $embedding ??= $this->embedder->embed($statement, $trigger ?? $source);
+        $embedding ??= $this->embedder->attempt($statement, $trigger ?? $source);
 
         return DB::transaction(function () use ($statement, $kind, $provenance, $subjects, $source, $confidence, $notableChange, $embedding): Fact {
             $fact = Fact::create([
@@ -79,7 +79,7 @@ class FactWriter
         ?array $embedding = null,
         ?Model $trigger = null,
     ): Fact {
-        $embedding ??= $this->embedder->embed($statement, $trigger ?? $source);
+        $embedding ??= $this->embedder->attempt($statement, $trigger ?? $source);
 
         $old->loadMissing(['people', 'projects', 'topics']);
 

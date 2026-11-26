@@ -5,6 +5,7 @@ namespace App\Extraction;
 use App\Enums\InterviewAreaStatus;
 use App\Enums\PersonKind;
 use App\Enums\ProjectStatus;
+use App\Memory\HybridSearch;
 use App\Memory\MemoryRenderer;
 use App\Memory\NameMatcher;
 use App\Models\Fact;
@@ -26,7 +27,10 @@ use Laravel\Ai\ObjectSchema;
  */
 class ExtractionRequests
 {
-    public function __construct(private MemoryRenderer $renderer) {}
+    public function __construct(
+        private MemoryRenderer $renderer,
+        private HybridSearch $search,
+    ) {}
 
     /**
      * The custom ID of the request covering one day, e.g. "day-2026-11-25".
@@ -105,8 +109,9 @@ class ExtractionRequests
 
     /**
      * The active facts the day is most likely to add to or contradict: those
-     * about its topics, the projects those belong to, the people and projects
-     * it names, and Josh himself. Most recent first.
+     * about its topics, the projects those belong to, and the people and
+     * projects it names; then facts sharing its words; then the newest facts
+     * about Josh and Donna, until the request's allowance is full.
      *
      * @param  Collection<int, Topic>  $topics
      * @param  Collection<int, Person>  $people
@@ -122,23 +127,33 @@ class ExtractionRequests
             ...DB::table('project_topic')->whereIn('topic_id', $topicIds)->pluck('project_id')->all(),
         ];
 
-        $personIds = [
-            ...$people->filter(fn (Person $person): bool => NameMatcher::mentions($text, $person->names()))->modelKeys(),
-            ...Person::query()->where('kind', '!=', PersonKind::Other)->pluck('id')->all(),
-        ];
+        $namedPersonIds = $people->filter(fn (Person $person): bool => NameMatcher::mentions($text, $person->names()))->modelKeys();
+
+        $limit = config('donna.extraction.related_facts_per_request');
+
+        $about = fn (string $type, array $ids): array => Fact::query()
+            ->active()
+            ->whereIn('id', DB::table('fact_subjects')->select('fact_id')->where('subject_type', $type)->whereIn('subject_id', $ids))
+            ->latest('id')
+            ->limit($limit)
+            ->pluck('id')
+            ->all();
+
+        // Most specific first, so a long-held fact about today's topic is never
+        // crowded out by whatever Donna learned about Josh most recently.
+        $ids = collect([
+            ...$about('topic', $topicIds),
+            ...$about('project', $projectIds),
+            ...$about('person', $namedPersonIds),
+            ...array_keys($this->search->facts($text, null)),
+            ...$about('person', Person::query()->where('kind', '!=', PersonKind::Other)->pluck('id')->all()),
+        ])->unique()->take($limit);
 
         return Fact::query()
-            ->active()
             ->with(['people', 'projects', 'topics', 'predecessors'])
-            ->whereIn('id', DB::table('fact_subjects')
-                ->select('fact_id')
-                ->where(fn ($query) => $query
-                    ->where(fn ($query) => $query->where('subject_type', 'topic')->whereIn('subject_id', $topicIds))
-                    ->orWhere(fn ($query) => $query->where('subject_type', 'project')->whereIn('subject_id', $projectIds))
-                    ->orWhere(fn ($query) => $query->where('subject_type', 'person')->whereIn('subject_id', $personIds))))
-            ->latest('id')
-            ->limit(config('donna.extraction.related_facts_per_request'))
-            ->get();
+            ->findMany($ids)
+            ->sortBy(fn (Fact $fact): int => $ids->search($fact->id))
+            ->values();
     }
 
     /**
@@ -188,6 +203,10 @@ class ExtractionRequests
             'topic_summaries' => $schema->array()->items($schema->object([
                 'topic_id' => $schema->integer()->required(),
                 'summary' => $schema->string()->required(),
+            ]))->required(),
+            'topic_projects' => $schema->array()->items($schema->object([
+                'topic_id' => $schema->integer()->required(),
+                'project' => $schema->string()->description('The project\'s name, as listed.')->required(),
             ]))->required(),
             'project_candidates' => $schema->array()->items($schema->object([
                 'name' => $schema->string()->required(),

@@ -17,7 +17,6 @@ it('backfills everything since the first message on the first run, one request p
     $first = Message::factory()->create(['body' => 'Fibermade pricing is going to $29.', 'created_at' => '2026-11-24 04:00:00']);
     Message::factory()->replyTo($first)->create(['body' => 'About time.', 'created_at' => '2026-11-24 04:00:05']);
     Message::factory()->create(['body' => 'Kristen wants to do the Houston show.', 'created_at' => '2026-11-24 15:00:00']);
-    Message::factory()->pending()->create(['created_at' => '2026-11-24 15:00:00']);
     travelTo('2026-11-25 09:00:00');
 
     StartExtraction::dispatchSync();
@@ -71,6 +70,41 @@ it('gives each day the people Donna knows and the facts that day could change, b
     expect(collect($batches->submitted)->sole()[0]->prompt)
         ->toContain('Kristen', "topic {$topic->id}: Fibermade pricing", "#{$related->id}", 'Fibermade pricing is $19 a month.')
         ->not->toContain('The gate code is 4471.');
+});
+
+it('leaves an exchange Donna is still answering whole for the next run', function () {
+    donnaExists();
+    $batches = fakeBatches();
+    Message::factory()->create(['body' => 'Settled earlier.', 'created_at' => '2026-11-25 08:00:00']);
+    $asked = Message::factory()->create(['body' => 'Asked a moment ago.', 'created_at' => '2026-11-25 08:59:50']);
+    Message::factory()->pending()->create(['in_reply_to_id' => $asked->id, 'created_at' => '2026-11-25 08:59:50']);
+    travelTo('2026-11-25 09:00:00');
+
+    StartExtraction::dispatchSync();
+
+    $run = ExtractionRun::sole();
+
+    expect($run->window_end->toDateTimeString())->toBe('2026-11-25 08:59:49')
+        ->and($batches->submitted[$run->batch_id][0]->prompt)
+        ->toContain('Settled earlier.')
+        ->not->toContain('Asked a moment ago.');
+});
+
+it('puts facts about the day\'s topics ahead of newer facts about Josh when space is short', function () {
+    ['josh' => $josh] = donnaExists();
+    $batches = fakeBatches();
+    config(['donna.extraction.related_facts_per_request' => 1]);
+    $topic = Topic::factory()->create(['name' => 'Fibermade pricing']);
+    Fact::factory()->hasAttached($topic, relationship: 'topics')->create(['statement' => 'Fibermade pricing is $19 a month.']);
+    Fact::factory()->hasAttached($josh, relationship: 'people')->create(['statement' => 'Josh bought new running shoes.']);
+    Message::factory()->hasAttached($topic)->create(['body' => 'Going to $29.', 'created_at' => '2026-11-24 15:00:00']);
+    travelTo('2026-11-25 09:00:00');
+
+    StartExtraction::dispatchSync();
+
+    expect(collect($batches->submitted)->sole()[0]->prompt)
+        ->toContain('Fibermade pricing is $19 a month.')
+        ->not->toContain('Josh bought new running shoes.');
 });
 
 it('submits nothing when nothing has been said since the last run', function () {

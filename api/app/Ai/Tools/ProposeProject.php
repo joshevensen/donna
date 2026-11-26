@@ -4,6 +4,7 @@ namespace App\Ai\Tools;
 
 use App\Enums\ProjectStatus;
 use App\Enums\ProjectTier;
+use App\Memory\ProjectLinker;
 use App\Memory\SubjectResolver;
 use App\Models\Project;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
@@ -13,7 +14,10 @@ use Laravel\Ai\Tools\Request;
 
 class ProposeProject implements Tool
 {
-    public function __construct(private SubjectResolver $subjects) {}
+    public function __construct(
+        private SubjectResolver $subjects,
+        private ProjectLinker $links,
+    ) {}
 
     public function name(): string
     {
@@ -49,6 +53,8 @@ class ProposeProject implements Tool
             'status' => ProjectStatus::Proposed,
             'status_changed_at' => now(),
         ]);
+
+        $this->links->linkProject($project);
 
         return "Saved as a proposal (project #{$project->id}). It is not tracked until Josh says yes.";
     }

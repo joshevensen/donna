@@ -53,7 +53,7 @@ class SubjectResolver
 
         return $topic ?? ($create ? Topic::create([
             'name' => trim($name),
-            'embedding' => $this->embedder->embed(trim($name), $trigger),
+            'embedding' => $this->embedder->attempt(trim($name), $trigger),
         ]) : null);
     }
 

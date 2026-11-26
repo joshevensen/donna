@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Ai\Agents\TopicTagger;
 use App\Memory\Embedder;
 use App\Memory\NameMatcher;
+use App\Memory\ProjectLinker;
 use App\Models\Message;
 use App\Models\Topic;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,7 +33,7 @@ class TagTopics implements ShouldQueue
         public Message $reply,
     ) {}
 
-    public function handle(Embedder $embedder): void
+    public function handle(Embedder $embedder, ProjectLinker $links): void
     {
         $candidates = $this->candidates();
 
@@ -47,7 +48,7 @@ class TagTopics implements ShouldQueue
             return;
         }
 
-        DB::transaction(function () use ($topics): void {
+        DB::transaction(function () use ($topics, $links): void {
             $this->message->topics()->syncWithoutDetaching($topics->modelKeys());
             $this->reply->topics()->syncWithoutDetaching($topics->modelKeys());
 
@@ -59,6 +60,8 @@ class TagTopics implements ShouldQueue
                     'last_discussed_at' => max($topic->last_discussed_at ?? $at, $at),
                 ]);
             }
+
+            $links->linkTopics($topics);
         });
     }
 

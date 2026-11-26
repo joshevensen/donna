@@ -3,12 +3,14 @@
 namespace App\Jobs;
 
 use App\Enums\ExtractionRunStatus;
+use App\Enums\MessageStatus;
 use App\Extraction\Contracts\BatchClient;
 use App\Extraction\ExtractionRequests;
 use App\Models\ExtractionRun;
 use App\Models\Message;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Carbon;
 
 /**
  * Once a day, sends everything said since the last extraction to the batch
@@ -35,6 +37,13 @@ class StartExtraction implements ShouldQueue
 
         // The last whole second, so nothing still being written falls between two windows.
         $until = now()->startOfSecond()->subSecond();
+
+        // An exchange Donna is still answering waits for the next run, whole.
+        $answering = Message::query()->where('status', MessageStatus::Pending)->min('created_at');
+
+        if ($answering !== null) {
+            $until = $until->min(Carbon::parse($answering)->subSecond());
+        }
 
         $messages = Message::query()
             ->complete()

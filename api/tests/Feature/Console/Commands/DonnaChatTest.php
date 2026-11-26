@@ -47,6 +47,17 @@ it('opens on the last few exchanges, oldest first, including a reply that finish
     Http::assertSent(fn (Request $request): bool => $request->hasHeader('Authorization', 'Bearer secret-token'));
 });
 
+it('prints angle-bracket text in a reply as written, not as terminal styling', function () {
+    Http::fake(['donna.test/api/v1/messages?limit=10' => Http::response(['data' => [
+        apiMessage(1, 'donna', 'Wrap it in <info>done</info> tags.'),
+    ]])]);
+
+    artisan('donna:chat')
+        ->expectsOutputToContain('Wrap it in <info>done</info> tags.')
+        ->expectsQuestion('You', '/quit')
+        ->assertSuccessful();
+});
+
 it('waits on start for a reply Donna is still writing', function () {
     Http::fake([
         'donna.test/api/v1/messages?limit=10' => Http::response(['data' => [

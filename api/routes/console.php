@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\EmbedMissing;
 use App\Jobs\PollExtractions;
 use App\Jobs\StartExtraction;
 use Illuminate\Support\Facades\Schedule;
@@ -21,3 +22,14 @@ Schedule::job(new StartExtraction)
 Schedule::job(new PollExtractions)
     ->cron('*/'.config('donna.extraction.poll_minutes').' * * * *')
     ->withoutOverlapping(30);
+
+/*
+|--------------------------------------------------------------------------
+| Self-healing
+|--------------------------------------------------------------------------
+|
+| Anything saved while the embeddings API was down gets its vector here.
+|
+*/
+
+Schedule::job(new EmbedMissing)->hourly();

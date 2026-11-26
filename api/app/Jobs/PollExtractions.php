@@ -36,8 +36,11 @@ class PollExtractions implements ShouldQueue
 
             $results = collect($batches->results($run->batch_id))->sortBy('customId')->values();
 
-            // The money is spent whether or not the results can be applied.
-            $this->recordCosts($run, $results, $costs);
+            // The money is spent whether or not the results can be applied, and
+            // it is recorded once even if applying them takes a second poll.
+            if (! $run->costs()->where('purpose', CostPurpose::Extraction)->exists()) {
+                $this->recordCosts($run, $results, $costs);
+            }
 
             $this->apply($run, $results, $applier);
         }
@@ -65,10 +68,14 @@ class PollExtractions implements ShouldQueue
             return;
         }
 
+        // Model calls happen out here. If embeddings are down this throws, the
+        // run stays submitted, and the next poll tries again.
+        $embeddings = $applicable->map(fn (BatchResult $result): Collection => $applier->prepare($run, $result->output));
+
         try {
-            DB::transaction(function () use ($run, $applicable, $firstFailure, $applier): void {
-                foreach ($applicable as $result) {
-                    $applier->apply($run, $result->output);
+            DB::transaction(function () use ($run, $applicable, $embeddings, $firstFailure, $applier): void {
+                foreach ($applicable as $index => $result) {
+                    $applier->apply($run, $result->output, $embeddings[$index]);
                 }
 
                 $run->update([

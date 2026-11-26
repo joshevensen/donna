@@ -6,6 +6,8 @@ use App\Models\Fact;
 use App\Models\Message;
 use App\Models\Person;
 use App\Models\Topic;
+use Illuminate\Support\Facades\Exceptions;
+use Laravel\Ai\Embeddings;
 
 it('writes the fact to memory immediately, about Josh unless told otherwise', function () {
     ['josh' => $josh] = donnaExists();
@@ -52,6 +54,19 @@ it('links the fact to who and what it is about, meeting new people and topics as
         ->and(Topic::sole()->embedding)->toBe(embedding(0))
         ->and($fact->projects)->toBeEmpty()
         ->and($result)->toContain('Untracked Thing');
+});
+
+it('still remembers when embeddings are down', function () {
+    donnaExists();
+    Exceptions::fake();
+    Embeddings::fake(fn () => throw new RuntimeException('Voyage is down.'));
+
+    [$result] = donnaCalls([['remember', ['statement' => 'The gate code is 4471.']]]);
+
+    expect(Fact::sole())
+        ->statement->toBe('The gate code is 4471.')
+        ->embedding->toBeNull()
+        ->and($result)->toStartWith('Remembered as fact');
 });
 
 it('writes a fact once when a retried reply repeats the call', function () {
