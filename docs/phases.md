@@ -23,11 +23,12 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 **Foundation**
 - One Forge-managed droplet with Postgres + pgvector on it; Spaces; droplet backups + database dumps to Spaces
 - Sanctum token auth (one user)
-- Laravel AI SDK wired to Anthropic behind a provider-agnostic interface
+- Laravel AI SDK wired to Anthropic behind a provider-agnostic interface; Voyage AI for embeddings (Anthropic has no embeddings model)
+- Web search via Anthropic's server-side web search tool, so Donna can go find out instead of guessing
 - `costs` table — every LLM call records a row
 - Messages stored permanently, with their source
 - Message endpoint + `donna:chat` artisan command, run from Josh's Mac against the deployed API
-- System prompt in `api/resources/prompts/donna.md` (cached) — the character profile, written from an interview with Josh and rewritten by him; edited directly from then on. Tech docs reference it, never restate it.
+- Character profile in the database, versioned — first version seeded from the draft in `api/resources/prompts/donna.md` (rewritten by Josh), after which the file is deleted. Cached as the start of the system prompt.
 
 **Memory**
 - Context rebuilt per message: current date, related messages, Facts, People, Skills (none yet)
@@ -35,11 +36,12 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 - Personal and Social Memory — Facts and People, with provenance
 - "Remember this" writes immediately
 - Daily passive extraction via the Batch API
-- Getting to Know You interview + import of existing context (Claude memory export, the planning seed notes)
+- Getting to Know You — an ongoing interview over days and weeks; the planning seed notes are pasted into chat
 - Time awareness and stale-topic refreshers
 - "What did you cost me this month?"
 - Shared history — daily extraction also captures moments worth remembering between Josh and Donna (running jokes, calls she got right or wrong), stored as Facts about Donna
-- Start the personal eval set — save real requests with known good answers from day one, plus personality and boundary cases (pushes back, never sycophantic, doesn't pad, no romance, no "I missed you")
+- Character growth — Donna proposes edits to her own profile; Josh approves; a new version is saved
+- Start the personal eval set — Josh flags exchanges as good or bad examples from day one, plus personality and boundary cases (pushes back, never sycophantic, doesn't pad, no romance, no "I missed you"). A runner that replays them comes with the first prompt or model change, not before.
 
 **Done when:** Josh talks to Donna daily from the terminal and she recalls things he told her days ago without being prompted.
 
@@ -109,9 +111,8 @@ Unordered until earlier phases make the order obvious.
 - Passive Capture — email (could follow Phase 4), texts (needs Phase 6), wearable
 - Skill learning loop — create, refine, propose, retire
 - Memory curation job
-- Character growth — Donna periodically reviews shared history and proposes edits to her own character profile; Josh approves, versioned and reversible
+- Scheduled character review — Donna periodically reviews shared history on her own and proposes profile edits
 - AI-judged nudge timing (once there's outcome data)
 - `DonnaWatch` capture app
 - Travel starter skill
-- Cold storage for messages older than 180 days
 - Voice output (TTS) setting

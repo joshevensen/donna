@@ -16,12 +16,12 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 
 ### Memory
 
-- **Fact** — one thing Donna knows. About Josh (Personal Memory), a Person (Social Memory), or Donna herself (shared history, her own opinions). Has a **provenance** (message, daily extraction, interview, import, check-in) and a confidence. Can be superseded by a newer Fact.
-- **Person** — anyone in Josh's orbit. Has names/aliases, a relationship to Josh, and Facts.
+- **Fact** — one thing Donna knows. Can be about anything — one or more People, Projects, Topics, or any other concept (polymorphic). Facts about Josh are Personal Memory; about other People, Social Memory; about Donna, her shared history and opinions. Has a **provenance** (message, daily extraction, interview, import, check-in) and a confidence. Can be superseded by a newer Fact.
+- **Person** — anyone in Josh's orbit, including Josh himself and Donna. Josh's Person is linked to his user account; Donna's is who Facts about her hang on. Has names/aliases, a relationship to Josh, and Facts.
 - **File** — a document that belongs to Donna, not to a message. MD or CSV. Split into **Chunks** at logical boundaries, each embedded (Archive Memory).
 - **Skill** — a procedure Donna knows (Agent Skills format: `SKILL.md` + optional scripts/references). Origin: seed, learned, or imported. Status: proposed, active, retired. Integration skills use an Integration.
 
-- **Character Profile** — who Donna is: taste, opinions, history. Versioned; changes are proposed by Donna and approved by Josh.
+- **Character Profile** — who Donna is: taste, opinions, history. Stored in the database and versioned; changes are proposed by Donna and approved by Josh.
 
 ### Presence
 
@@ -55,11 +55,11 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 Message ──< Attachment
 Message >── Topic (many-to-many)
 Topic >── Project (many-to-many)
-Project >── Person                      (owner)
+Project >── Person                      (owner — Josh or Kristen)
 Project ──< Goal / Task
 Message ──< Task / Goal / Fact          (where they came from)
 
-Person ──< Fact
+Fact >──< anything (polymorphic)      (Person, Project, Topic, …)
 Fact ──> Fact                           (superseded_by)
 File ──< Chunk
 
@@ -92,9 +92,9 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 
 **Memory**
 - Projects are labels, not fences. Retrieval never filters by Project; a Project only boosts what's related to it.
-- Facts are superseded, not silently overwritten, so Donna can explain what changed. *(Proposed — confirm in the Phase 1 tech doc.)*
+- Facts are superseded, not silently overwritten, so Donna knows what Josh used to think and can explain what changed.
 - Memories, Skills, and Files are never deleted automatically.
-- Messages older than 180 days move to cold storage but stay retrievable.
+- Every Message stays in the active database and retrievable, forever.
 
 **Autonomy**
 - An external-irreversible Action requires confirmation unless a matching Trust Grant exists.

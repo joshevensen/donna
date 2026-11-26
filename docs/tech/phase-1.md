@@ -1,8 +1,8 @@
 # Phase 1 — Foundation, Conversation + Memory
 
-Donna runs on the real server, every call is accounted for, and she remembers. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); her character in [`api/resources/prompts/donna.md`](../../api/resources/prompts/donna.md).
+Donna runs on the real server, every call is accounted for, and she remembers. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); her character profile draft in [`api/resources/prompts/donna.md`](../../api/resources/prompts/donna.md).
 
-**Status:** user stories drafted — awaiting Josh's approval. Design not started.
+**Status:** user stories drafted — awaiting Josh's approval. Design in progress.
 
 ---
 
@@ -13,6 +13,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 - I talk to Donna from a terminal on my Mac. She answers in her own voice, as defined in her character profile.
 - There's one conversation. I never start a new chat, and nothing is siloed by thread or project.
 - Closing the terminal never loses anything. Every message is saved the moment it's sent, and if I close mid-reply, Donna still finishes it.
+- When she doesn't know something, she looks it up on the web instead of guessing.
 - When I open `donna:chat` again, I see the last few exchanges and pick up right where we left off — including any reply I missed.
 
 ### She remembers everything
@@ -79,6 +80,21 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 ## Design
 
 *Full design written after the user stories are approved. Decisions made so far:*
+
+### Providers
+
+- **Anthropic, called directly** through the Laravel AI SDK — conversation, extraction (Batch API), and web search (Anthropic's server-side tool). If the SDK lacks batch or caching support, those calls go to Anthropic's API directly.
+- **Voyage AI for embeddings** — Anthropic has no embeddings model; Voyage is the one Anthropic recommends.
+- **Not DigitalOcean Inference** — it resells the same models at provider rates, but its batch flow is its own, its web search is a third-party service rather than Anthropic's, and it adds a layer for no gain. Revisit only if one bill becomes worth it.
+
+### Character profile
+
+Lives in the database, versioned. The first version is seeded from `api/resources/prompts/donna.md` (once Josh has rewritten it); the build deletes the file afterwards. Donna's proposed changes create a new version only when Josh approves.
+
+### Facts and People
+
+- Facts are polymorphic many-to-many: one Fact can be about any combination of People, Projects, Topics, or anything added later.
+- Josh and Donna are both People. Josh's Person is linked to his user account; Donna's is where Facts about her live.
 
 ### Replies run on the server
 

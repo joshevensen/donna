@@ -15,6 +15,8 @@ donna/
 
 One repo on purpose: most features touch both the API and the apps, so one issue → one PR.
 
-## Status
+## Docs
 
-Vision phase. Scaffolding only.
+- [`docs/vision.md`](docs/vision.md) — what Donna is and why
+- [`docs/domain.md`](docs/domain.md) — concepts and the rules that always hold
+- [`docs/phases.md`](docs/phases.md) — build order and where things stand

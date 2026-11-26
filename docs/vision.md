@@ -68,17 +68,25 @@ When Donna responds to any message, the context she works with is:
 
 The conversation history alone is never the context. The full memory is.
 
+### Topics and Projects
+
+Memory is organized around what Josh talks about and what he works on — as labels, never fences.
+
+- **Topics** — the things that come up over time. How often Josh comes back to a topic is how Donna knows his interests and spots his rabbit holes; nothing is declared.
+- **Projects** — what Josh (or Kristen) is actually working on, with a priority (main, secondary, fun) and a status (active, parked, dropped). Donna proposes tracking one when she notices it; Josh adjusts by telling her.
+- **Nothing is walled off** — a project only boosts what's related to it in retrieval; it never hides anything else.
+
 ### Keeping Memory Current
 
 Memory is only useful if it's accurate. Four mechanisms work together to keep it current:
 
-**Getting to Know You** — a one-time interview at the start, asking about Josh's life, work, relationships, goals, and preferences. He answers naturally; Donna extracts what she learns and seeds Personal and Social Memory so she's useful from week one, not month three. Existing context (exported Claude memory, notes, documents) can be imported the same way.
+**Getting to Know You** — an ongoing interview over the first days and weeks, in sessions of any length, about Josh's life, work, people, interests, goals, and his relationship with Donna. She tracks what's been covered, picks up where they left off, and weaves it into normal conversation. He answers naturally; Donna extracts what she learns into memory so she's useful from week one, not month three. Existing context (exported Claude memory, notes, documents) can be imported the same way.
 
 **Passive extraction** — a daily background job collects the past 24 hours of conversation and sends it in a single batch call to Anthropic (batch calls are significantly cheaper). It extracts new facts, corrections, and updates about Josh and the people in his life, writing them to Personal and Social Memory automatically. Josh never has to tell Donna to remember something — she pays attention. Up to 24 hours of delay is acceptable; an explicit "remember this" writes immediately.
 
 **Active check-in** — Donna periodically surfaces things she thinks she knows and asks if they're still true. "Last time we talked you were working on X — is that still the case?" Triggered on a sensible cadence for things that change over time, or anytime Josh says "let's do a check-in."
 
-**Memory curation** — a periodic background job (monthly or quarterly) that removes outdated facts, consolidates redundant entries, promotes frequently retrieved facts, and demotes rarely retrieved ones. Built last, once real data exists to test against.
+**Memory curation** — a periodic background job (monthly or quarterly) that retires outdated facts (kept as history, never deleted), consolidates redundant entries, promotes frequently retrieved facts, and demotes rarely retrieved ones. Built last, once real data exists to test against.
 
 ---
 
@@ -410,7 +418,6 @@ Capture surfaces outside the chat window (see Presence): Mac global hotkey and m
 ### Chat History
 
 - Recent messages load first; scrolling up loads more
-- Messages older than 180 days move to cold storage (compressed archives in Spaces) — retrievable but not in the active DB
 - Memories, skills, and files are never deleted automatically
 - Thinking state: submit disabled, thinking indicator in chat
 - Error state: input disabled, border turns red, notification explains the error
