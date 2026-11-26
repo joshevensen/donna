@@ -10,7 +10,13 @@ The Laravel app on the droplet, served at `donna.joshevensen.com`.
 
 ## 1. DNS
 
-At your registrar, add an `A` record for `donna.joshevensen.com` pointing at the server's IP address. The certificate in step 3 can't be issued until it resolves.
+At your registrar, add an `A` record for `donna.joshevensen.com` pointing at the server's IP address. It needs time to spread across the internet, and the certificate in step 6 can't be issued until it has. To see whether it has reached you:
+
+```bash
+dig +short donna.joshevensen.com
+```
+
+It should print the server's IP address. Carry on with the next steps while you wait.
 
 ## 2. Create the site
 
@@ -22,15 +28,11 @@ In Forge, create a site for `donna.joshevensen.com` from the `joshevensen/donna`
 | Web directory | `/public` | Measured from the root directory *(unverified; if the site shows a 404 after the first deploy, try `/api/public`)*. |
 | PHP version | 8.4 | |
 | Zero downtime deployments | On, Forge's default | It can only be set when the site is created. These instructions assume it is on. |
-| Frontend package manager, Build command | Leave as they are | Donna has no frontend. The deploy script in step 5 has no npm lines, so these do nothing. |
+| Frontend package manager, Build command | Leave as they are | Donna has no frontend. The deploy script in step 4 has no npm lines, so these do nothing. |
 
 If the form offers to install Composer dependencies, leave it off. The deploy script does that.
 
-## 3. Certificate
-
-Issue a **Let's Encrypt** certificate for the domain.
-
-## 4. Environment
+## 3. Environment
 
 Open the site's **Environment** tab. Forge copied `api/.env.example` into it, and its docs say it replaces some settings to match the server's database, without saying which. Check these, fixing any that are blank or wrong:
 
@@ -47,7 +49,7 @@ Leave out the `ANTHROPIC_API_KEY` and `VOYAGEAI_API_KEY` lines for now.
 
 Forge links this file into the app's `api/` folder on every deploy, so this tab is the only place to edit it. A deploy that gets through `migrate` is the proof it is being found: without it, Laravel would fall back to SQLite and the pgvector migration would fail.
 
-## 5. Deploy script
+## 4. Deploy script
 
 In the site's deployment settings, replace the whole script with:
 
@@ -78,22 +80,31 @@ $RESTART_QUEUES()
 - `db:seed` is safe on every deploy. It creates Josh, Donna, Kristen, the first character profile and the interview areas if they are missing, and never overwrites anything Donna has learned.
 - There are no `npm` lines. Forge's default script has `npm ci || npm install` and `npm run build`, which fail on Donna with "Could not read package.json" because she has no frontend. If your first deploy failed on that, this is the fix.
 
-## 6. First deploy
+## 5. First deploy
 
 Deploy. The log should show "Linking environment file" and "Linking storage directories" and end without an error. Turn on "push to deploy" if you want every push to `main` to ship itself.
 
-Then `https://donna.joshevensen.com/up` should answer 200.
+There is no certificate yet, so check it over plain HTTP: `http://donna.joshevensen.com/up` should answer 200. That also needs the DNS from step 1 to have spread.
 
-## If the deploy fails
+### If the deploy fails
 
 Two failures have come up on this site, both from Forge's defaults:
 
 | Error in the deploy log | Cause | Fix |
 |---|---|---|
-| `Could not read package.json` (npm) | Forge's default script has `npm ci` and `npm run build`; Donna has no frontend. | Use the script in step 5, which has no npm lines. |
-| `Composer could not find a composer.json` | `$FORGE_RELEASE_DIRECTORY` is the top of the release, not its `api/` folder. | Use the script in step 5, which starts with `cd $FORGE_RELEASE_DIRECTORY/api`. |
+| `Could not read package.json` (npm) | Forge's default script has `npm ci` and `npm run build`; Donna has no frontend. | Use the script in step 4, which has no npm lines. |
+| `Composer could not find a composer.json` | `$FORGE_RELEASE_DIRECTORY` is the top of the release, not its `api/` folder. | Use the script in step 4, which starts with `cd $FORGE_RELEASE_DIRECTORY/api`. |
 
 A failed deploy never goes live. Forge only switches to a release in `$ACTIVATE_RELEASE()`, so fix the script and deploy again.
+
+## 6. Certificate
+
+Do this after the first deploy, once `dig +short donna.joshevensen.com` prints the server's IP address. Forge can't issue a certificate before the domain resolves.
+
+1. **Stop the `www` redirect.** Edit the site's domain, `donna.joshevensen.com`, and set the redirect to **No Redirect**. Donna lives on a subdomain, so there is no `www.` version of it to redirect from.
+2. Issue a **Let's Encrypt** certificate for the domain.
+
+Then `https://donna.joshevensen.com/up` should answer 200.
 
 ## 7. Find the app's folder
 
