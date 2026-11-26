@@ -9,10 +9,10 @@ Until the Phase 2 app exists, you talk to Donna with `php artisan donna:chat`, r
 
 ## 1. Make your token
 
-On the server, create a token for your Mac. It is shown once:
+On the server, create a token for your Mac. It is shown once. Replace `<app-folder>` with the path from [forge-site.md](forge-site.md#7-find-the-apps-folder):
 
 ```bash
-cd /home/forge/donna.joshevensen.com/api && php8.4 artisan donna:token mac
+cd <app-folder> && php8.4 artisan donna:token mac
 ```
 
 ## 2. Set up the Mac

@@ -31,5 +31,5 @@ Each file is one task. Do them in this order the first time. Afterwards they are
 
 - Forge, DigitalOcean, Anthropic and Blink rename their screens now and then. Where a label doesn't match what you see, the goal of the step is what matters.
 - A step marked *(unverified)* was written from documentation, not followed live. When you follow one and it differs, fix the file.
-- Commands assume the server's `forge` user and the site at `/home/forge/donna.joshevensen.com`.
+- Commands assume the server's `forge` user and the site at `/home/forge/donna.joshevensen.com`. `<app-folder>` is the folder on the server that holds the app's `artisan` file; [forge-site.md](forge-site.md#7-find-the-apps-folder) shows how to find it, and you replace it in any command that shows it.
 - Never put a key in the repo, in a chat with Donna, or in a pull request.
