@@ -40,6 +40,10 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 - Josh is learning Swift/SwiftUI — briefly explain non-obvious Swift choices and platform gotchas
 - Default to the established stack; propose alternatives only with a compelling reason
 
+## Builds
+
+- The draft PR's checklist is the resume point if a session stops, so it must always match the branch. Updating it is part of every push: commit, push, then tick the finished items in the PR description before starting the next area. Never push a finished area with its box unticked.
+
 ## Testing
 
 Tests exist to protect what Donna does, not to maximize coverage. The `testing-best-practices` skill applies; these rules come first where they're stricter.
