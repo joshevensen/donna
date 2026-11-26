@@ -28,6 +28,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 
 - Donna knows my interests by what I keep coming back to, not by a list I gave her.
 - She comments on my rabbit holes: "That's your third keyboard rabbit hole this month."
+- When a rabbit hole relates to one of my projects, she connects it.
 
 ### She knows what time it is
 
