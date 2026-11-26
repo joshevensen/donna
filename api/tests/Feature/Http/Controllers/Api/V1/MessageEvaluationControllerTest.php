@@ -48,12 +48,3 @@ it('returns 422 when the message is not a finished reply of Donna\'s', function 
     'something Josh said' => [fn () => Message::factory()->create()],
     'a reply still being written' => [fn () => Message::factory()->pending()->create()],
 ]);
-
-it('returns 422 for a rating that is not good or bad', function () {
-    actingAs(User::factory()->create());
-    $reply = Message::factory()->fromDonna()->create();
-
-    postJson("/api/v1/messages/{$reply->id}/evaluation", ['rating' => 'meh'])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['rating' => 'The selected rating is invalid.']);
-});

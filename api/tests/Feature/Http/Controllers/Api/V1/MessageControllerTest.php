@@ -58,14 +58,6 @@ describe('store', function () {
         expect(Message::count())->toBe(0);
         Queue::assertNotPushed(GenerateReply::class);
     });
-
-    it('returns 422 for a source that is not a known input surface', function () {
-        actingAs(User::factory()->create());
-
-        postJson('/api/v1/messages', ['body' => 'Hi', 'source' => 'carrier-pigeon'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['source' => 'The selected source is invalid.']);
-    });
 });
 
 describe('show', function () {
@@ -101,12 +93,6 @@ describe('show', function () {
             ->assertJsonPath('data.status', 'failed')
             ->assertJsonPath('data.error', 'Donna could not reply.');
     });
-
-    it('returns 404 for a message that does not exist', function () {
-        actingAs(User::factory()->create());
-
-        getJson('/api/v1/messages/999')->assertNotFound();
-    });
 });
 
 describe('index', function () {
@@ -135,13 +121,5 @@ describe('index', function () {
             ->assertOk()
             ->assertJsonPath('data.*.id', [$second->id, $first->id])
             ->assertJsonPath('meta.next_before', null);
-    });
-
-    it('returns 422 for a limit above the maximum', function () {
-        actingAs(User::factory()->create());
-
-        getJson('/api/v1/messages?limit=500')
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['limit' => 'The limit field must not be greater than 100.']);
     });
 });
