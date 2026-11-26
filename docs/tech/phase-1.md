@@ -167,7 +167,7 @@ After a reply completes, queue `EmbedMessage` for Donna's reply and `TagTopics` 
 An artisan command in the same app, run from Josh's Mac against the deployed API (`DONNA_API_URL` and `DONNA_API_TOKEN` in his local `.env`). It never touches the database directly.
 
 - On start: fetch the last ~10 messages and print them, including any reply that finished while he was away; if one is still pending, wait for it.
-- Input via Laravel Prompts (multi-line textarea, sent with Ctrl+D). Send → show a thinking indicator → poll every second until complete or failed. *(as built)* After ten minutes it stops waiting and says the reply will be there next time; the server keeps working on it.
+- Input via Laravel Prompts (multi-line textarea, sent with Ctrl+D). *(as built)* A function key sends too (F5 by default, `DONNA_SUBMIT_KEY` to change it, blank to turn it off), for terminals where the Ctrl+D chord is awkward, such as a phone. Send → show a thinking indicator → poll every second until complete or failed. *(as built)* After ten minutes it stops waiting and says the reply will be there next time; the server keeps working on it.
 - Slash commands, handled in code, never sent to Donna: `/good [note]` and `/bad [note]` flag her last reply; `/history [n]`; `/quit`.
 - Plain-text output with light formatting; no markdown renderer needed in Phase 1.
 

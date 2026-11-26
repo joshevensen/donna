@@ -259,7 +259,7 @@ Add `~/donna-phone.pub` in Forge as above, import `donna-phone` into Blink under
 
 ### Using it
 
-- **Sending a message:** Enter starts a new line, so send with Ctrl+D. In Blink's Smart Keys bar, which sits above the on-screen keyboard, hold **CTRL** and press **D**. The bar is hidden when an external keyboard is attached.
+- **Sending a message:** Enter starts a new line. Tap **F5** in Blink's Smart Keys bar to send. Ctrl+D works too: hold **CTRL** there and press **D**. The bar is hidden when an external keyboard is attached. If F5 does nothing, set `DONNA_SUBMIT_KEY` to another key (`f1` to `f12`) in the site's environment and redeploy. I couldn't confirm what Blink sends for each key.
 - **Leaving:** type `/quit`, or just close Blink.
 - **Dropped connections:** iOS can suspend Blink in the background, which can end a plain SSH session. Run `ssh donna` and `donna` again and nothing is lost. [Mosh](https://docs.blink.sh/advanced/advanced-mosh) survives network changes better, and `mosh donna` works the same way once `mosh` is installed on the server (`sudo apt-get install -y mosh`) and its UDP ports (60000 to 61000) are open in the server's firewall. Blink's docs don't say whether either survives the app being backgrounded, so it is optional.
 - **A lost phone:** delete the `iPhone` key in Forge. The phone never holds the API token, which lives in the server's environment, so removing the key cuts off its access.

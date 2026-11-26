@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\SubmitKey;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -11,10 +12,10 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
+use Laravel\Prompts\TextareaPrompt;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 use function Laravel\Prompts\spin;
-use function Laravel\Prompts\textarea;
 
 /**
  * Josh's terminal. It only ever talks to the deployed API over HTTP, so
@@ -41,7 +42,7 @@ class DonnaChat extends Command
             $this->showHistory(config('donna.client.history'));
 
             while (true) {
-                $input = trim(textarea(label: 'You', placeholder: 'Message Donna, or /good, /bad, /history, /quit', required: true));
+                $input = $this->nextMessage();
 
                 if (str_starts_with($input, '/')) {
                     if ($this->slashCommand(...$this->parseCommand($input)) === false) {
@@ -66,6 +67,26 @@ class DonnaChat extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Ask for Josh's next message. Enter adds a line; Ctrl+D or the
+     * configured function key sends it.
+     */
+    private function nextMessage(): string
+    {
+        $submitKey = SubmitKey::configured();
+
+        $prompt = new TextareaPrompt(
+            label: 'You',
+            placeholder: 'Message Donna, or /good, /bad, /history, /quit',
+            required: true,
+            hint: $submitKey->hint(),
+        );
+
+        $submitKey->attachTo($prompt);
+
+        return trim($prompt->prompt());
     }
 
     /**

@@ -45,6 +45,10 @@ return [
         'history' => 10,
         'poll_seconds' => 1,
         'wait_seconds' => 600,
+
+        // The function key that sends a message, besides Ctrl+D: f1 to f12, or
+        // blank for none. Meant for phone terminals, where Ctrl+D is awkward.
+        'submit_key' => env('DONNA_SUBMIT_KEY', 'f5'),
     ],
 
     /*
