@@ -12,16 +12,19 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 
 - **Message** — one turn in the single, never-ending conversation. Author is Josh or Donna. Has a **source** (keyboard, dictation, Siri, quick capture, watch, notification reply) — Donna treats every source the same. May carry **Attachments**. Embedded for retrieval. There is no Conversation or Thread entity: there is only one.
 - **Topic** — something Josh and Donna talk about over time (Fibermade, a trip, a person). Exists so Donna knows when a topic was last discussed and can open with a refresher. How often Josh comes back to a Topic is what defines his interests — interests are tracked, not declared.
-- **Project** — something Josh (or Kristen) is working on, as opposed to just talking about. Has an **owner**, a **tier** (main, secondary, fun), and a **status** (active, parked, dropped). Donna proposes new Projects when she notices one; Josh sets tier and status conversationally. A label, never a fence.
+- **Project** — something Josh (or Kristen) is working on, as opposed to just talking about. Has an **owner**, a **tier** (main, secondary, fun), and a **status** (proposed, active, parked, dropped). Donna proposes new Projects when she notices one, and they stay proposed until Josh agrees; he sets tier and status conversationally. A label, never a fence.
 
 ### Memory
 
-- **Fact** — one thing Donna knows. Can be about anything — one or more People, Projects, Topics, or any other concept (polymorphic). Facts about Josh are Personal Memory; about other People, Social Memory; about Donna, her shared history and opinions. Has a **provenance** (message, daily extraction, interview, import, check-in) and a confidence. Can be superseded by a newer Fact.
+- **Fact** — one thing Donna knows. Can be about anything — one or more People, Projects, Topics, or any other concept (polymorphic). Facts about Josh are Personal Memory; about other People, Social Memory; about Donna, her shared history and opinions. Has a **kind** (fact, preference, decision, opinion, moment), a **provenance** (remember, daily extraction, interview, correction — import and check-in arrive with their features), and a confidence. Can be superseded by a newer Fact.
 - **Person** — anyone in Josh's orbit, including Josh himself and Donna. Josh's Person is linked to his user account; Donna's is who Facts about her hang on. Has names/aliases, a relationship to Josh, and Facts.
 - **File** — a document that belongs to Donna, not to a message. MD or CSV. Split into **Chunks** at logical boundaries, each embedded (Archive Memory).
 - **Skill** — a procedure Donna knows (Agent Skills format: `SKILL.md` + optional scripts/references). Origin: seed, learned, or imported. Status: proposed, active, retired. Integration skills use an Integration.
 
 - **Character Profile** — who Donna is: taste, opinions, history. Stored in the database and versioned; changes are proposed by Donna and approved by Josh.
+- **Interview Area** — a stretch of ground Getting to Know You covers (life story, work, people…), with how far the interview has got in it.
+- **Eval Example** — a reply of Donna's that Josh flagged as good or bad, kept so future changes to her can be tested against real conversations.
+- **Extraction Run** — one daily pass that turns everything said since the last one into Facts, People, and Topic summaries.
 
 ### Presence
 
@@ -58,6 +61,7 @@ Topic >── Project (many-to-many)
 Project >── Person                      (owner — Josh or Kristen)
 Project ──< Goal / Task
 Message ──< Task / Goal / Fact          (where they came from)
+Message ──< Eval Example                (replies Josh flagged good or bad)
 
 Fact >──< anything (polymorphic)      (Person, Project, Topic, …)
 Fact ──> Fact                           (superseded_by)
@@ -92,7 +96,7 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 
 **Memory**
 - Projects are labels, not fences. Retrieval never filters by Project; a Project only boosts what's related to it.
-- Facts are superseded, not silently overwritten, so Donna knows what Josh used to think and can explain what changed.
+- Facts are superseded, not silently overwritten, so Donna knows what Josh used to think and can explain what changed. The one exception is forgetting: when Josh asks, a Fact is deleted along with every earlier version of it.
 - Memories, Skills, and Files are never deleted automatically.
 - Every Message stays in the active database and retrievable, forever.
 
@@ -122,5 +126,5 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 ## Open questions
 
 - **Task vs. Action** — is a Task Donna completes herself just a Task with an Action attached, or something else?
-- **Check-ins and refreshers** — are they Nudges, or their own concept?
+- **Check-ins** — are they Nudges, or their own concept? (Stale-topic refreshers turned out to be neither: they are a flag in the context Donna is given, which she acts on in her reply.)
 - **Skill trust** — does a new Skill get its own Trust Grants, or inherit from the Action Types it uses?

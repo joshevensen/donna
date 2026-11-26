@@ -7,9 +7,9 @@ Source of truth is [`vision.md`](vision.md); concepts are defined in [`domain.md
 ## How phases work
 
 - **One tech doc at a time** — `docs/tech/phase-N.md` is written just before that phase is built, using what the previous phases taught. Later phases here are intentionally rough.
-- **Docs first, together** — each phase doc starts with an interview: Claude reads the relevant vision sections and asks Josh, a few questions per round, about what the vision doesn't answer — real situations from his life, not implementation. From that, Josh and Claude write the doc together: user stories first (Josh's call), then the technical design (Claude's call, discussed with Josh), and UI mockups once there's UI. Josh approves the finished doc.
-- **Built in one shot** — once approved, Fable implements the phase doc in a single pass, no milestones. The doc references whatever else it needs (vision, domain model, prompts) and makes reasonable defaults rather than leaving decisions open.
-- **Builds survive interruptions** — the build works on a branch, opens a draft PR early with a progress checklist from the phase doc, and commits and pushes after each larger area of work. If a session ends or hits a usage limit, a new session resumes from the branch, the checklist, and the phase doc; nothing is lost.
+- **Docs first, together** — each phase doc starts with an interview: Claude reads the relevant vision sections and asks Josh, a few questions per round, about what the vision doesn't answer — real situations from his life, not implementation. From that, Josh and Claude write the doc together: user stories first (Josh's call), then the technical design (Claude's call, discussed with Josh), and UI mockups once there's UI. Josh approves the finished doc. The data model says what writes every table, so nothing is defined that nothing fills.
+- **Built in one shot** — once approved, Fable implements the phase doc in a single pass, no milestones. The doc references whatever else it needs (vision, domain model, prompts) and makes reasonable defaults rather than leaving decisions open. Before the PR is marked ready, an independent reviewer checks the diff against the doc: Phase 1's review found that nothing wrote `project_topic`, which the tests had missed because they set that data up by hand.
+- **Builds survive interruptions** — the build works on a branch, opens a draft PR early with a progress checklist from the phase doc, and commits and pushes after each larger area of work, ticking that area's checklist item in the same step. If a session ends or hits a usage limit, a new session resumes from the branch, the checklist, and the phase doc; nothing is lost.
 - **Data is protected, not precious** — the database is never wiped casually; changes go through migrations. But this is a personal project, not a product with customers: basic backups are enough, and losing data would hurt, not end things.
 - **Done means daily use** — a phase is finished when Josh is using it day to day, not when every bullet is checked. Leftover bullets move to a later phase.
 - **API first until the app is needed** — Phase 1 is used through `php artisan donna:chat`. The Donna app starts in Phase 2, because Presence can't work without push, Siri, and device context.
@@ -21,15 +21,17 @@ Source of truth is [`vision.md`](vision.md); concepts are defined in [`domain.md
 
 Donna runs on the real server, every call is accounted for, and she remembers. Memory is the product; everything after builds on it.
 
+**Status:** built; awaiting daily use.
+
 **Foundation**
-- One Forge-managed droplet with Postgres + pgvector on it; Spaces; droplet backups + database dumps to Spaces
+- One Forge-managed droplet with Postgres + pgvector on it; droplet backups + database dumps to Spaces (the app itself doesn't use Spaces until Phase 3)
 - Sanctum token auth (one user)
 - Laravel AI SDK wired to Anthropic behind a provider-agnostic interface; Voyage AI for embeddings (Anthropic has no embeddings model)
 - Web search via Anthropic's server-side web search tool, so Donna can go find out instead of guessing
 - `costs` table — every LLM call records a row
 - Messages stored permanently, with their source
 - Message endpoint + `donna:chat` artisan command, run from Josh's Mac against the deployed API
-- Character profile in the database, versioned — first version seeded from the draft in `api/resources/prompts/donna.md` (rewritten by Josh), after which the file is deleted. Cached as the start of the system prompt.
+- Character profile in the database, versioned — version 1 is the profile Josh wrote, seeded by `CharacterProfileSeeder`. Cached as the start of the system prompt.
 
 **Memory**
 - Context rebuilt per message: current date, related messages, Facts, People, Skills (none yet)
@@ -42,7 +44,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 - "What did you cost me this month?"
 - Shared history — daily extraction also captures moments worth remembering between Josh and Donna (running jokes, calls she got right or wrong), stored as Facts about Donna
 - Character growth — Donna proposes edits to her own profile; Josh approves; a new version is saved
-- Start the personal eval set — Josh flags exchanges as good or bad examples from day one, plus personality and boundary cases (pushes back, never sycophantic, doesn't pad, no romance, no "I missed you"). A runner that replays them comes with the first prompt or model change, not before.
+- Start the personal eval set — Josh flags exchanges as good or bad examples from day one, plus personality and boundary cases (pushes back, never sycophantic, doesn't pad, no romance, no "I missed you"). A runner that replays them comes with the first prompt or model change, not before. Replaying a reply needs the memory Donna saw, which changes over time, and flagged examples don't keep it yet — saving each reply's memory block is worth doing before the runner.
 
 **Done when:** Josh talks to Donna daily from the terminal and she recalls things he told her days ago without being prompted.
 
@@ -67,6 +69,7 @@ Donna comes to Josh. The app starts here.
 - Accountability — stall detection, asks why, dial set conversationally
 - Active memory check-ins
 - Durable workflows introduced for Presence jobs
+- Streaming replies — Phase 1 returns a reply whole once it's finished; the app should show it as it's written
 - No external actions yet — Donna can draft, not send
 
 **Done when:** Josh uses the app daily instead of the terminal, captures land in under five seconds, and nudges arrive at moments he can act on them.
@@ -93,7 +96,7 @@ Donna starts acting in the outside world, so trust has to exist first.
 ## Phase 5 — Orchestration
 
 - Jobs and scoped Workers on durable workflows, parallel by default
-- Per-job budgets and cost totals
+- Per-job budgets and cost totals — including the declined attempts of refusal fallbacks, which Phase 1 doesn't record yet
 - Checkpoints — jobs pause for confirmation and resume
 - "What are you working on?"
 - Code Work — GitHub integration, Orc status tracking, headless Claude Code runs
@@ -112,6 +115,7 @@ Unordered until earlier phases make the order obvious.
 - Passive Capture — email (could follow Phase 4), texts (needs Phase 6), wearable
 - Skill learning loop — create, refine, propose, retire
 - Memory curation job
+- Retrieval tuning on real data — a similarity floor for message and fact search, which Phase 1 doesn't have
 - Scheduled character review — Donna periodically reviews shared history on her own and proposes profile edits
 - AI-judged nudge timing (once there's outcome data)
 - `DonnaWatch` capture app
