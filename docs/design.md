@@ -29,7 +29,7 @@ One hue (the icon's Suit, `#3B0000`) stepped darker and slightly lighter. Raised
 |---|---|---|---|
 | 1 | Canvas | `#120000` | Page and window background — what everything sits on |
 | 2 | Inset | `#1E0000` | Hairlines and separators on Canvas; recessed fills (code blocks, table stripes, error banner) |
-| 3 | Panel | `#2A0000` | Sidebar, top bar, input bar, the project detail pane |
+| 3 | Panel | `#230000` | Sidebar, top bar, input bar, the project detail pane |
 | 4 | Raised (the Suit) | `#3B0000` | Donna's chat bubbles, cards, the input field, sheets |
 | 5 | Hover | `#4D0A0A` | Hover and pressed backgrounds, the selected row, borders on Raised |
 
@@ -63,13 +63,13 @@ Measured (WCAG):
 |---|---|---|---|
 | Canvas `#120000` | 17.4 : 1 | 7.4 : 1 | 2.8 : 1 |
 | Inset `#1E0000` | 16.9 : 1 | 7.3 : 1 | 2.8 : 1 |
-| Panel `#2A0000` | 16.2 : 1 | 7.1 : 1 | 2.8 : 1 |
+| Panel `#230000` | 16.6 : 1 | 7.2 : 1 | 2.8 : 1 |
 | Raised `#3B0000` | 15.0 : 1 | 6.7 : 1 | 2.7 : 1 |
 | Hover `#4D0A0A` | 13.1 : 1 | 6.1 : 1 | 2.6 : 1 |
 
 Tie on Shirt is 15.0 : 1, and Shirt on Accent is 6.2 : 1. All body text passes AA. Disabled text (35%) is exempt.
 
-The steps between surfaces are small (adjacent surfaces differ by only 1.03 to 1.15 : 1), so separation comes from the step itself plus a hairline where two meet, not from contrast alone. Check on a real screen and widen a step here if it disappears.
+The steps between surfaces are small (adjacent surfaces differ by only 1.02 to 1.15 : 1), so separation comes from the step itself plus a hairline where two meet, not from contrast alone. Check on a real screen and widen a step here if it disappears.
 
 Accent on these surfaces is only 2.1 to 2.8 : 1, so it is **never text** and never the only signal. Use it for fills with a Shirt label or icon, and pair it with a shape or a word. **Focus rings are Shirt, not Accent**, because Accent fails the 3 : 1 needed for them.
 
@@ -84,7 +84,7 @@ Same names on every platform. Web: CSS custom properties. Swift: an asset catalo
 ```
 --donna-canvas: #120000;
 --donna-inset: #1E0000;
---donna-panel: #2A0000;
+--donna-panel: #230000;
 --donna-raised: #3B0000;   /* the icon's Suit */
 --donna-hover: #4D0A0A;
 --donna-accent: #A3262A;
