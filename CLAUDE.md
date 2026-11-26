@@ -18,7 +18,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Durable workflows | `durable-workflow/workflow` — Presence and Orchestration jobs |
 | AI SDK | Laravel AI SDK (`laravel/ai`) — provider-agnostic, Anthropic by default |
 | LLM provider | Anthropic (Haiku / Sonnet / Opus by task), called directly; Anthropic server-side web search; Apple on-device model for Home Node triage |
-| Embeddings | Voyage AI (Anthropic has no embeddings model) |
+| Embeddings | Voyage AI, via a MongoDB Atlas API key (Anthropic has no embeddings model; no MongoDB database) |
 | Skills | Agent Skills standard (`SKILL.md`), stored in Spaces and indexed in Postgres |
 | Integrations | Direct APIs via Laravel HTTP client, packaged as skills; Laravel MCP client only as an escape hatch |
 | Code worker | Claude Code (headless) + Orc plugin, on a DigitalOcean droplet |

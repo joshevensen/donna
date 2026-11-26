@@ -93,7 +93,7 @@ The build follows this section. Where it's silent, follow Laravel and Swift best
 |---|---|
 | Conversation, tagging, tools, web search, prompt caching, embeddings, pgvector helpers, fakes | `laravel/ai` (1.x) |
 | Message Batches (daily extraction) | Anthropic's official PHP SDK — `laravel/ai` doesn't support the Batch API. Wrap it behind an app interface so tests use a fake. |
-| Embeddings | Voyage AI through `laravel/ai`. Use Voyage's current general-purpose text model; set dimensions from its docs and keep model + dimensions in config. |
+| Embeddings | Voyage AI through `laravel/ai`. Use Voyage's current general-purpose text model; set dimensions from its docs and keep model + dimensions in config. Voyage is now owned by MongoDB: keys come from a MongoDB Atlas account and call `https://ai.mongodb.com/v1` (set the provider `url` if the driver defaults to `api.voyageai.com`). No MongoDB database is involved. |
 | Queue | Laravel's database queue driver — one user, no Redis needed |
 | Scheduling | Laravel scheduler. Durable workflows aren't needed until Phase 2. |
 
