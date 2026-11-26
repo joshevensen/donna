@@ -1,8 +1,12 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\V1\MessageController;
+use App\Http\Controllers\Api\V1\MessageEvaluationController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::prefix('v1')->name('api.v1.')->middleware('auth:sanctum')->group(function () {
+    Route::apiResource('messages', MessageController::class)->only(['index', 'store', 'show']);
+
+    Route::post('messages/{message}/evaluation', [MessageEvaluationController::class, 'store'])
+        ->name('messages.evaluation.store');
+});
