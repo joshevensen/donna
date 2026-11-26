@@ -78,4 +78,25 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 
 ## Design
 
-*Not started — written after the user stories are approved.*
+*Full design written after the user stories are approved. Decisions made so far:*
+
+### Replies run on the server
+
+Josh's message is saved on receipt; Donna's reply is generated in a queued job and saved when done. The client waits for it, but closing the client never stops it.
+
+### Cost
+
+Phase 1 does the cheap, structural things and leaves the rest until the `costs` table shows where the money actually goes.
+
+**In this phase**
+- **Cost tracking** — every LLM call records a row in `costs`
+- **Prompt caching** — the character profile and other stable context go first in the prompt and are cached
+- **Batch API** — the daily extraction runs through it
+- **One sensible model per job** — Sonnet for conversation; Haiku for small mechanical work (topic tagging, classification). A setting per job, not a routing system.
+- **Spend cap** — a hard monthly limit on the Anthropic API key, set in the Anthropic console (not code)
+
+**Not in this phase**
+- Routing logic and token-trimming context tricks — the "absorb" layer; prices keep falling and one user's volume is small
+- Per-job budgets — needed once Donna runs autonomous jobs (Phase 5)
+
+Optimize later against real `costs` data, not guesses.
