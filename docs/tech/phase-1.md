@@ -12,6 +12,8 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 
 - I talk to Donna from a terminal on my Mac. She answers in her own voice, as defined in her character profile.
 - There's one conversation. I never start a new chat, and nothing is siloed by thread or project.
+- Closing the terminal never loses anything. Every message is saved the moment it's sent, and if I close mid-reply, Donna still finishes it.
+- When I open `donna:chat` again, I see the last few exchanges and pick up right where we left off — including any reply I missed.
 
 ### She remembers everything
 
