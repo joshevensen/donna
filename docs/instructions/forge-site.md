@@ -45,9 +45,11 @@ echo "base64:$(openssl rand -base64 32)"
 
 Leave out the `ANTHROPIC_API_KEY` and `VOYAGEAI_API_KEY` lines for now.
 
+Forge links this file into the app's `api/` folder on every deploy, so this tab is the only place to edit it. A deploy that gets through `migrate` is the proof it is being found: without it, Laravel would fall back to SQLite and the pgvector migration would fail.
+
 ## 5. Deploy script
 
-In the site's deployment settings *(unverified; where the script is edited may differ)*, replace the whole script with:
+In the site's deployment settings, replace the whole script with:
 
 ```bash
 $CREATE_RELEASE()
@@ -78,9 +80,20 @@ $RESTART_QUEUES()
 
 ## 6. First deploy
 
-Deploy. Turn on "push to deploy" if you want every push to `main` to ship itself.
+Deploy. The log should show "Linking environment file" and "Linking storage directories" and end without an error. Turn on "push to deploy" if you want every push to `main` to ship itself.
 
 Then `https://donna.joshevensen.com/up` should answer 200.
+
+## If the deploy fails
+
+Two failures have come up on this site, both from Forge's defaults:
+
+| Error in the deploy log | Cause | Fix |
+|---|---|---|
+| `Could not read package.json` (npm) | Forge's default script has `npm ci` and `npm run build`; Donna has no frontend. | Use the script in step 5, which has no npm lines. |
+| `Composer could not find a composer.json` | `$FORGE_RELEASE_DIRECTORY` is the top of the release, not its `api/` folder. | Use the script in step 5, which starts with `cd $FORGE_RELEASE_DIRECTORY/api`. |
+
+A failed deploy never goes live. Forge only switches to a release in `$ACTIVATE_RELEASE()`, so fix the script and deploy again.
 
 ## 7. Find the app's folder
 
