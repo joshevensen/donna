@@ -7,7 +7,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 - `api/` — Laravel, pure JSON API (no views, no frontend)
 - `apple/` — one Xcode project: iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
 - `.github/` — CI (Pint + the full suite on Postgres) and Dependabot; GitHub only reads these from the repo root, never from `api/`
-- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `deploy.md` (server setup); update the relevant doc when a decision changes it
+- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `instructions/` (how to set up everything outside the repo); update the relevant doc when a decision changes it
 
 ## Stack
 
@@ -45,6 +45,13 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 ## Builds
 
 - The draft PR's checklist is the resume point if a session stops, so it must always match the branch. Updating it is part of every push: commit, push, then tick the finished items in the PR description before starting the next area. Never push a finished area with its box unticked.
+
+## Instructions
+
+- `docs/instructions/` is the step-by-step setup for everything outside the repo: accounts and API keys, Forge, DNS, environment variables, backups, devices. Josh follows it by hand, so it has to be complete and current.
+- Any change that needs something outside the repo adds or updates the matching file in the same PR: a new environment variable or config key, an API key or account, a Forge daemon, cron or firewall rule, a DNS record, a device setup. A new `env()` in `config/donna.php` or `config/ai.php` needs a row in `environment-variables.md`; a test fails without one.
+- The PR's "Before deploying" section links the instruction files the change touched.
+- Write each step so it can be followed without reading code. Mark anything you couldn't verify *(unverified)* rather than stating it as fact.
 
 ## Testing
 
