@@ -2,7 +2,7 @@
 
 How Donna looks and feels. [`vision.md`](vision.md) (UI section) says what the interface is — chat, dark mode only; this doc says what it's made of. Phase docs reference this for color, type, and components rather than redefining them, and put their own mockups in `docs/tech/phase-N.md`.
 
-Status: foundation. Color, icon, and principles are settled (the palette was reworked to dark neutrals before Phase 2); type, spacing, and component specs are first drafts to be firmed up in the phase doc that first builds the UI (Phase 2).
+Status: foundation. Color, icon, and principles are settled (the palette was reworked before Phase 2: dark neutrals and a purple icon); type, spacing, and component specs are first drafts to be firmed up in the phase doc that first builds the UI (Phase 2).
 
 ---
 
@@ -10,7 +10,7 @@ Status: foundation. Color, icon, and principles are settled (the palette was rew
 
 - **Dark only** — one theme, no toggle, no light variant. The web app, the native apps and the landing page all declare dark.
 - **Chat is the interface** — the design is a quiet frame around a conversation. Chrome is minimal; color is used for meaning, not decoration.
-- **Deep reds, kept dark** — surfaces are a ramp of dark reds built on the icon's Suit (`#3B0000`), staying at the dark end with small steps between them. The brighter reds (Lapel, Accent) appear in small doses: the send button, the selected marker, an error. If a screen looks bright red, something is overusing them.
+- **Dark neutrals, one purple** — surfaces are a ramp of warm near-blacks. Purple is the brand and the single interactive color, so it appears in small doses: the send button, the selected marker. If a screen looks purple, something is overusing it.
 - **Doesn't beg for attention** — no badges that count up, no pulsing, no streaks. Donna is measured by how much she helps, not how much she's used (see vision, Presence).
 - **Tailored, not flashy** — the icon is a suit and tie; the app should feel the same: deep, restrained, well-fitted.
 - **Web first, native later** — the web app is the first front end (see vision, UI). It uses plain HTML and CSS with system fonts and the tokens below. When the native apps arrive they use SwiftUI system components, Dynamic Type and platform conventions, with the same tokens.
@@ -19,26 +19,32 @@ Status: foundation. Color, icon, and principles are settled (the palette was rew
 
 ## Color
 
-Two groups: a ramp of five deep reds for surfaces, and the bright reds, which are used sparingly.
+Two groups: a ramp of five dark neutrals for surfaces, and one bright purple for the things you act on. The purple is the icon's color.
 
-### Surfaces — deep reds
+### Ink — surfaces
 
-One hue (the icon's Suit, `#3B0000`) stepped darker and slightly lighter. Raised is the Suit itself. Steps are deliberately small. Numbers run dark to light; surfaces get lighter as they come forward.
+Warm near-blacks, tinted a few degrees toward red so they don't read as cold gray. Numbers run dark to light; surfaces get lighter as they come forward.
 
 | # | Name | Hex | Role |
 |---|---|---|---|
-| 1 | Canvas | `#120000` | Page and window background — what everything sits on |
-| 2 | Inset | `#1E0000` | Hairlines and separators on Canvas; recessed fills (code blocks, table stripes, error banner) |
-| 3 | Panel | `#230000` | Sidebar, top bar, input bar, the project detail pane |
-| 4 | Raised (the Suit) | `#3B0000` | Donna's chat bubbles, cards, the input field, sheets |
-| 5 | Hover | `#4D0A0A` | Hover and pressed backgrounds, the selected row, borders on Raised |
+| 1 | Canvas | `#0F0B0B` | Page and window background — what everything sits on |
+| 2 | Inset | `#1A1414` | Hairlines and separators on Canvas; recessed fills (code blocks, table stripes, error banner) |
+| 3 | Panel | `#1F1718` | Sidebar, top bar, input bar, the project detail pane |
+| 4 | Raised | `#2D2223` | Donna's chat bubbles, cards, the input field, sheets |
+| 5 | Hover | `#3A2D2E` | Hover and pressed backgrounds, the selected row, borders on Raised |
 
-### Bright reds
+### Purple — the brand and the interactive color
 
 | Name | Hex | Role |
 |---|---|---|
-| Accent | `#A3262A` | The single interactive color, used in small amounts: the send button, the selected-item marker, flagged state, error borders. Never a large surface. |
-| Lapel | `#6B1214` | The icon's lapels. Not used for UI surfaces; too bright for a background. |
+| Accent | `#7C3AED` | The icon's background, and the single interactive color, used in small amounts: the send button, the selected-item marker, the Active dot. Never a large surface inside the app. |
+| Lapel | `#5B21B6` | The icon's lapels only. |
+
+### Error
+
+| Name | Hex | Role |
+|---|---|---|
+| Error | `#E05A55` | Error borders and icons only, always with a message. The one non-brand hue; purple can't mean "something went wrong". |
 
 ### Neutrals — text
 
@@ -59,36 +65,35 @@ Canvas (1) → Inset (2) → Panel (3) → Raised (4) → Hover (5). Accent is n
 
 Measured (WCAG):
 
-| On | Shirt | Shirt 65% | Shirt 35% |
-|---|---|---|---|
-| Canvas `#120000` | 17.4 : 1 | 7.4 : 1 | 2.8 : 1 |
-| Inset `#1E0000` | 16.9 : 1 | 7.3 : 1 | 2.8 : 1 |
-| Panel `#230000` | 16.6 : 1 | 7.2 : 1 | 2.8 : 1 |
-| Raised `#3B0000` | 15.0 : 1 | 6.7 : 1 | 2.7 : 1 |
-| Hover `#4D0A0A` | 13.1 : 1 | 6.1 : 1 | 2.6 : 1 |
+| On | Shirt | Shirt 65% | Shirt 35% | Accent | Error |
+|---|---|---|---|---|---|
+| Canvas `#0F0B0B` | 16.6 : 1 | 7.3 : 1 | 2.8 : 1 | 3.4 : 1 | 5.4 : 1 |
+| Inset `#1A1414` | 15.4 : 1 | 7.1 : 1 | 2.9 : 1 | 3.2 : 1 | 5.0 : 1 |
+| Panel `#1F1718` | 14.9 : 1 | 6.9 : 1 | 2.9 : 1 | 3.1 : 1 | 4.8 : 1 |
+| Raised `#2D2223` | 13.1 : 1 | 6.4 : 1 | 2.9 : 1 | 2.7 : 1 | 4.2 : 1 |
+| Hover `#3A2D2E` | 11.2 : 1 | 5.7 : 1 | 2.7 : 1 | 2.3 : 1 | 3.6 : 1 |
 
-Tie on Shirt is 15.0 : 1, and Shirt on Accent is 6.2 : 1. All body text passes AA. Disabled text (35%) is exempt.
+Tie on Shirt is 15.0 : 1, and Shirt on Accent is 4.8 : 1 (passes AA for labels). All body text passes AA. Disabled text (35%) is exempt.
 
-The steps between surfaces are small (adjacent surfaces differ by only 1.02 to 1.15 : 1), so separation comes from the step itself plus a hairline where two meet, not from contrast alone. Check on a real screen and widen a step here if it disappears.
-
-Accent on these surfaces is only 2.1 to 2.8 : 1, so it is **never text** and never the only signal. Use it for fills with a Shirt label or icon, and pair it with a shape or a word. **Focus rings are Shirt, not Accent**, because Accent fails the 3 : 1 needed for them.
+Accent clears 3 : 1 on Canvas, Inset and Panel but not on Raised or Hover, so it is **never body text** and never the only signal there; pair it with a shape or a word. **Focus rings are Shirt**, which works on every surface. The steps between surfaces are small (adjacent surfaces differ by 1.03 to 1.17 : 1), so check on a real screen and widen one here if it disappears.
 
 ### Status colors
 
-Error is red, which is also the accent, so an error is told apart by shape: an Accent border plus an icon and a message (matches the vision: input disabled, border red, message explains). Success and warning get no new hues; use an icon and text. If Phase 2 shows this isn't enough, add one muted amber and one muted green here, not ad hoc in the app.
+An error is Error-colored (a border, an icon and a message), matching the vision: input disabled, border red, message explains. Success and warning get no new hues; use an icon and text. If Phase 2 shows this isn't enough, add one muted amber and one muted green here, not ad hoc in the app.
 
 ### Tokens
 
 Same names on every platform. Web: CSS custom properties. Swift: an asset catalog color set per token (single appearance, dark).
 
 ```
---donna-canvas: #120000;
---donna-inset: #1E0000;
---donna-panel: #230000;
---donna-raised: #3B0000;   /* the icon's Suit */
---donna-hover: #4D0A0A;
---donna-accent: #A3262A;
---donna-lapel: #6B1214;   /* icon only */
+--donna-canvas: #0F0B0B;
+--donna-inset: #1A1414;
+--donna-panel: #1F1718;
+--donna-raised: #2D2223;
+--donna-hover: #3A2D2E;
+--donna-accent: #7C3AED;
+--donna-lapel: #5B21B6;   /* icon only */
+--donna-error: #E05A55;
 --donna-shirt: #F4EBE1;
 --donna-tie: #1E1718;
 ```
@@ -97,7 +102,7 @@ Same names on every platform. Web: CSS custom properties. Swift: an asset catalo
 
 ## Icon
 
-The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored knot, framed by Lapel (`#6B1214`) lapels, on a Suit (`#3B0000`) background. Source of truth is [`api/public/favicon.svg`](../api/public/favicon.svg) (512 × 512 viewBox, square, full-bleed).
+The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored knot, framed by Lapel (`#5B21B6`) lapels, on an Accent (`#7C3AED`) background. Source of truth is [`api/public/favicon.svg`](../api/public/favicon.svg) (512 × 512 viewBox, square, full-bleed).
 
 - **Full-bleed square** — no baked-in rounded corners or padding. iOS, iPadOS, and macOS apply their own mask; the landing page rounds it with CSS.
 - **Derived files** — `favicon.ico` (16/32/48) and `apple-touch-icon.png` (180) are rasterized from the SVG. Regenerate them whenever the SVG changes; never edit them by hand.
@@ -124,13 +129,13 @@ The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored kn
 First drafts, tried out in the Phase 2 mockup; see vision UI section for behavior.
 
 - **Chat history** — one continuous conversation on Canvas. Donna's messages sit in Raised bubbles; Josh's in Shirt bubbles with Tie text. Timestamps and metadata in secondary text. Day dividers are small uppercase secondary text.
-- **Sources and flags** — under each Donna reply: the time, a "N sources" toggle that lists what she used (on Inset), and good/bad flags. A set flag is Hover with a Shirt border, not red.
-- **Chat input** — fixed to the bottom, a Raised field on a Panel bar. Send is the one Accent button. Disabled while thinking; Accent border plus an icon and message on error. The focus ring is Shirt.
+- **Sources and flags** — under each Donna reply: the time, a "N sources" toggle that lists what she used (on Inset), and good/bad flags. A set flag is Hover with a Shirt border, not purple.
+- **Chat input** — fixed to the bottom, a Raised field on a Panel bar. Send is the one Accent button. Disabled while thinking; Error border plus an icon and message on error. The focus ring is Shirt.
 - **Buttons** — primary is Shirt with Tie text; secondary is transparent with Shirt text. Accent fills are reserved for send.
 - **Thinking indicator** — a quiet in-chat indicator in secondary text; no bouncing dots.
 - **Code blocks** — Inset with a monospace font and a copy button; a language label in secondary text.
-- **Navigation** — selected item is Raised with a short Accent marker on its left edge, so selection is shape plus a color accent, not a red slab.
-- **Pills** — Active: Raised with a small Accent dot; Proposed: Shirt 65% outline; Parked: dashed outline. Never a filled red pill.
+- **Navigation** — selected item is Raised with a short Accent marker on its left edge, so selection is shape plus a color accent, not a purple slab.
+- **Pills** — Active: Raised with a small Accent dot; Proposed: Shirt 65% outline; Parked: dashed outline. Never a filled purple pill.
 - **File viewer** — Panel. Visual mode renders on Panel; edit mode is visually distinct (Inset, monospace) so Josh always knows which he's in. Metadata is expandable at the bottom.
 - **Quick capture** — a single Raised field that gets out of the way; same tokens as chat input.
 - **Notifications** — system styling only; Donna's icon and plain text.
