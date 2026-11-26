@@ -237,8 +237,23 @@ Scheduled daily at 03:00 Josh's time.
 - Env: `ANTHROPIC_API_KEY`, `VOYAGEAI_API_KEY`, Spaces credentials. Credentials are never logged and never sent to a model.
 - A `docs/deploy.md` with the steps Josh runs once in Forge, including when to resize: memory regularly above ~80% or steady swap use → CPU/RAM-only resize (reversible; never grow the disk).
 
+### Code vs model in this phase
+
+| Code | Model |
+|---|---|
+| Context assembly, hybrid retrieval, rank fusion, project boost | Donna's replies (Sonnet 5.5) |
+| Name/alias matching for People | Topic tagging (Haiku 5.5) |
+| Stale-topic and rabbit-hole counts and thresholds | Daily extraction: facts, supersessions, summaries, candidates (Sonnet 5.5, batch) |
+| Every tool's work (writes, supersession, forget, project and profile updates) | Embeddings (Voyage) |
+| Cost pricing and the cost report | — |
+| Slash commands, polling, pagination, history | — |
+| Applying extraction results, retries, scheduling | — |
+
+A tool is called by the model, but what the tool does is always code.
+
 ### Testing
 
+- Follow the Testing rules in the root `CLAUDE.md`: each test maps to a story or invariant, one test per behavior, no prompt-wording tests, suite under ~60 seconds.
 - Tests run against Postgres with pgvector (not SQLite) so vector and full-text queries are real.
 - Fake every model: `Donna::fake()`, `Embeddings::fake()`, and a fake batch client. No test calls a real API.
 - Cover: the message lifecycle and polling, reopening after a missed reply, context assembly (recent window, hybrid retrieval, superseded facts, stale topics, project boost never filtering), each tool, supersession vs. forget, character proposal and approval, extraction applying results and backfilling, cost rows for every call path and the cost report, eval flagging, and `donna:chat` against `Http::fake()`.

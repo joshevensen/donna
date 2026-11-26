@@ -40,6 +40,30 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 - Josh is learning Swift/SwiftUI — briefly explain non-obvious Swift choices and platform gotchas
 - Default to the established stack; propose alternatives only with a compelling reason
 
+## Testing
+
+Tests exist to protect what Donna does, not to maximize coverage. The `testing-best-practices` skill applies; these rules come first where they're stricter.
+
+- **Every test protects something nameable** — a user story in the phase doc, an invariant in `docs/domain.md`, or a bug it reproduces. If you can't name it, don't write it.
+- **Test at the boundary** — feature tests through the HTTP endpoint, artisan command, or queued job. Unit tests only for pure logic with real branching (retrieval scoring, cost pricing).
+- **One test per behavior** — variations go in Pest datasets, not copies.
+- **Don't test** framework behavior, relationships, casts, config values, migrations, simple accessors, or each validation rule one by one.
+- **Don't test prompt wording or model output** — assert what the code does with a response (saved, priced, linked), never the exact prompt text. Whether Donna's answers are good is the eval set's job.
+- **No real network** — every model and external API is faked.
+- **Fast** — runs in parallel against Postgres with transactions; the full suite stays under ~60 seconds. A test slower than a second needs a reason.
+- **Prune before the PR** — remove tests that catch the same defect as another. The PR lists test count and suite runtime.
+- **Every bug fix adds one regression test.**
+
+## Code or model
+
+Default to code. A model call is only for judgment: understanding language, deciding what matters, or writing in Donna's voice. Every new kind of model call needs a one-line reason in the PR.
+
+**Always code, never a model:** math and totals (costs, counts, dates, durations), sorting, ranking, and filtering, matching names and aliases, thresholds (stale topics, rabbit-hole counts), parsing commands and slash commands, validation, formatting output, applying structured results to the database, scheduling, retries, and anything that can be answered by a query.
+
+**A model, when judgment is needed:** writing Donna's replies, deciding what is a fact and whether it replaces an old one, tagging topics, writing summaries of people and topics, proposing projects or character changes.
+
+**Never:** a model call to reformat, validate, or re-check another model's output (use structured output), to answer something a query can answer, or to summarize data only code will read.
+
 ## Rules from the Vision
 
 - **Code before LLM** — deterministic work (fetch, filter, file ops, totals) runs as code, never as a model call
