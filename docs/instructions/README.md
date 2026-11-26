@@ -10,7 +10,7 @@ Each file is one task. Do them in this order the first time. Afterwards they are
 
 | # | File | What it covers |
 |---|---|---|
-| 1 | [`forge-server.md`](forge-server.md) | The droplet: Forge, swap, pgvector |
+| 1 | [`forge-server.md`](forge-server.md) | The droplet, and one recipe that gives it swap and pgvector |
 | 2 | [`forge-site.md`](forge-site.md) | The site: DNS, certificate, environment, deploy script. The keys below go into its environment |
 | 3 | [`anthropic-api-key.md`](anthropic-api-key.md) | The key Donna thinks with, and the spend limit on it |
 | 4 | [`voyage-api-key.md`](voyage-api-key.md) | The key her memory searches with |
