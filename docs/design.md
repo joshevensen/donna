@@ -2,75 +2,93 @@
 
 How Donna looks and feels. [`vision.md`](vision.md) (UI section) says what the interface is — chat, dark mode only; this doc says what it's made of. Phase docs reference this for color, type, and components rather than redefining them, and put their own mockups in `docs/tech/phase-N.md`.
 
-Status: foundation. Color, icon, and principles are settled; type, spacing, and component specs are first drafts to be firmed up in the phase doc that first builds the UI (Phase 2).
+Status: foundation. Color, icon, and principles are settled (the palette was reworked to dark neutrals before Phase 2); type, spacing, and component specs are first drafts to be firmed up in the phase doc that first builds the UI (Phase 2).
 
 ---
 
 ## Principles
 
-- **Dark only** — one theme, no toggle, no light variant. The apps and the landing page all declare dark.
+- **Dark only** — one theme, no toggle, no light variant. The web app, the native apps and the landing page all declare dark.
 - **Chat is the interface** — the design is a quiet frame around a conversation. Chrome is minimal; color is used for meaning, not decoration.
+- **Mostly dark neutrals, a little red** — surfaces are a ramp of warm near-blacks. Red is the brand and the single interactive color, so it appears in small doses: the send button, the selected marker, an error. If a screen looks red, something is overusing it.
 - **Doesn't beg for attention** — no badges that count up, no pulsing, no streaks. Donna is measured by how much she helps, not how much she's used (see vision, Presence).
 - **Tailored, not flashy** — the icon is a suit and tie; the app should feel the same: deep, restrained, well-fitted.
-- **Native first** — SwiftUI system components, Dynamic Type, and platform conventions on iOS, iPadOS, and macOS. Custom styling only where it carries the brand.
+- **Web first, native later** — the web app is the first front end (see vision, UI). It uses plain HTML and CSS with system fonts and the tokens below. When the native apps arrive they use SwiftUI system components, Dynamic Type and platform conventions, with the same tokens.
 
 ---
 
 ## Color
 
-Five reds, one family, named by the suit they come from. Numbers run light to dark.
+Two groups: a ramp of five dark neutrals for surfaces, and the reds, which come from the icon.
+
+### Ink — surfaces
+
+Warm near-blacks, tinted a few degrees toward the suit so they sit with the icon. Numbers run dark to light; surfaces get lighter as they come forward.
 
 | # | Name | Hex | Role |
 |---|---|---|---|
-| 1 | Lightest | `#A3262A` | Accent — the single interactive color: send button, links, selected state, focus ring, unread marker |
-| 2 | Light (lapel) | `#6B1214` | Raised surfaces — Donna's chat bubbles, cards, sheets, input field, hover/pressed backgrounds |
-| 3 | Mid (suit) | `#3B0000` | Panels — sidebars, file viewer, toolbar, the icon's background |
-| 4 | Dark | `#260000` | Separators and borders on Darkest; subtle fills (code blocks, table stripes) |
-| 5 | Darkest | `#140000` | Page and window background — the canvas everything sits on |
+| 1 | Canvas | `#0F0B0B` | Page and window background — what everything sits on |
+| 2 | Inset | `#1A1414` | Hairlines and separators on Canvas; recessed fills (code blocks, table stripes, error banner) |
+| 3 | Panel | `#231A1B` | Sidebar, top bar, input bar, the project detail pane |
+| 4 | Raised | `#2D2223` | Donna's chat bubbles, cards, the input field, sheets |
+| 5 | Hover | `#3A2D2E` | Hover and pressed backgrounds, the selected row, borders on Raised |
 
-### Neutrals
-
-Text needs more than five reds. These two come straight from the icon (shirt and tie) and are the only non-red colors in the system.
+### Red — the brand
 
 | Name | Hex | Role |
 |---|---|---|
-| Shirt | `#F4EBE1` | Primary text and icons; Josh's chat bubbles (with Darkest text) |
+| Accent | `#A3262A` | The single interactive color, used in small amounts: the send button, the selected-item marker, flagged state, error borders. Never a large surface. |
+| Suit | `#3B0000` | The icon's background. Not used for UI surfaces. |
+| Lapel | `#6B1214` | The icon's lapels. Not used for UI surfaces. |
+
+### Neutrals — text
+
+Two colors come straight from the icon (shirt and tie).
+
+| Name | Hex | Role |
+|---|---|---|
+| Shirt | `#F4EBE1` | Primary text and icons; Josh's chat bubbles; primary buttons (with Tie text) |
 | Tie | `#1E1718` | Text on Shirt-colored fills |
 
 Secondary text is Shirt at 65% opacity; disabled is 35%. Don't introduce a pure white or pure black.
 
 ### Layering
 
-Surfaces get lighter as they come forward: Darkest (canvas) → Dark (inset, borders) → Mid (panels) → Light (raised) → Lightest (accent only, never a large surface).
+Canvas (1) → Inset (2) → Panel (3) → Raised (4) → Hover (5). Accent is never a surface.
 
 ### Contrast
 
-Shirt text, measured (WCAG):
+Measured (WCAG):
 
-| On | Ratio |
-|---|---|
-| Darkest `#140000` | 17.3 : 1 |
-| Dark `#260000` | 16.5 : 1 |
-| Mid `#3B0000` | 15.0 : 1 |
-| Light `#6B1214` | 10.4 : 1 |
-| Lightest `#A3262A` | 6.2 : 1 |
+| On | Shirt | Shirt 65% | Shirt 35% |
+|---|---|---|---|
+| Canvas `#0F0B0B` | 16.6 : 1 | 7.3 : 1 | 2.8 : 1 |
+| Inset `#1A1414` | 15.4 : 1 | 7.1 : 1 | 2.9 : 1 |
+| Panel `#231A1B` | 14.4 : 1 | 6.8 : 1 | 2.9 : 1 |
+| Raised `#2D2223` | 13.1 : 1 | 6.4 : 1 | 2.9 : 1 |
+| Hover `#3A2D2E` | 11.2 : 1 | 5.7 : 1 | 2.7 : 1 |
 
-All pass AA for body text. Lightest on Darkest is only 2.8 : 1, so the accent is **never used as text color on a dark surface** for anything that must be read — use it for fills, icons larger than 24 pt, borders, and underlines, and keep the label Shirt.
+Tie on Shirt is 15.0 : 1, and Shirt on Accent is 6.2 : 1. All body text passes AA. Disabled text (35%) is exempt.
+
+Accent on the ink surfaces is only 1.8 to 2.7 : 1, so it is **never text** and never the only signal. Use it for fills with a Shirt label or icon, and pair it with a shape or a word. **Focus rings are Shirt, not Accent**, because Accent fails the 3 : 1 needed for them.
 
 ### Status colors
 
-Error is Lightest, which is already red — so error is distinguished by shape, not hue: a red border plus an icon and message (matches the vision: input disabled, border red, notification explains). Success and warning get no new hues; use an icon and text. If Phase 2 shows this isn't enough, add one muted amber and one muted green here, not ad hoc in the app.
+Error is red, which is also the accent, so an error is told apart by shape: an Accent border plus an icon and a message (matches the vision: input disabled, border red, message explains). Success and warning get no new hues; use an icon and text. If Phase 2 shows this isn't enough, add one muted amber and one muted green here, not ad hoc in the app.
 
 ### Tokens
 
-Same names on every platform. Swift: an asset catalog color set per token (single appearance, dark). Web: CSS custom properties.
+Same names on every platform. Web: CSS custom properties. Swift: an asset catalog color set per token (single appearance, dark).
 
 ```
---donna-1: #A3262A;   /* accent */
---donna-2: #6B1214;   /* raised */
---donna-3: #3B0000;   /* panel */
---donna-4: #260000;   /* border / inset */
---donna-5: #140000;   /* canvas */
+--donna-ink-1: #0F0B0B;   /* canvas */
+--donna-ink-2: #1A1414;   /* inset */
+--donna-ink-3: #231A1B;   /* panel */
+--donna-ink-4: #2D2223;   /* raised */
+--donna-ink-5: #3A2D2E;   /* hover */
+--donna-accent: #A3262A;
+--donna-suit: #3B0000;    /* icon only */
+--donna-lapel: #6B1214;   /* icon only */
 --donna-shirt: #F4EBE1;
 --donna-tie: #1E1718;
 ```
@@ -79,7 +97,7 @@ Same names on every platform. Swift: an asset catalog color set per token (singl
 
 ## Icon
 
-The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored knot, framed by Light lapels, on a Mid background. Source of truth is [`api/public/favicon.svg`](../api/public/favicon.svg) (512 × 512 viewBox, square, full-bleed).
+The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored knot, framed by Lapel (`#6B1214`) lapels, on a Suit (`#3B0000`) background. Source of truth is [`api/public/favicon.svg`](../api/public/favicon.svg) (512 × 512 viewBox, square, full-bleed).
 
 - **Full-bleed square** — no baked-in rounded corners or padding. iOS, iPadOS, and macOS apply their own mask; the landing page rounds it with CSS.
 - **Derived files** — `favicon.ico` (16/32/48) and `apple-touch-icon.png` (180) are rasterized from the SVG. Regenerate them whenever the SVG changes; never edit them by hand.
@@ -88,14 +106,14 @@ The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored kn
 
 ### Landing page
 
-`api/public/index.html` shows the icon centered on a Darkest background and nothing else. It has no route or view; the API stays pure JSON.
+`api/public/index.html` shows the icon centered on a Canvas background and nothing else. It has no route or view; the API stays pure JSON.
 
 ---
 
 ## Typography
 
-- **System fonts** — SF Pro on Apple platforms, `ui-sans-serif` stack on the web. No custom typefaces to ship or license.
-- **Dynamic Type everywhere** — text styles, never fixed sizes.
+- **System fonts** — `ui-sans-serif` stack on the web (renders as SF Pro on Apple devices), SF Pro in the native apps. No custom typefaces to ship or license.
+- **Scalable text** — web: `rem` sizes and no fixed pixel text, so the browser's text size is respected; native: Dynamic Type text styles.
 - **Monospace** (SF Mono) for code, file paths, and CSV/edit views.
 - Hierarchy comes from weight and opacity (Shirt 100% / 65% / 35%), not extra colors.
 
@@ -103,20 +121,25 @@ The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored kn
 
 ## Components
 
-First drafts; see vision UI section for behavior.
+First drafts, tried out in the Phase 2 mockup; see vision UI section for behavior.
 
-- **Chat history** — one continuous conversation on Darkest. Donna's messages sit in Light bubbles; Josh's in Shirt bubbles with Tie text. Timestamps and metadata in secondary text.
-- **Chat input** — fixed to the bottom, Light field on a Mid bar, Lightest send button. Disabled while thinking; red border on error.
+- **Chat history** — one continuous conversation on Canvas. Donna's messages sit in Raised bubbles; Josh's in Shirt bubbles with Tie text. Timestamps and metadata in secondary text. Day dividers are small uppercase secondary text.
+- **Sources and flags** — under each Donna reply: the time, a "N sources" toggle that lists what she used (on Inset), and good/bad flags. A set flag is Hover with a Shirt border, not red.
+- **Chat input** — fixed to the bottom, a Raised field on a Panel bar. Send is the one Accent button. Disabled while thinking; Accent border plus an icon and message on error. The focus ring is Shirt.
+- **Buttons** — primary is Shirt with Tie text; secondary is transparent with Shirt text. Accent fills are reserved for send.
 - **Thinking indicator** — a quiet in-chat indicator in secondary text; no bouncing dots.
-- **File viewer** — Mid panel. Visual mode renders on Mid; edit mode is visually distinct (Dark inset, monospace) so Josh always knows which he's in. Metadata is expandable at the bottom.
-- **Quick capture** — a single Light field that gets out of the way; same tokens as chat input.
+- **Code blocks** — Inset with a monospace font and a copy button; a language label in secondary text.
+- **Navigation** — selected item is Raised with a short Accent marker on its left edge, so selection is shape plus a color accent, not a red slab.
+- **Pills** — Active: Raised with a small Accent dot; Proposed: Shirt 65% outline; Parked: dashed outline. Never a filled red pill.
+- **File viewer** — Panel. Visual mode renders on Panel; edit mode is visually distinct (Inset, monospace) so Josh always knows which he's in. Metadata is expandable at the bottom.
+- **Quick capture** — a single Raised field that gets out of the way; same tokens as chat input.
 - **Notifications** — system styling only; Donna's icon and plain text.
 
 ### Platform layout
 
-- **iPhone** — chat fills the screen; files open as a full-screen sheet.
-- **iPad / Mac** — chat plus a 50/50 side panel for files.
-- **Watch** — capture only: dictation, then a confirmation. Darkest background, Shirt text.
+- **Mac (web)** — a sidebar (Panel) with Chat and Projects, and the chat in a centered column. Files, later, open in a 50/50 side panel.
+- **iPhone (web, installed to the Home Screen)** — chat fills the screen; a top bar leads to Projects; files open as a full-screen sheet.
+- **Native apps (later)** — the same layouts in SwiftUI. **Watch** is capture only: dictation, then a confirmation, on Canvas with Shirt text.
 
 ---
 
