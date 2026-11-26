@@ -10,7 +10,7 @@ Status: foundation. Color, icon, and principles are settled (the palette was rew
 
 - **Dark only** — one theme, no toggle, no light variant. The web app, the native apps and the landing page all declare dark.
 - **Chat is the interface** — the design is a quiet frame around a conversation. Chrome is minimal; color is used for meaning, not decoration.
-- **Mostly dark neutrals, a little red** — surfaces are a ramp of warm near-blacks. Red is the brand and the single interactive color, so it appears in small doses: the send button, the selected marker, an error. If a screen looks red, something is overusing it.
+- **Deep reds, kept dark** — surfaces are a ramp of dark reds built on the icon's Suit (`#3B0000`), staying at the dark end with small steps between them. The brighter reds (Lapel, Accent) appear in small doses: the send button, the selected marker, an error. If a screen looks bright red, something is overusing them.
 - **Doesn't beg for attention** — no badges that count up, no pulsing, no streaks. Donna is measured by how much she helps, not how much she's used (see vision, Presence).
 - **Tailored, not flashy** — the icon is a suit and tie; the app should feel the same: deep, restrained, well-fitted.
 - **Web first, native later** — the web app is the first front end (see vision, UI). It uses plain HTML and CSS with system fonts and the tokens below. When the native apps arrive they use SwiftUI system components, Dynamic Type and platform conventions, with the same tokens.
@@ -19,27 +19,26 @@ Status: foundation. Color, icon, and principles are settled (the palette was rew
 
 ## Color
 
-Two groups: a ramp of five dark neutrals for surfaces, and the reds, which come from the icon.
+Two groups: a ramp of five deep reds for surfaces, and the bright reds, which are used sparingly.
 
-### Ink — surfaces
+### Surfaces — deep reds
 
-Warm near-blacks, tinted a few degrees toward the suit so they sit with the icon. Numbers run dark to light; surfaces get lighter as they come forward.
+One hue (the icon's Suit, `#3B0000`) stepped darker and slightly lighter. Raised is the Suit itself. Steps are deliberately small. Numbers run dark to light; surfaces get lighter as they come forward.
 
 | # | Name | Hex | Role |
 |---|---|---|---|
-| 1 | Canvas | `#0F0B0B` | Page and window background — what everything sits on |
-| 2 | Inset | `#1A1414` | Hairlines and separators on Canvas; recessed fills (code blocks, table stripes, error banner) |
-| 3 | Panel | `#231A1B` | Sidebar, top bar, input bar, the project detail pane |
-| 4 | Raised | `#2D2223` | Donna's chat bubbles, cards, the input field, sheets |
-| 5 | Hover | `#3A2D2E` | Hover and pressed backgrounds, the selected row, borders on Raised |
+| 1 | Canvas | `#120000` | Page and window background — what everything sits on |
+| 2 | Inset | `#1E0000` | Hairlines and separators on Canvas; recessed fills (code blocks, table stripes, error banner) |
+| 3 | Panel | `#2A0000` | Sidebar, top bar, input bar, the project detail pane |
+| 4 | Raised (the Suit) | `#3B0000` | Donna's chat bubbles, cards, the input field, sheets |
+| 5 | Hover | `#4D0A0A` | Hover and pressed backgrounds, the selected row, borders on Raised |
 
-### Red — the brand
+### Bright reds
 
 | Name | Hex | Role |
 |---|---|---|
 | Accent | `#A3262A` | The single interactive color, used in small amounts: the send button, the selected-item marker, flagged state, error borders. Never a large surface. |
-| Suit | `#3B0000` | The icon's background. Not used for UI surfaces. |
-| Lapel | `#6B1214` | The icon's lapels. Not used for UI surfaces. |
+| Lapel | `#6B1214` | The icon's lapels. Not used for UI surfaces; too bright for a background. |
 
 ### Neutrals — text
 
@@ -62,15 +61,17 @@ Measured (WCAG):
 
 | On | Shirt | Shirt 65% | Shirt 35% |
 |---|---|---|---|
-| Canvas `#0F0B0B` | 16.6 : 1 | 7.3 : 1 | 2.8 : 1 |
-| Inset `#1A1414` | 15.4 : 1 | 7.1 : 1 | 2.9 : 1 |
-| Panel `#231A1B` | 14.4 : 1 | 6.8 : 1 | 2.9 : 1 |
-| Raised `#2D2223` | 13.1 : 1 | 6.4 : 1 | 2.9 : 1 |
-| Hover `#3A2D2E` | 11.2 : 1 | 5.7 : 1 | 2.7 : 1 |
+| Canvas `#120000` | 17.4 : 1 | 7.4 : 1 | 2.8 : 1 |
+| Inset `#1E0000` | 16.9 : 1 | 7.3 : 1 | 2.8 : 1 |
+| Panel `#2A0000` | 16.2 : 1 | 7.1 : 1 | 2.8 : 1 |
+| Raised `#3B0000` | 15.0 : 1 | 6.7 : 1 | 2.7 : 1 |
+| Hover `#4D0A0A` | 13.1 : 1 | 6.1 : 1 | 2.6 : 1 |
 
 Tie on Shirt is 15.0 : 1, and Shirt on Accent is 6.2 : 1. All body text passes AA. Disabled text (35%) is exempt.
 
-Accent on the ink surfaces is only 1.8 to 2.7 : 1, so it is **never text** and never the only signal. Use it for fills with a Shirt label or icon, and pair it with a shape or a word. **Focus rings are Shirt, not Accent**, because Accent fails the 3 : 1 needed for them.
+The steps between surfaces are small (adjacent surfaces differ by only 1.03 to 1.15 : 1), so separation comes from the step itself plus a hairline where two meet, not from contrast alone. Check on a real screen and widen a step here if it disappears.
+
+Accent on these surfaces is only 2.1 to 2.8 : 1, so it is **never text** and never the only signal. Use it for fills with a Shirt label or icon, and pair it with a shape or a word. **Focus rings are Shirt, not Accent**, because Accent fails the 3 : 1 needed for them.
 
 ### Status colors
 
@@ -81,13 +82,12 @@ Error is red, which is also the accent, so an error is told apart by shape: an A
 Same names on every platform. Web: CSS custom properties. Swift: an asset catalog color set per token (single appearance, dark).
 
 ```
---donna-ink-1: #0F0B0B;   /* canvas */
---donna-ink-2: #1A1414;   /* inset */
---donna-ink-3: #231A1B;   /* panel */
---donna-ink-4: #2D2223;   /* raised */
---donna-ink-5: #3A2D2E;   /* hover */
+--donna-canvas: #120000;
+--donna-inset: #1E0000;
+--donna-panel: #2A0000;
+--donna-raised: #3B0000;   /* the icon's Suit */
+--donna-hover: #4D0A0A;
 --donna-accent: #A3262A;
---donna-suit: #3B0000;    /* icon only */
 --donna-lapel: #6B1214;   /* icon only */
 --donna-shirt: #F4EBE1;
 --donna-tie: #1E1718;
