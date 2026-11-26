@@ -52,7 +52,7 @@ In the site's deployment settings *(unverified; where the script is edited may d
 ```bash
 $CREATE_RELEASE()
 
-cd $FORGE_RELEASE_DIRECTORY
+cd $FORGE_RELEASE_DIRECTORY/api
 
 $FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
@@ -69,6 +69,7 @@ $RESTART_QUEUES()
 ```
 
 - `$CREATE_RELEASE()`, `$ACTIVATE_RELEASE()` and `$RESTART_QUEUES()` are Forge's zero-downtime steps. Each deploy is built in a new folder, switched live at the end, and the queue worker is restarted onto the new code.
+- `$FORGE_RELEASE_DIRECTORY` is the top of the new release, not its `api/` folder, so the script changes into `api/` itself. Without that, Composer fails with "could not find a composer.json".
 - Forge's default script has no `composer install`, so it is added here.
 - The two `mkdir` lines make the folders Laravel writes to. A new site's shared `storage` folder starts empty, and Forge's docs don't say whether it fills these in.
 - `optimize` caches the configuration, so **a changed environment variable only takes effect after a redeploy**.
