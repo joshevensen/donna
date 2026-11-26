@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Donna">
+  <rect width="512" height="512" fill="#3B0000"/>
+  <path d="M90 -20 L422 -20 L256 370 Z" fill="#F4EBE1"/>
+  <path d="M200 -20 L256 150 L312 -20 Z" fill="#1E1718"/>
+  <path d="M130 -20 L256 320 L256 420 L56 196 L100 150 L-20 108 L-20 -20 Z" fill="#6B1214"/>
+  <path d="M382 -20 L256 320 L256 420 L456 196 L412 150 L532 108 L532 -20 Z" fill="#6B1214"/>
+</svg>

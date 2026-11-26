@@ -4,10 +4,10 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 ## Layout
 
-- `api/` — Laravel, pure JSON API (no views, no frontend). The one exception is `public/index.html`, a static page that shows the word "Donna" at the site's root; it has no route or view, so the API stays pure
+- `api/` — Laravel, pure JSON API (no views, no frontend). The one exception is `public/index.html`, a static page that shows the Donna icon at the site's root (with `favicon.svg`, `favicon.ico`, and `apple-touch-icon.png` beside it); it has no route or view, so the API stays pure
 - `apple/` — one Xcode project (not started; native comes with Presence): iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
 - `.github/` — CI (Pint + the full suite on Postgres) and Dependabot; GitHub only reads these from the repo root, never from `api/`
-- `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `instructions/` (how to set up everything outside the repo); update the relevant doc when a decision changes it
+- `docs/` — `vision.md` (what and why), `design.md` (palette, icon, type, components), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `instructions/` (how to set up everything outside the repo); update the relevant doc when a decision changes it
 
 ## Stack
 

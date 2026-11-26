@@ -517,6 +517,7 @@ No future model arrives with these. They are the durable assets, and they compou
 ## Elsewhere
 
 - **Stack** — [`CLAUDE.md`](../CLAUDE.md)
+- **Look and feel** — palette, icon, type, components: [`design.md`](design.md)
 - **Build order** — [`phases.md`](phases.md)
 - **Concepts and invariants** — [`domain.md`](domain.md)
 - **Dated facts** — model trends, prices, hardware, inspiration: [`landscape.md`](landscape.md)
