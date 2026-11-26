@@ -5,7 +5,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 ## Layout
 
 - `api/` — Laravel, pure JSON API (no views, no frontend). The one exception is `public/index.html`, a static page that shows the word "Donna" at the site's root; it has no route or view, so the API stays pure
-- `apple/` — one Xcode project: iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
+- `apple/` — one Xcode project (not started; native comes with Presence): iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
 - `.github/` — CI (Pint + the full suite on Postgres) and Dependabot; GitHub only reads these from the repo root, never from `api/`
 - `docs/` — `vision.md` (what and why), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `instructions/` (how to set up everything outside the repo); update the relevant doc when a decision changes it
 
@@ -14,9 +14,10 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Layer | Choice |
 |---|---|
 | Backend | Laravel — pure API, JSON responses only |
-| Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only |
+| Web client | Browser app, installable to the iPhone Home Screen; chat only; dark mode only. The first front end (Phase 2); its framework is chosen in the Phase 2 doc |
+| Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only. Arrives with Presence (Phase 7) |
 | Home Node | Mac mini — headless Swift agent, outbound-only over Tailscale, EventKit, Messages database, Foundation Models framework |
-| Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive in Phase 2 |
+| Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive with Orchestration (Phase 5) |
 | Durable workflows | `durable-workflow/workflow` — Presence and Orchestration jobs |
 | AI SDK | Laravel AI SDK (`laravel/ai`) — provider-agnostic, Anthropic by default; the Batch API (daily extraction) uses Anthropic's official PHP SDK, which `laravel/ai` doesn't cover |
 | LLM provider | Anthropic (Haiku / Sonnet / Opus by task), called directly; Anthropic server-side web search; Apple on-device model for Home Node triage |
@@ -29,9 +30,9 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | File storage | DigitalOcean Spaces |
 | Auth | Laravel Sanctum |
 | Backups | Droplet backups + database dumps to Spaces |
-| Voice | Apple SpeechAnalyzer (dictation) + App Intents (Siri) |
+| Voice | Apple SpeechAnalyzer (dictation) + App Intents (Siri), in the native app |
 | Context signals | Calendar, location, Core Motion (driving), device activity — reported from the apps |
-| Push | APNs |
+| Push | Web Push for the web app; APNs with the native app |
 
 ## Working with Josh
 

@@ -1,6 +1,6 @@
 # Talking to Donna from your Mac
 
-Until the Phase 2 app exists, you talk to Donna with `php artisan donna:chat`, run on your Mac against the server. It only calls the server's API over HTTPS and never touches a database, so a closed terminal loses nothing.
+Until the web chat (Phase 2) exists, you talk to Donna with `php artisan donna:chat`, run on your Mac against the server. It only calls the server's API over HTTPS and never touches a database, so a closed terminal loses nothing.
 
 ## Before you start
 

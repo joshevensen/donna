@@ -1,6 +1,6 @@
 # Donna
 
-A personal AI that knows me, remembers everything, and doesn't let me slack off. Laravel + SwiftUI.
+A personal AI that knows me, remembers everything, and doesn't let me slack off. Laravel API, a web chat, and later SwiftUI apps.
 
 Donna is a personal tool, not a product: one user, self-hosted, built for exactly how I work. See [`docs/vision.md`](docs/vision.md) — it's the source of truth for what Donna is and isn't.
 
@@ -9,7 +9,7 @@ Donna is a personal tool, not a product: one user, self-hosted, built for exactl
 ```
 donna/
   api/      Laravel — pure JSON API, Postgres + pgvector, durable workflows
-  apple/    One Xcode project — iOS / iPadOS / macOS apps, watchOS capture, Home Node agent
+  apple/    (later) One Xcode project — iOS / iPadOS / macOS apps, watchOS capture, Home Node agent
   docs/     Vision and design docs
 ```
 

@@ -1,6 +1,6 @@
 # Donna on your iPhone (Blink Shell)
 
-Until the Phase 2 app exists, Donna works from an iPhone through a terminal app that connects to the server over SSH and runs `donna:chat` there. [Blink Shell](https://apps.apple.com/app/blink-shell/id1594898306) does this.
+Until the web chat (Phase 2) exists, Donna works from an iPhone through a terminal app that connects to the server over SSH and runs `donna:chat` there. [Blink Shell](https://apps.apple.com/app/blink-shell/id1594898306) does this.
 
 Dropping the connection costs nothing. Donna writes her replies on the server, and the next time you open `donna:chat` it shows the latest exchange, including a reply that finished while you were away.
 

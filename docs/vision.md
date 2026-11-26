@@ -6,6 +6,8 @@ One place. One context pool. One continuous conversation. Donna knows Josh, his 
 
 Donna is a personal tool, not a product. One user, self-hosted, built for exactly how Josh works. No pricing, no market, no onboarding funnel — if it's useful to Josh, it belongs; if it only matters to customers, it doesn't.
 
+**Where Donna starts.** Josh's code projects come first: Donna replaces Claude and Claude Code, the Donna way — remembering, tending the work, running it when he's away. She starts as a chat in a browser, on his Mac and on his phone. Travel, email, driving capture, reminders and the rest of Presence come after, and the native apps arrive with them. The order lives in [`phases.md`](phases.md).
+
 ## Design Principles
 
 - **Memory is the product** — the longer Donna is used, the more valuable she gets
@@ -147,6 +149,8 @@ Josh is happily married. Donna is a friend and confidant, not a companion or par
 
 ### Siri Integration
 
+*Native app, not the first front end* — it needs the iOS app (see UI).
+
 Built with App Intents (iOS 27+) — the only path for Siri integration after SiriKit was deprecated at WWDC 2026.
 
 - "Hey Siri, tell Donna [request]"
@@ -164,6 +168,8 @@ Josh doesn't forget things entirely — he remembers them at the wrong moment. T
 ### Capture — wherever the thought hits
 
 Capture has to cost less than the thought takes to fade. One sentence, no follow-up questions, no app to open.
+
+The capture surfaces below need the native apps (see UI), so they arrive with Presence. Until then, capture is the chat.
 
 - **Driving** — "Hey Siri, tell Donna to call the yarn vendor about the late order." Donna confirms in a word and stays quiet. This is the one place voice is non-negotiable.
 - **Working on the Mac** — a global hotkey or menu bar field: type the thought, hit enter, back to work in under five seconds
@@ -307,7 +313,7 @@ Donna's brain lives in the cloud. Her hands and ears inside Josh's Apple world l
 
 ### Split of Responsibilities
 
-- **Cloud (DigitalOcean droplet)** — Laravel API, Postgres, memory, orchestration, durable workflows, APNs, and webhooks from outside services. Always reachable; unaffected by home internet or power.
+- **Cloud (DigitalOcean droplet)** — Laravel API, Postgres, memory, orchestration, durable workflows, push (Web Push, then APNs), and webhooks from outside services. Always reachable; unaffected by home internet or power.
 - **Home Node (Mac mini)** — Messages, Reminders and Calendar (EventKit), Shortcuts, Apple's on-device model, and local files. Anything that only a Mac signed into Josh's Apple ID can do.
 
 The cloud is the default home for everything else. Presence depends on Donna being reachable, and a home outage shouldn't take reminders down with it.
@@ -397,7 +403,11 @@ Thinking-partner work — sounding board, decisions — isn't a skill. It's the 
 
 ## UI
 
-Native SwiftUI across iOS, iPadOS, and macOS. Dark mode only. Chat is the interface.
+Chat is the interface. Dark mode only.
+
+**Web first.** The first front end is a web app: one chat that runs in a browser tab on the Mac and installs to the iPhone's Home Screen. It costs nothing to distribute, needs no App Store account, and is quick to build and change. Donna isn't a product, so the App Store and TestFlight add friction (a paid developer account; builds that expire) for no gain.
+
+**Native later, for what the web can't reach.** SwiftUI apps across iOS, iPadOS, and macOS arrive with Presence: Siri and App Intents, the Action Button and widgets, the Mac hotkey and menu bar capture, on-device dictation, and context signals (calendar, location, driving). The chat stays the same in both; the web app is not thrown away.
 
 ### Layout
 
@@ -413,7 +423,7 @@ Native SwiftUI across iOS, iPadOS, and macOS. Dark mode only. Chat is the interf
 
 ### Quick Capture
 
-Capture surfaces outside the chat window (see Presence): Mac global hotkey and menu bar field, iPhone Action Button / lock screen control / widget, Apple Watch dictation, and Siri. Each is a single field that sends one message into the same conversation and gets out of the way.
+*Native apps.* Capture surfaces outside the chat window (see Presence): Mac global hotkey and menu bar field, iPhone Action Button / lock screen control / widget, Apple Watch dictation, and Siri. Each is a single field that sends one message into the same conversation and gets out of the way.
 
 ### Chat History
 
@@ -435,8 +445,8 @@ Opened by Donna when Josh asks for a file, or browsed directly when Josh wants t
 Text is the primary interface. Josh types better than he talks and is usually around people, so talking out loud to Donna isn't how he'll use her day to day. The exception is capture while driving, where Siri is the only safe input. Beyond that, voice is an option, not a foundation — but the design keeps the door open for whatever input comes next.
 
 - **Input is a surface, not a feature** — the server accepts text from any source (keyboard, dictation, Siri, a future wearable) and Donna treats it the same way. Adding a new input never touches memory, skills, or the conversation model.
-- **Dictation, not a voice mode** — the microphone icon transcribes on-device (Apple SpeechAnalyzer) into the chat input, where Josh can review before sending
-- **Siri for hands-free moments** — via App Intents when the app is backgrounded or closed; the primary capture path in the car
+- **Dictation, not a voice mode** — the microphone icon transcribes on-device (Apple SpeechAnalyzer in the native app; the keyboard's own dictation in the web app) into the chat input, where Josh can review before sending
+- **Siri for hands-free moments** — via App Intents in the native app, when it's backgrounded or closed; the primary capture path in the car
 - **Voice output (TTS) is a setting, off by default**
 - **Not planned now** — a live speech-to-speech conversation mode, an Alexa skill. Revisit only if Josh starts wanting them.
 
@@ -444,7 +454,7 @@ Text is the primary interface. Josh types better than he talks and is usually ar
 
 ### Notifications
 
-Push notifications via APNs are required for Presence — Donna coming to Josh is the whole point.
+Push notifications are required for Presence — Donna coming to Josh is the whole point. The web app can receive Web Push once it's installed to the iPhone's Home Screen (iOS 16.4+), which is enough for the first nudges and finished jobs; APNs with the native app adds actionable buttons and the reliability Presence needs.
 
 - Reminders, nudges, accountability check-ins, finished background jobs, and Orc gate questions deliver as push notifications
 - Notifications are actionable — approve, dismiss, snooze, or open Donna directly
@@ -492,7 +502,7 @@ No future model arrives with these. They are the durable assets, and they compou
 - **Senses** — the connections into Josh's world: integrations, credentials, webhooks, event feeds (Fibermade, Shopify, Stripe, GitHub, email, calendar, home), the Home Node's reach into his Apple devices, and knowing what Josh is doing right now. A model can't subscribe itself to a webhook or sign into iMessage. This is what makes Donna proactive instead of reactive — and what makes her a JARVIS rather than a chatbot.
 - **Trust** — the Graduated Autonomy record: what Josh has approved, for which action types and contacts, and the audit log of everything Donna did on her own. Earned trust doesn't transfer to a new model or product.
 - **Judgment about Josh** — what matters to him, what's worth interrupting for, when he's able to act, which goals he's let slide — encoded as memory and skills, not buried in prompts.
-- **Surfaces** — where Donna reaches Josh: native apps, quick capture, notifications, dictation, Siri, and whatever input comes next (see Voice and Other Inputs).
+- **Surfaces** — where Donna reaches Josh: the web chat, native apps, quick capture, notifications, dictation, Siri, and whatever input comes next (see Voice and Other Inputs).
 - **A personal eval set** — real past requests with known good answers, so a new model can be tested against Josh's actual life in an afternoon instead of by vibes.
 
 ### Design rules

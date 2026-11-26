@@ -29,7 +29,7 @@ pg_dump -U forge donna | gzip | s3cmd put - s3://YOUR-BUCKET/donna/$(date +\%F).
 
 Restore one dump into a scratch database once, so you know the backups are real and how long a restore takes.
 
-Spaces credentials never go in the app's environment. The app itself doesn't use Spaces until files arrive in Phase 3.
+Spaces credentials never go in the app's environment. The app itself doesn't use Spaces until files arrive in Phase 6.
 
 Next: [terminal-on-mac.md](terminal-on-mac.md).
 

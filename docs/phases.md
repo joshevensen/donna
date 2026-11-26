@@ -13,7 +13,7 @@ Source of truth is [`vision.md`](vision.md); concepts are defined in [`domain.md
 - **Builds survive interruptions** — the build works on a branch, opens a draft PR early with a progress checklist from the phase doc, and commits and pushes after each larger area of work, ticking that area's checklist item in the same step. If a session ends or hits a usage limit, a new session resumes from the branch, the checklist, and the phase doc; nothing is lost.
 - **Data is protected, not precious** — the database is never wiped casually; changes go through migrations. But this is a personal project, not a product with customers: basic backups are enough, and losing data would hurt, not end things.
 - **Done means daily use** — a phase is finished when Josh is using it day to day, not when every bullet is checked. Leftover bullets move to a later phase.
-- **API first until the app is needed** — Phase 1 is used through `php artisan donna:chat`. The Donna app starts in Phase 2, because Presence can't work without push, Siri, and device context.
+- **Code projects first, web first** — Josh's main goal is to replace Claude and Claude Code, the Donna way, with Donna in charge of his code projects. Phase 1 is used through `php artisan donna:chat`; Phase 2 is a web chat that works on the Mac and the phone; Code Work follows. The native apps wait for Presence, which can't work without Siri, Action Button capture and device context. Travel, email, driving and reminders come after.
 - **This doc changes** — reorder, split, or cut phases as things are learned. Update it in the same PR as the change.
 
 ---
@@ -25,7 +25,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 **Status:** built; awaiting daily use.
 
 **Foundation**
-- One Forge-managed droplet with Postgres + pgvector on it; droplet backups + database dumps to Spaces (the app itself doesn't use Spaces until Phase 3)
+- One Forge-managed droplet with Postgres + pgvector on it; droplet backups + database dumps to Spaces (the app itself doesn't use Spaces until Files)
 - Sanctum token auth (one user)
 - Laravel AI SDK wired to Anthropic behind a provider-agnostic interface; Voyage AI for embeddings (Anthropic has no embeddings model)
 - Web search via Anthropic's server-side web search tool, so Donna can go find out instead of guessing
@@ -49,14 +49,73 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 
 **Done when:** Josh talks to Donna daily from the terminal and she recalls things he told her days ago without being prompted.
 
-## Phase 2 — Presence v1 + the Donna app
+## Phase 2 — Web chat
 
-Donna comes to Josh. The app starts here.
+The first front end, so Josh can leave the terminal. A web app he opens in a browser tab on the Mac and installs to the iPhone's Home Screen. It costs nothing to distribute and needs no Apple developer account.
+
+- Chat UI per the vision: single conversation, infinite scroll up, markdown and code blocks, chat input, thinking and error states, dark mode only
+- Sign-in with a Sanctum token, kept on the device
+- Streaming replies — Phase 1 returns a reply whole once it's finished; the web chat should show it as it's written
+- Citations for the memory Donna used, and good/bad flags for the eval set
+- The API gains a `web` message source
+- Installable to the iPhone Home Screen (a web app manifest); Web Push is optional here and can wait for Presence
+- `donna:chat` and Blink stay as the fallback
+
+**Done when:** Josh uses the web chat daily instead of the terminal, on his Mac and on his phone.
+
+## Phase 3 — Skills, Integrations, Code Work awareness
+
+Donna learns what is going on in Josh's code projects, read-only first. Nothing is changed, so trust doesn't have to exist yet.
+
+- Agent Skills loader — `SKILL.md` stored in Spaces, indexed in Postgres, loaded on relevance
+- Integration credentials, encrypted
+- GitHub, read-only — issues, PRs, CI status, review comments, and Orc's decision records, reported in her voice
+- Projects tied to repos, so "what's the state of my projects?" and "what's blocking #42?" have real answers
+- Nudges when work is ready: "#42 is specced — start the build." Josh runs the interactive Orc steps (plan, build, walkthru) in Claude Code himself for now
+- Starter skill: Research
+
+**Done when:** Josh asks Donna about his code projects instead of opening GitHub.
+
+## Phase 4 — Graduated Autonomy
+
+Donna starts acting, so trust has to exist first.
+
+- Actions, Action Types, Trust Grants — confirm-first enforced server-side, audit log, autonomous actions reported
+- Approvals in the web chat: approve, decline, or grant standing trust for that action type
+- The first writes, on GitHub: comment, label, create an issue (never merge)
+- Presence "doing it for him" — work done first, surfaced ready to approve (the full form arrives with Presence)
+
+## Phase 5 — Orchestration + Code Work
+
+Donna runs the work, not just watches it.
+
+- Jobs and scoped Workers on durable workflows, parallel by default. Durable workflows are introduced here
+- Per-job budgets and cost totals — including the declined attempts of refusal fallbacks, which Phase 1 doesn't record yet
+- Checkpoints — jobs pause for confirmation and resume. Orc's gates become Donna questions in the web chat
+- "What are you working on?"
+- Headless Claude Code runs with Orc on a droplet, when Josh is away; Donna watches the PR and CI and reports. Merge stays human
+- The token-economics question (Max subscription vs. headless credit or API) gets answered with real usage data
+
+**Done when:** Josh can hand Donna a specced issue and come back to a PR.
+
+## Phase 6 — Files + Archive Memory
+
+- Files (MD, CSV) — create, view, manual edit, Donna-edit
+- Deterministic operations without the LLM (replace, rename, append, delete line)
+- Chunking at logical boundaries + embeddings; files join per-message context
+- File viewer in the web chat (side panel on wide screens, sheet on the phone)
+- Attachments in chat
+
+Placed here because code projects don't need it. If Josh starts wanting files sooner, move it up.
+
+## Phase 7 — Presence v1 + the native iOS app
+
+Donna comes to Josh. The native app starts here, because Presence needs what the web can't give: Siri, the Action Button, and device context.
 
 **App (`Donna` target only)**
-- Chat UI per the vision (single conversation, infinite scroll up, chat input, thinking/error states)
+- iOS first; the iPad and Mac versions follow. Chat reuses what the web chat taught
 - Dictation via SpeechAnalyzer
-- Quick capture — Mac hotkey + menu bar field, iPhone Action Button / widget
+- Quick capture — iPhone Action Button / widget; on the Mac, hotkey + menu bar field
 - Siri via App Intents ("tell Donna…")
 - APNs with actionable notifications (done / snooze / open)
 - Context Signals — calendar, location, driving, active device
@@ -69,40 +128,11 @@ Donna comes to Josh. The app starts here.
 - "What's on my plate?"
 - Accountability — stall detection, asks why, dial set conversationally
 - Active memory check-ins
-- Durable workflows introduced for Presence jobs
-- Streaming replies — Phase 1 returns a reply whole once it's finished; the app should show it as it's written
-- No external actions yet — Donna can draft, not send
+- First personal integrations: Gmail, Google Calendar; starter skills: Correspondence, Briefing
 
-**Done when:** Josh uses the app daily instead of the terminal, captures land in under five seconds, and nudges arrive at moments he can act on them.
+**Done when:** Josh uses the app daily, captures land in under five seconds, and nudges arrive at moments he can act on them.
 
-## Phase 3 — Files + Archive Memory
-
-- Files (MD, CSV) — create, view, manual edit, Donna-edit
-- Deterministic operations without the LLM (replace, rename, append, delete line)
-- Chunking at logical boundaries + embeddings; files join per-message context
-- File viewer in the app (side panel on iPad/Mac, sheet on iPhone)
-- Attachments in chat
-
-## Phase 4 — Skills, Integrations, Graduated Autonomy
-
-Donna starts acting in the outside world, so trust has to exist first.
-
-- Agent Skills loader — `SKILL.md` stored in Spaces, indexed in Postgres, loaded on relevance
-- Actions, Action Types, Trust Grants — confirm-first enforced server-side, audit log, autonomous actions reported
-- Integration credentials, encrypted
-- First integrations: Gmail, Google Calendar
-- Starter skills: Correspondence, Research, Briefing
-- Presence "doing it for him" — work done first, surfaced ready to approve
-
-## Phase 5 — Orchestration
-
-- Jobs and scoped Workers on durable workflows, parallel by default
-- Per-job budgets and cost totals — including the declined attempts of refusal fallbacks, which Phase 1 doesn't record yet
-- Checkpoints — jobs pause for confirmation and resume
-- "What are you working on?"
-- Code Work — GitHub integration, Orc status tracking, headless Claude Code runs
-
-## Phase 6 — Home Node
+## Phase 8 — Home Node
 
 - `DonnaNode` — headless macOS agent, login item, outbound over Tailscale
 - Runs Workers dispatched from the cloud; Mac-only jobs queue while offline
@@ -113,7 +143,7 @@ Donna starts acting in the outside world, so trust has to exist first.
 
 Unordered until earlier phases make the order obvious.
 
-- Passive Capture — email (could follow Phase 4), texts (needs Phase 6), wearable
+- Passive Capture — email (could follow Gmail), texts (needs Phase 8), wearable
 - Skill learning loop — create, refine, propose, retire
 - Memory curation job
 - Retrieval tuning on real data — a similarity floor for message and fact search, which Phase 1 doesn't have
@@ -122,3 +152,4 @@ Unordered until earlier phases make the order obvious.
 - `DonnaWatch` capture app
 - Travel starter skill
 - Voice output (TTS) setting
+- A Mac app (hotkey and menu bar capture) if the web chat in a tab isn't enough
