@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\Donna;
+use App\Extraction\Contracts\BatchClient;
 use App\Jobs\EmbedMessage;
 use App\Jobs\GenerateReply;
 use App\Jobs\TagTopics;
@@ -18,6 +19,7 @@ use Laravel\Ai\Events\ToolFailed;
 use Laravel\Ai\Events\ToolInvoked;
 use Laravel\Ai\Prompts\EmbeddingsPrompt;
 use Laravel\Ai\Responses\Data\ToolCall;
+use Tests\Fakes\FakeBatchClient;
 use Tests\TestCase;
 
 /*
@@ -138,4 +140,12 @@ function donnaCalls(array $calls, string $said = 'Go ahead.'): array
     GenerateReply::dispatchSync(pendingReplyTo($said));
 
     return $results;
+}
+
+/**
+ * Swap the batch API for an in-memory one.
+ */
+function fakeBatches(): FakeBatchClient
+{
+    return tap(new FakeBatchClient, fn (FakeBatchClient $fake) => app()->instance(BatchClient::class, $fake));
 }

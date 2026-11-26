@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use Anthropic\Client;
+use App\Extraction\AnthropicBatchClient;
+use App\Extraction\Contracts\BatchClient;
 use App\Models\ExtractionRun;
 use App\Models\Message;
 use App\Models\Person;
@@ -18,7 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(BatchClient::class, fn (): BatchClient => new AnthropicBatchClient(
+            new Client(apiKey: config('ai.providers.anthropic.key')),
+        ));
     }
 
     /**
