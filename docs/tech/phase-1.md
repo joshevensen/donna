@@ -93,7 +93,7 @@ The build follows this section. Where it's silent, follow Laravel and Swift best
 |---|---|
 | Conversation, tagging, tools, web search, prompt caching, embeddings, pgvector helpers, fakes | `laravel/ai` (1.x) |
 | Message Batches (daily extraction) | Anthropic's official PHP SDK — `laravel/ai` doesn't support the Batch API. Wrap it behind an app interface so tests use a fake. |
-| Embeddings | Voyage AI through `laravel/ai`. Use Voyage's current general-purpose text model; set dimensions from its docs and keep model + dimensions in config. Voyage is now owned by MongoDB: keys come from a MongoDB Atlas account and call `https://ai.mongodb.com/v1` (set the provider `url` if the driver defaults to `api.voyageai.com`). No MongoDB database is involved. |
+| Embeddings | Voyage AI through `laravel/ai`. Use `voyage-4` (general purpose; $0.06/M tokens, first 200M free); set dimensions from its docs and keep model + dimensions in config. Voyage is now owned by MongoDB: keys come from a MongoDB Atlas account and call `https://ai.mongodb.com/v1` (set the provider `url` if the driver defaults to `api.voyageai.com`). No MongoDB database is involved. |
 | Queue | Laravel's database queue driver — one user, no Redis needed |
 | Scheduling | Laravel scheduler. Durable workflows aren't needed until Phase 2. |
 
@@ -231,11 +231,11 @@ Scheduled daily at 03:00 Josh's time.
 
 ### Deployment
 
-- Forge-provisioned DigitalOcean droplet: PHP 8.4, Postgres with the pgvector extension installed, Nginx, Let's Encrypt for `donna.joshevensen.com`.
+- Forge-provisioned DigitalOcean droplet, Basic 2 GB / 1 vCPU ($12/mo), with a swap file: PHP 8.4, Postgres with the pgvector extension installed, Nginx, Let's Encrypt for `donna.joshevensen.com`.
 - Queue worker daemon for `replies,default`; scheduler cron.
 - Backups: droplet backups on, plus a nightly database dump to Spaces (Forge database backups, or a scheduled `pg_dump` command if the plan lacks them).
 - Env: `ANTHROPIC_API_KEY`, `VOYAGEAI_API_KEY`, Spaces credentials. Credentials are never logged and never sent to a model.
-- A `docs/deploy.md` with the steps Josh runs once in Forge.
+- A `docs/deploy.md` with the steps Josh runs once in Forge, including when to resize: memory regularly above ~80% or steady swap use → CPU/RAM-only resize (reversible; never grow the disk).
 
 ### Testing
 
