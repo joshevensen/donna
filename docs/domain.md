@@ -121,7 +121,6 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 
 ## Open questions
 
-- **Topic** — how Donna assigns Messages to Topics (at write time, during extraction, or both).
 - **Task vs. Action** — is a Task Donna completes herself just a Task with an Action attached, or something else?
 - **Check-ins and refreshers** — are they Nudges, or their own concept?
 - **Skill trust** — does a new Skill get its own Trust Grants, or inherit from the Action Types it uses?
