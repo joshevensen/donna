@@ -1,6 +1,6 @@
 # Phase 3 — Files + Archive Memory
 
-Josh attaches markdown, CSV, PDF and image files in the chat, reads and edits them with Donna in a viewer, and the ones he wants kept become something she finds on her own. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); look and feel in [`design.md`](../design.md); the chat this builds on is [`phase-2.md`](phase-2.md).
+Josh attaches files in the chat as context for Donna: text, CSV, PDF and images. He reads them in a viewer and edits markdown files together with her. Donna works out which files are worth keeping, and those become something she finds on her own. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); look and feel in [`design.md`](../design.md); the chat this builds on is [`phase-2.md`](phase-2.md).
 
 **Status:** draft for discussion; not approved, not built. Open questions are at the end.
 
@@ -12,8 +12,8 @@ Josh attaches markdown, CSV, PDF and image files in the chat, reads and edits th
 
 ### Attaching files
 
-- I tap the plus in the input and choose a file or a photo. Markdown, CSV, PDF and images all work, up to 10 MB each and five to a message.
-- The file shows as a chip above the input while it uploads. If it can't be used, the chip says why ("Unsupported. Markdown, CSV, PDF and images only", "Too large. Max 10 MB") and I can remove it.
+- I tap the plus in the input and choose a file or a photo. Any plain-text file (markdown, text, CSV, JSON, code), PDFs and images work, up to 10 MB each and five to a message. Files she can't read, like Word, Excel or zip, are refused with a reason.
+- The file shows as a chip above the input while it uploads. If it can't be used, the chip says why ("Unsupported. Text, PDF and images only", "Too large. Max 10 MB") and I can remove it.
 - I can send a file with no text. Donna looks at it and answers.
 - In the thread my message carries the file as a small card at the top of its bubble. Tapping it opens it.
 
@@ -21,22 +21,22 @@ Josh attaches markdown, CSV, PDF and image files in the chat, reads and edits th
 
 - Donna reads what I attach: a Stripe export, a Ravelry pattern, a PDF from a vendor. She answers questions about it, and for a CSV she gets totals and filtered rows right without guessing, because the arithmetic is done by code, not by her.
 - I tell her what to change and she changes exactly that: "replace Fibermade Co with Fibermade everywhere", "add a section on returns", "rewrite the pricing section to be shorter". Small edits don't rewrite the whole file.
-- I can open any markdown or CSV file and edit it myself, in a view that looks different from reading, then go back to the conversation and she knows what I changed.
+- I can open a markdown file and edit it myself, in a view that looks different from reading, then go back to the conversation and she knows what I changed. Other files I read; they are context, not documents we write.
 - If I say "undo that", she puts the file back.
 - Donna can create a file from scratch: "write that up as a plan".
 - There's no delete button. I ask her to delete a file. She can bring it back if I change my mind.
 
 ### What she can tell me about a file
 
-- Every file has a provenance she can cite: who added it, when, and in which message. "The screenshot you sent Nov 27 at 3:01", not "something you showed me".
+- She knows when a file arrived and which message it came with, so she can say "the screenshot you sent Nov 27 at 3:01", not "something you showed me". (There is one user, so who added it isn't recorded.)
 - The original is never lost. What I uploaded is kept as the file's first version however much it is edited, and a PDF or image original is never changed at all.
 - She tells me what she could and couldn't read. A scanned PDF with no text layer, a file too long for her to have seen all of, a page that didn't extract: she says so instead of answering as if she'd read everything.
 - When a file is about a person, project or topic ("the Houston vendor PDF", "the Anita screenshots"), I can link it, and it comes up with them.
 
 ### What she remembers
 
-- A file is temporary by default. When I ask her to reformat a knitting pattern, she doesn't remember the pattern afterwards.
-- When I want a file remembered, I say so ("keep this"), or she asks when it looks like something I'll come back to (my notes, plans, context documents, an export I'll refer to). A switch in the viewer does the same.
+- She works out for herself what is temporary. When I ask her to reformat a knitting pattern, she doesn't remember the pattern afterwards. When I give her a file as context (my notes, a plan, a vendor PDF, an export I'll refer to), she keeps it, and says so in a line, so I can tell her to forget it.
+- I can still tell her ("keep this", "forget that one"), and a switch in the viewer does the same.
 - Kept files are found on their own: when a topic comes up she draws on them, and "what I looked at" shows which file and which section.
 - When I stop keeping a file she stops finding it. The file itself stays.
 
@@ -49,9 +49,9 @@ Josh attaches markdown, CSV, PDF and image files in the chat, reads and edits th
 
 - Folders or tags. Names, links to people and projects, and Donna's search are the structure.
 - A history screen. Versions are kept and Donna can undo, but there's no UI to browse them.
-- Editing PDFs or images, OCR as a feature, and editing a PDF's pages. PDFs are read, not changed.
+- Editing anything but markdown and plain text: CSVs, PDFs and images are read, not changed. Word, Excel and zip files, and OCR as a feature.
 - Sharing files outside Donna, and exporting everything at once. A single file can be downloaded.
-- JSON or other formats, and a file viewer in the terminal. The terminal can't attach.
+- A file viewer in the terminal. The terminal can't attach.
 - Skills, which are also files but arrive with the skills loader (Phase 4).
 - Deleting forever, and any automatic deletion. See the open questions.
 
@@ -71,8 +71,8 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 
 | Decision | Choice | Reason |
 |---|---|---|
-| Temporary or kept | Every file starts **working**. Only **kept** files are chunked and embedded. | Josh's rule from the interview: a reformatted pattern shouldn't be remembered. It also keeps embedding cost and retrieval noise down. |
-| Where the bytes live | Text of markdown and CSV files in Postgres, as versions. Original PDFs and images in DigitalOcean Spaces. | Edits are small, frequent, versioned and must change a file and its chunks together, which one database transaction does. Binaries never change. This departs from the stack table's "file storage: Spaces"; the table is updated in the build PR. |
+| Temporary or kept | Every file starts **working**. Donna decides which become **kept**, and says so; only kept files are chunked and embedded. | A reformatted pattern shouldn't be remembered, a context document should. Keeping is reversible and internal, so she needs no confirmation, and a wrong keep costs less than a wrong skip. |
+| Where the bytes live | Text files in Postgres, as versions. Original PDFs and images on the server's disk, in the app's private storage folder, behind Laravel's filesystem layer. | Edits are small, frequent, versioned and must change a file and its chunks together, which one database transaction does. Binaries never change. The server's disk needs no new account; moving to Spaces later is a configuration change. This departs from the stack table's "file storage: Spaces", which is updated in the build PR. |
 | Versions | Every change creates a version: Josh's saves, each of Donna's edits, a revert. | "Undo that" and "I edited it, continue" both need it. Cheap for text of this size. |
 | Simple edits | Donna's tools do find-and-replace, append, delete lines and rename in code. Rewriting a section is her judgment, but applying it is code, by heading. | The vision's rule: no tokens spent on deterministic work, and no rewriting a whole file for a small edit. |
 | CSV maths | A `query_csv` tool: filter, sort, group, count, sum, average, evaluated in PHP. | `CLAUDE.md`: totals and filtering are always code. A Shopify export with thousands of rows can't go into a prompt anyway. |
@@ -85,20 +85,21 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 
 | Kind | Types accepted | Stored | Viewer |
 |---|---|---|---|
-| `markdown` | `.md`, `.markdown`, `.txt` | Postgres | Rendered; edit mode |
-| `csv` | `.csv` | Postgres | Table; edit mode (raw text) |
-| `pdf` | `.pdf` | Original in Spaces; extracted text in Postgres | The extracted text, with "Open original" |
-| `image` | JPEG, PNG, WebP, GIF | Spaces | The image |
+| `markdown` | `.md`, `.markdown`, `.txt` | Postgres | Rendered; **edit mode** |
+| `csv` | `.csv` | Postgres | Table, read-only |
+| `text` | Any other plain text: JSON, HTML, code, logs | Postgres | Monospace, read-only |
+| `pdf` | `.pdf` | Original on disk; extracted text in Postgres | The extracted text, with "Open original" |
+| `image` | JPEG, PNG, WebP, GIF | Disk | The image |
 
 - 10 MB per file, five per message, the same limits in the client and the server. The server decides by sniffing the content (`finfo`), never by the extension or the browser's claimed type.
 - iPhone photos arrive as JPEG when picked through the file input *(unverified: iOS converts HEIC when the input accepts `image/jpeg`; check on the device)*.
-- Text files must be valid UTF-8. A different encoding is converted if it can be detected, otherwise the file is refused with a message.
+- A file counts as text if its content is valid UTF-8 with no binary bytes, whatever its extension. Anything else that isn't a PDF or image is refused. Text files must be valid UTF-8. A different encoding is converted if it can be detected, otherwise the file is refused with a message.
 
 ### Data model
 
 | Table | Columns and notes |
 |---|---|
-| `files` | `id`, `name`, `kind`, `mime`, `size_bytes`, `storage_path` (null for text), `current_version_id`, `kept_at` (null while working), `deleted_at`, `created_by` (`josh` or `donna`), `extraction` (`ready`, `failed`), `extraction_error`, timestamps |
+| `files` | `id`, `name`, `kind`, `mime`, `size_bytes`, `storage_path` (null for text), `current_version_id`, `kept_at` (null while working), `deleted_at`, `extraction` (`ready`, `failed`), `extraction_error`, timestamps |
 | `file_versions` | `id`, `file_id`, `number`, `body` (text), `content_hash`, `author` (`josh`, `donna`), `message_id` (null), `summary` (what changed, written by code, e.g. "Replaced 14 matches of 'Fibermade Co'"), `created_at`. A PDF has one; an image has none |
 | `file_chunks` | `id`, `file_id`, `position`, `heading_path` (e.g. "Pricing › Wholesale"), `body`, `content_hash`, `embedding` (vector 1024), `search` (tsvector, generated), timestamps. Current version only; rebuilt on change |
 | `file_subjects` | `file_id`, `subject_type`, `subject_id`: a file linked to people, projects or topics, the same polymorphic shape as `fact_subjects`. Written by `link_file`; read by retrieval and the viewer |
@@ -106,7 +107,7 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 
 Every table is written by something: `files` and `file_versions` by uploads, manual saves and Donna's tools; `file_chunks` by the indexing job; `file_subjects` by `link_file`; `file_message` by the message endpoint and the tools.
 
-**Provenance** is already in these rows: who added a file (`created_by`), when (`created_at`), and in which message (`file_message`). **Originals** are kept: version 1 of a text file is exactly what was uploaded or first written, and is never edited or removed; the original bytes of a PDF or image are never touched. Nothing is defined that nothing fills.
+**Provenance** is already in these rows: when a file arrived (`created_at`) and in which message (`file_message`). **Originals** are kept: version 1 of a text file is exactly what was uploaded or first written, and is never edited or removed; the original bytes of a PDF or image are never touched. Nothing is defined that nothing fills.
 
 ### Upload and file API
 
@@ -117,8 +118,8 @@ All under `/api/v1`, JSON, `auth:sanctum`.
 | `POST /files` | Multipart, one file. Validates size and content, stores it, extracts text, returns the file. Throttled (30 a minute). The file belongs to no message until one names it |
 | `GET /files` | The list for `/files` and Donna's cards: kept first, then working files from the last 30 days; `?q=` filters by name |
 | `GET /files/{id}` | Metadata, the current version's number and, for text kinds, its body |
-| `GET /files/{id}/content` | The bytes, for image display and "Open original". Served by the app after the session check, never as a public Spaces URL, with `X-Content-Type-Options: nosniff` and, for anything but images and PDFs, `Content-Disposition: attachment` |
-| `PUT /files/{id}` | Manual save: `{body, base_version}`. 409 with the current version if `base_version` is stale. Markdown and CSV only |
+| `GET /files/{id}/content` | The bytes, for image display and "Open original". Served by the app after the session check, never as a public Spaces URL, with `X-Content-Type-Options: nosniff` and, for anything but images and PDFs, `Content-Disposition: attachment`. Read from the files disk, so it works the same on Spaces later |
+| `PUT /files/{id}` | Manual save: `{body, base_version}`. 409 with the current version if `base_version` is stale. Markdown only |
 | `PATCH /files/{id}` | `{kept?, name?}`: the keep switch and rename |
 | `POST /messages` | Gains optional `file_ids` (up to five of the user's uploaded, unattached files). `body` may be empty when there are files |
 | `MessageResource` | Gains `files: [{id, name, kind, role}]` for what was attached and what Donna created, edited or opened |
@@ -128,8 +129,9 @@ There is no `DELETE`. Deleting is a tool of Donna's.
 ### Working files and kept files
 
 - A new file is working: stored, visible, usable in the conversation, never indexed.
-- It becomes kept when Donna calls `keep_file` (Josh said so, or she offered and he agreed), or Josh flips the switch in the viewer. Both set `kept_at` and queue indexing.
-- Un-keeping removes its chunks and nothing else. Donna never keeps a file on her own: she can offer, and `operating-instructions.md` tells her to offer for reference material (notes, plans, context documents, exports he'll return to) and never for work product like a reformatted copy.
+- It becomes kept when Donna calls `keep_file`, or Josh flips the switch in the viewer. Both set `kept_at` and queue indexing.
+- **Donna decides, and says so.** `operating-instructions.md` tells her: a file Josh gives her as context or reference (notes, plans, vendor documents, exports he'll return to) is kept; a file he asks her to transform, or one she writes as a one-off, is not; and when she keeps one she says so in a line, so he can tell her to forget it. She judges from what he asked, in her normal reply, with no extra model call.
+- Un-keeping removes its chunks and nothing else. If Josh un-keeps a file she kept, she doesn't keep it again unless he asks.
 - Facts learned from a conversation about a file are still extracted from the conversation by the daily run, as for anything else Josh says. Files themselves are never read by extraction; Archive Memory and Facts stay separate layers.
 - **Nothing is deleted automatically**, working files included (`domain.md` invariant). See the open questions.
 
@@ -143,18 +145,18 @@ There is no `DELETE`. Deleting is a tool of Donna's.
 
 ### Donna's tools
 
-Each does its work in code. Only the first four need a model to decide *what*; none calls a model itself.
+Each does its work in code; none calls a model. The edit tools (`edit_section` to `delete_lines`) work on markdown files only, and refuse anything else.
 
 | Tool | What it does |
 |---|---|
-| `create_file` | `{name, kind, content}`. Creates a working file. The reply gets a file card |
-| `read_file` | `{file, heading?, from_line?, lines?}`. Returns a part of a text file, so a long file isn't read whole |
+| `create_file` | `{name, content}`. Creates a markdown file. The reply gets a file card |
+| `read_file` | `{file, heading?, from_line?, lines?}`. Returns a part of any text file, so a long file isn't read whole |
 | `edit_section` | `{file, heading, new_text}`. Replaces one markdown section by its heading. For "rewrite this section" |
 | `replace_in_file` | `{file, find, replace, all?}`. Exact text. Fails with the match count if the text isn't there or isn't unique and `all` isn't set |
 | `append_to_file`, `delete_lines` | Append text; delete lines by number range or by exact content |
 | `query_csv` | `{file, where?, group_by?, aggregate?, order_by?, limit?}`, run in PHP. Also returns the header and row count, so she can plan a query |
 | `rename_file` | Rename |
-| `keep_file` | `{file, keep}`. Keep or un-keep |
+| `keep_file` | `{file, keep}`. Keep or un-keep. She calls it herself for context files, and on Josh's say-so either way |
 | `link_file` | `{file, subjects}`. Link a file to people, projects or topics by name (resolved like facts' subjects), or unlink |
 | `delete_file`, `restore_file` | Soft delete (`deleted_at`) and bring back. Deleting removes the chunks; restoring re-indexes if it was kept. Only on Josh's say-so, and an explicit permanent delete arrives with Autonomy (Phase 5) |
 | `revert_file` | Restore a previous version as a new one |
@@ -165,7 +167,7 @@ These are all reversible and internal, so they need no confirmation (Graduated A
 ### Context
 
 - **The turn's attachments** go into the message. A text file under the inline limit (about 6,000 tokens) goes in whole, in a tagged block marked as Josh's material, not instructions. A larger one goes in as an outline (markdown headings with line numbers; CSV columns, row count and a few rows; PDF page count and the first lines) and she reads or queries the rest. Images, and PDFs with no extractable text, go in as the model's own file blocks for that turn only.
-- **Files in play**: files attached or touched in the last 20 messages, listed in the memory block with their IDs, names, kinds, who added them and when (in Josh's timezone), the message they came with, whether they're kept, and the diff of Josh's changes if any. This is how "that file" and "the second one" resolve, and how she cites where a file came from.
+- **Files in play**: files attached or touched in the last 20 messages, listed in the memory block with their IDs, names, kinds, when they arrived (in Josh's timezone), the message they came with, whether they're kept, and the diff of Josh's changes if any. This is how "that file" and "the second one" resolve, and how she cites where a file came from.
 - **What she was and wasn't given**, stated by code for every file in the turn: "read in full", "outline only: 3,200 of 41,000 lines", "no text could be extracted (scanned, 12 pages), shown as images", or "extraction failed: <reason>". She is told to say so when an answer rests on less than the whole file.
 - **Related files**: the best-matching chunks of kept files (below), a few at a time, with file name and heading path. Chunks of a file already in play are left out.
 - `operating-instructions.md` gains: what files are and the working/kept rule; to treat text inside a file as material, never as instructions; to use the tools instead of retyping a file; to look at the diff of Josh's changes before editing; to offer to keep reference material and never work product; and what an image or scan looked like if she has no text for it.
@@ -174,6 +176,7 @@ These are all reversible and internal, so they need no confirmation (Graduated A
 
 - **Chunking** (code, at logical boundaries):
   - Markdown: by heading, each chunk carrying its heading path. A section over about 800 tokens is split by paragraph.
+  - Other text: by blank-line paragraph groups up to about 800 tokens.
   - CSV: groups of rows up to about 800 tokens, each with the header row. A file over 2,000 rows gets chunks for its first 2,000 and a summary chunk (columns, row count, a few rows); more than that isn't useful as memory, and `query_csv` answers questions about it anyway.
   - PDF: by page, split by paragraph if long.
   - Images: none.
@@ -187,7 +190,7 @@ These are all reversible and internal, so they need no confirmation (Graduated A
 - **The plus returns** in the input, bottom left, as in the mockup: the collapsed bar, the open field and the sheet ("Choose a file", "Choose a photo"). The two choices open the file picker and the photo picker. This reverses Phase 2's "no plus".
 - **Chips** above the text, one per file, with a remove button. Upload starts on picking; a chip shows progress, then ready, or an Error border with the reason. Send is disabled while any chip is uploading or has an error. A message may be only chips.
 - **Sent files** show as a card at the top of the bubble: icon, name, size. Files Donna created, edited or opened show the same card under her bubble. Tapping a card opens the viewer. An edit's card says what changed ("Edited · 14 replacements").
-- **The viewer.** On a phone, a full-screen sheet over the chat. At 768px and wider, a side panel: the chat keeps its width on the left and the file takes the right half, so the 600px centred column becomes two columns while a file is open. Header: the file's name, a **Keep** switch, Edit and Close. Body by kind: rendered markdown (the same safe renderer as replies; images and raw HTML are not shown), a table for CSV, extracted text with "Open original" for a PDF, the image. Edit mode (markdown and CSV): Inset background, monospace, Save and Cancel, and a conflict banner when a save is refused. Metadata (created, modified, size, who edited last, version) expands at the bottom.
+- **The viewer.** On a phone, a full-screen sheet over the chat. At 768px and wider, a side panel: the chat keeps its width on the left and the file takes the right half, so the 600px centred column becomes two columns while a file is open. Header: the file's name, a **Keep** switch, Edit and Close. Body by kind: rendered markdown (the same safe renderer as replies; images and raw HTML are not shown), a table for CSV, extracted text with "Open original" for a PDF, the image. Edit mode (markdown only): Inset background, monospace, Save and Cancel, and a conflict banner when a save is refused. Metadata (created, modified, size, who edited last, version) expands at the bottom.
 - **`/files`** is a slash command handled in the client, no model call: it lists files as cards in a local message. Anything else about files goes through Donna.
 - The CSP stays as is: images and PDFs load from the app's own address through `GET /files/{id}/content`.
 - The keyboard behavior from Phase 2 applies to edit mode's textarea too; it is a second input that has to sit above the keyboard.
@@ -217,10 +220,11 @@ No new kind of model call. Embedding chunks is the existing embedding call and r
 
 ### Deployment and instructions
 
-- **New `docs/instructions/spaces.md`**: a DigitalOcean Space for the app's files, separate from the backup Space, with its own access key limited to that bucket; the environment variables (`DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_REGION`, `DO_SPACES_BUCKET`, `DO_SPACES_ENDPOINT`); that it stays private (files are served through the app); and a check. Adds `league/flysystem-aws-s3-v3` and an `s3` disk in `config/filesystems.php`.
+- **Storage.** A `files` disk in `config/filesystems.php`, defaulting to the app's private storage folder, which Forge shares across deploys. `DONNA_FILES_DISK` (default `local`) names the disk, so moving to Spaces later needs an `s3` disk, a short `spaces.md` and one variable, with no code change. `forge-server.md` or `operating.md` gets a "check free disk space" step (`df -h`), since originals accumulate and the disk can't be shrunk or safely grown.
+- **Backups.** Droplet backups include the files folder; the database dumps (which hold all text files and versions) go to Spaces as before. The original PDFs and images are only as safe as the last droplet backup. `backups.md` says so.
 - **Upload limits on the server**: PHP's `upload_max_filesize` and `post_max_size` and Nginx's `client_max_body_size` must allow 10 MB per file and five files *(unverified: Forge's defaults are higher than this; check)*. Written into `forge-site.md`.
 - **PDF text extraction**: a pure-PHP package, chosen when building after trying it on real Stripe and Shopify PDFs *(unverified: quality on those)*; if it isn't good enough, `pdftotext` (poppler) is installed on the droplet and `forge-server.md` says how.
-- **Updated**: `environment-variables.md`, `forge-site.md`, `backups.md` (the app and the backups no longer share the idea of "Spaces"), `verify-setup.md` (attach a file, edit it, keep it, get it back), `operating.md` (storage use, what "working" files accumulate), `README.md` row for `spaces.md`.
+- **Updated**: `environment-variables.md` (`DONNA_FILES_DISK`), `forge-site.md`, `backups.md`, `verify-setup.md` (attach a file, edit a markdown file, see it kept, get it back), `operating.md` (disk use, what working files accumulate).
 - `CLAUDE.md`'s stack row for file storage, `domain.md`'s File concept and invariants (working and kept, versions), `design.md`'s viewer and attachment components and `vision.md`'s Files section where the build departs from it are updated in the build PR.
 - The build PR's "Before deploying" lists these in order.
 
@@ -229,16 +233,16 @@ No new kind of model call. Embedding chunks is the existing embedding call and r
 Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real network.
 
 **API (Pest feature tests):**
-- Upload: each kind accepted and extracted; a wrong type, a file over 10 MB, and a file whose content disagrees with its extension refused; throttling.
+- Upload: each kind accepted and extracted (including an unusual text file by content, not extension); a Word or zip file, a wrong type, a file over 10 MB, and a file whose content disagrees with its extension refused; throttling.
 - Attaching: files go with the message; another message can't reuse them; a message with only files works.
-- Working vs kept: a working file is never chunked or embedded; keeping it queues indexing; un-keeping and deleting drop its chunks; restoring a kept file re-indexes.
+- Working vs kept: a working file is never chunked or embedded; keeping it queues indexing; a file kept by Donna's tool is reported in her reply; un-keeping and deleting drop its chunks; restoring a kept file re-indexes.
 - Tools, through the reply job: each operation writes a version with its summary; `replace_in_file` fails on zero and on ambiguous matches; `edit_section` replaces only its section; `revert_file` restores; delete and restore.
-- Manual save: writes a version; a stale `base_version` returns 409 and changes nothing. A Donna edit after Josh's save keeps his change.
+- Manual save: writes a version; a stale `base_version` returns 409 and changes nothing; a CSV or PDF is refused. A Donna edit after Josh's save keeps his change.
 - Context: Josh's changes since Donna last saw the file appear as a diff; an attached file is inlined under the limit and outlined over it.
 - `query_csv` (a unit test: real branching): filter, group, aggregate and order against a fixture.
 - Chunking (a unit test): markdown by heading and by size, CSV groups with the header, PDF pages; unchanged chunks keep their hash and aren't re-embedded.
 - Retrieval: a kept file's chunk comes back for a related message and is recorded as a source; a working file's never does; a chunk of a file linked to a related project is ranked above an otherwise equal one.
-- Provenance and honesty: the context states who added a file and when, and whether it was read whole, as an outline, as images, or failed; a scanned PDF is flagged rather than passed as empty text.
+- Provenance and honesty: the context states when a file arrived and with which message, and whether it was read whole, as an outline, as images, or failed; a scanned PDF is flagged rather than passed as empty text.
 - Originals: after any number of edits and reverts, version 1 is unchanged and retrievable.
 - Content endpoint: session required; correct headers.
 
@@ -249,17 +253,18 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 - **PDF text from real files.** Stripe and Shopify PDFs vary; try the extractor on a handful of Josh's before building on it.
 - **The photo picker on iOS**, in Safari and the installed app: which formats arrive, and whether the file input works from the Home Screen app. Device check.
 - **The viewer beside the chat on a Mac** changes the Phase 2 layout; the keyboard and scroll behavior shouldn't regress. Re-run the Phase 2 device checks.
+- **Disk space.** Check `df -h` on the droplet before building; originals accumulate and the disk can't be shrunk.
 - **Token cost of files in context.** The inline limit and outlines exist for this; watch real `costs` rows in the first week and move the limit.
 - **Embedding cost of large kept files.** The CSV caps exist for this; the first big kept export will show whether they're right.
 
 ### Open questions
 
-These are for the discussion before this doc is approved.
+Settled in the discussion: any text file is accepted but only markdown is edited; Donna decides what to keep and says so; files live on the server's disk; provenance is when and which message, not who.
 
-1. **Working files and the "never deleted automatically" invariant.** I kept it: temporary files stay in storage, unindexed, forever, and show in `/files` only for 30 days. Storage is cheap, but it means Donna's store fills with copies of one-off work. The alternative is to let working files expire (for example after 90 days) and amend the invariant for them. Which do you prefer?
-2. **Should keeping be offered on every attachment, or only for reference-looking files?** I've written it as her judgment, to avoid asking each time. If she asks too often, it's an instruction change, not code.
+1. **Other formats.** Which others do you actually use: Word, Excel, Pages, zip? Each needs an extractor, so I'd add them only if you do.
+2. **Working files and the "never deleted automatically" invariant.** I kept it: temporary files stay in storage, unindexed, forever, and show in `/files` only for 30 days. With the server's disk that is a real cost over time. The alternative is to let working files expire (for example after 90 days) and amend the invariant for them. Which do you prefer?
 3. **PDFs in the viewer.** Showing extracted text loses the layout of an invoice. Embedding the original is better on a Mac and poor on iPhone Safari. I chose text plus "Open original". Is that enough?
-4. **Image memory.** Images aren't searchable. If you want "find the photo of the yarn I took", a kept image would need a description written by the model, which is a new kind of model call. I left it out. Needed?
-5. **Skills (Phase 4) are files too.** If you'd rather they live in this same store, that changes this phase's tables slightly; I've assumed they get their own.
-6. **Donna's own wishlist, and one clash.** I asked her what she'd want here (her answer shaped the provenance, honest-extraction and linking parts above). She also wants files **read-only by default**: "never alter or delete your originals", mainly so a screenshot from Anita stays evidence. That clashes with editing uploaded files together. I resolved it by keeping the original as version 1 and never changing PDFs or images, so an edited file can always be traced back. Do you also want a **lock** (a file Donna can't edit or delete until you unlock it)? It would be small, and it makes sense for evidence.
-7. **Her other two questions**, answered in the draft: files live in their own store, linked to the messages they came with (not as messages); and files she writes back (a draft, a summary) are stored the same way, as working files, only when she creates a file, not for ordinary replies.
+4. **Image memory.** Images aren't searchable. If you want "find the photo of the yarn", a kept image would need a description written by the model, a new kind of model call. I left it out. Needed?
+5. **Skills (Phase 4) are files too.** I've assumed they get their own store, not this one.
+6. **A lock for evidence.** Donna asked for files to be read-only by default, mainly so a screenshot from Anita stays evidence. I kept the original as version 1 and never change PDFs or images. Do you also want a lock (a file Donna can't edit or delete until you unlock it)? It would be small.
+7. **Free disk space on the droplet.** `df -h` tells us whether the disk is enough or Spaces is needed from the start.
