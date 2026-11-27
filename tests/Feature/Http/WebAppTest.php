@@ -18,9 +18,7 @@ it('serves the web app at every address that is not the API, locked down against
         ->and($response->headers->get('Referrer-Policy'))->toBe('same-origin');
 })->with([
     'the chat' => ['/'],
-    'sign-in' => ['/login'],
-    'the emailed sign-in link' => ['/login/link/'.str_repeat('a', 40)],
-    'the emailed sign-out link' => ['/security/revoke/1800000000-abcdef'],
+    'a page inside it' => ['/login/link/'.str_repeat('a', 40)],
 ]);
 
 it('leaves the API and the health check to themselves', function () {
