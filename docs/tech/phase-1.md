@@ -1,6 +1,6 @@
 # Phase 1 — Foundation, Conversation + Memory
 
-Donna runs on the real server, every call is accounted for, and she remembers. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); her character profile lives in the database, seeded as version 1 by [`CharacterProfileSeeder`](../../api/database/seeders/CharacterProfileSeeder.php).
+Donna runs on the real server, every call is accounted for, and she remembers. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); her character profile lives in the database, seeded as version 1 by [`CharacterProfileSeeder`](../../database/seeders/CharacterProfileSeeder.php).
 
 **Status:** built. The Design section below describes what was implemented; where the build departed from the approved draft, the text has been updated and the change is marked *(as built)*.
 
@@ -79,7 +79,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 
 ## Design
 
-The build follows this section. Where it's silent, follow Laravel and Swift best practice, the root and `api/` `CLAUDE.md` files, and the Boost guidelines — and note any notable choice in the PR. If something here turns out to be wrong once you're in the code, deviate, say why in the PR, and update this doc in the same PR.
+The build follows this section. Where it's silent, follow Laravel and Swift best practice, the `CLAUDE.md` file, and the Boost guidelines — and note any notable choice in the PR. If something here turns out to be wrong once you're in the code, deviate, say why in the PR, and update this doc in the same PR.
 
 ### Delivery
 
@@ -140,7 +140,7 @@ Rules:
 - "Forget it" is the one hard delete: Josh's explicit request deletes the Fact and its subject links. Nothing is deleted automatically. *(as built)* Forgetting a fact also deletes every earlier version it superseded — otherwise the thing he asked her to forget would survive as history.
 
 *(as built)* Small additions to the table above: `messages.meta` (jsonb: citations, responding model, declined flag); `extraction_runs.error`; `topics.name` and `projects.name` are unique; `projects.tier` is null while a project is only proposed; `eval_examples.message_id` is unique (flagging again changes the verdict); a partial unique index allows only one `active` character profile; `facts.provenance` also takes `interview` when extraction marks a fact as coming from the interview; the morph map also holds `user` (Sanctum tokens). `costs.input_tokens` is the whole prompt, with the two cache columns as subsets of it. The cost trigger for everything in an exchange — embeddings, each reply step, tagging — is Josh's message.
-- Seed data (a seeder, idempotent, run on first deploy): Josh's user and Person, Donna's Person, Kristen's Person (relationship: wife), character profile v1 = the current text of `api/resources/prompts/donna.md` (copied into the seeder, then delete the file), and interview areas: life story, work, people, interests, how Josh works, goals, and Josh & Donna.
+- Seed data (a seeder, idempotent, run on first deploy): Josh's user and Person, Donna's Person, Kristen's Person (relationship: wife), character profile v1 = the current text of `resources/prompts/donna.md` (copied into the seeder, then delete the file), and interview areas: life story, work, people, interests, how Josh works, goals, and Josh & Donna.
 
 ### Messages and replies
 

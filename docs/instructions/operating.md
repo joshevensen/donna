@@ -14,7 +14,7 @@ If the droplet regularly sits above about 80% memory, or swap is in steady use, 
 
 - The limit on the Anthropic key is the hard stop ([anthropic-api-key.md](anthropic-api-key.md)).
 - "What did you cost me this month?" is the running total. Voyage's first 200 million tokens are free and Donna prices them at list anyway, so her number runs slightly high.
-- A model she uses that isn't in the pricing table in `api/config/donna.php` is recorded at $0 and reported as an error, so her totals would run low. Add its price when you change a model.
+- A model she uses that isn't in the pricing table in `config/donna.php` is recorded at $0 and reported as an error, so her totals would run low. Add its price when you change a model.
 
 ## When replies start failing
 
@@ -24,7 +24,7 @@ Otherwise start with the end of `storage/logs/laravel.log` on the server and `ph
 
 ## Tuning
 
-Every retrieval count and threshold (how many memories she looks at, when a topic counts as stale, token budgets) is in `api/config/donna.php`. Model choices are there too, each overridable from the environment ([environment-variables.md](environment-variables.md)).
+Every retrieval count and threshold (how many memories she looks at, when a topic counts as stale, token budgets) is in `config/donna.php`. Model choices are there too, each overridable from the environment ([environment-variables.md](environment-variables.md)).
 
 ---
 

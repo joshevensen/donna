@@ -3,7 +3,7 @@
 Every setting Donna's own configuration reads, and the ones Laravel needs to run her. Defaults are what applies when the variable is unset.
 
 - **Server** means the site's environment file in Forge. Changing it needs a redeploy, because the deploy script caches the configuration ([forge-site.md](forge-site.md)).
-- **Mac** means `api/.env` on your Mac, which only the terminal client needs ([terminal-on-mac.md](terminal-on-mac.md)).
+- **Mac** means `.env` in your clone of the repo on your Mac, which only the terminal client needs ([terminal-on-mac.md](terminal-on-mac.md)).
 
 ## Production environment
 
@@ -68,7 +68,7 @@ Forge fills in `APP_KEY` and the database username and password. For [using Donn
 
 ## Models
 
-Each is one job's model. The pricing table in `api/config/donna.php` must have the model, or its cost is recorded as $0 and reported as an error. Add its price there when you change one.
+Each is one job's model. The pricing table in `config/donna.php` must have the model, or its cost is recorded as $0 and reported as an error. Add its price there when you change one.
 
 | Variable | Where | Default | Notes |
 |---|---|---|---|

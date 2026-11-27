@@ -1,19 +1,19 @@
 # Donna
 
-A personal AI that knows me, remembers everything, and doesn't let me slack off. Laravel API, a web chat, and later SwiftUI apps.
+A personal AI that knows me, remembers everything, and doesn't let me slack off. A Laravel app with a web chat (and later SwiftUI apps).
 
 Donna is a personal tool, not a product: one user, self-hosted, built for exactly how I work. See [`docs/vision.md`](docs/vision.md) — it's the source of truth for what Donna is and isn't.
 
 ## Layout
 
+One Laravel app at the repo root:
+
 ```
-donna/
-  api/      Laravel — pure JSON API, Postgres + pgvector, durable workflows
-  apple/    (later) One Xcode project — iOS / iPadOS / macOS apps, watchOS capture, Home Node agent
-  docs/     Vision and design docs
+app/ routes/ resources/ database/ tests/ ...   Laravel: the JSON API at /api/v1, plus the React web app (resources/js)
+docs/                                          Vision, design, build order, and setup instructions
 ```
 
-One repo on purpose: most features touch both the API and the apps, so one issue → one PR.
+The native apps (later) will get their own repository or folder when Presence begins.
 
 ## Docs
 

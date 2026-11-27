@@ -9,10 +9,10 @@ Until the web chat (Phase 2) exists, you talk to Donna with `php artisan donna:c
 
 ## 1. Make your token
 
-On the server, create a token for your Mac. It is shown once. Replace `<app-folder>` with the path from [forge-site.md](forge-site.md#7-find-the-apps-folder):
+On the server, create a token for your Mac. It is shown once.:
 
 ```bash
-cd <app-folder> && php8.4 artisan donna:token mac
+cd /home/forge/donna.joshevensen.com/current && php8.4 artisan donna:token mac
 ```
 
 ## 2. Set up the Mac
@@ -20,10 +20,10 @@ cd <app-folder> && php8.4 artisan donna:token mac
 In a clone of the repo:
 
 ```bash
-cd api && composer install && cp .env.example .env && php artisan key:generate
+composer install && cp .env.example .env && php artisan key:generate
 ```
 
-Then put these in that local `api/.env`:
+Then put these in that local `.env`:
 
 ```dotenv
 CACHE_STORE=file
@@ -46,7 +46,7 @@ When you open it again it shows the latest exchange, including a reply that fini
 
 ## If it won't connect
 
-- "Set DONNA_API_URL and DONNA_API_TOKEN" means the Mac's `api/.env` is missing them.
+- "Set DONNA_API_URL and DONNA_API_TOKEN" means the Mac's `.env` is missing them.
 - "Donna did not accept the token" means the token is wrong or was copied incompletely. Make a new one.
 - "Could not reach Donna" means the URL is wrong or the server is down; check `https://donna.joshevensen.com/up`.
 

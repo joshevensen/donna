@@ -11,10 +11,10 @@ Dropping the connection costs nothing. Donna writes her replies on the server, a
 
 ## On the server
 
-Create a token of its own for this, so it doesn't share one with your Mac. Replace `<app-folder>` with the path from [forge-site.md](forge-site.md#7-find-the-apps-folder), here and in the shortcut below:
+Create a token of its own for this, so it doesn't share one with your Mac.
 
 ```bash
-cd <app-folder> && php8.4 artisan donna:token blink
+cd /home/forge/donna.joshevensen.com/current && php8.4 artisan donna:token blink
 ```
 
 Add it to the site's environment in Forge, next to the other settings ([environment-variables.md](environment-variables.md)):
@@ -29,7 +29,7 @@ DONNA_API_TOKEN=the-token-from-above
 Then add a shortcut, so a session is just `donna`. Run this once over SSH from your Mac:
 
 ```bash
-echo "alias donna='cd <app-folder> && php8.4 artisan donna:chat'" >> ~/.bashrc
+echo "alias donna='cd /home/forge/donna.joshevensen.com/current && php8.4 artisan donna:chat'" >> ~/.bashrc
 ```
 
 ## In Blink

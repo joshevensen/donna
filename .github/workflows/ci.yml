@@ -18,10 +18,6 @@ jobs:
     name: API (Pint + tests)
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: api
-
     services:
       postgres:
         image: pgvector/pgvector:pg17

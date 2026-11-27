@@ -24,8 +24,8 @@ In Forge, create a site for `donna.joshevensen.com` from the `joshevensen/donna`
 
 | Setting | Value | Why |
 |---|---|---|
-| Root directory | `/api` | The Laravel app is in the repo's `api/` folder, not at its root. Forge's help text says this is "where your application code lives". |
-| Web directory | `/public` | Measured from the root directory *(unverified; if the site shows a 404 after the first deploy, try `/api/public`)*. |
+| Root directory | `/` | Forge's default: the Laravel app is the repo's root. (If it was `/api` from an earlier version of this repo, change it. See "If the deploy fails".) |
+| Web directory | `/public` | Forge's default. |
 | PHP version | 8.4 | |
 | Zero downtime deployments | On, Forge's default | It can only be set when the site is created. These instructions assume it is on. |
 | Frontend package manager, Build command | Leave as they are | Donna has no frontend. The deploy script in step 4 has no npm lines, so these do nothing. |
@@ -34,7 +34,7 @@ If the form offers to install Composer dependencies, leave it off. The deploy sc
 
 ## 3. Environment
 
-Open the site's **Environment** tab. Forge copied `api/.env.example` into it, and its docs say it replaces some settings to match the server's database, without saying which. Check these, fixing any that are blank or wrong:
+Open the site's **Environment** tab. Forge copied `.env.example` into it, and its docs say it replaces some settings to match the server's database, without saying which. Check these, fixing any that are blank or wrong:
 
 - `APP_KEY` set. If it is blank, make one on any machine with `openssl` and paste it in:
 
@@ -47,7 +47,7 @@ echo "base64:$(openssl rand -base64 32)"
 
 Leave out the `ANTHROPIC_API_KEY` and `VOYAGEAI_API_KEY` lines for now.
 
-Forge links this file into the app's `api/` folder on every deploy, so this tab is the only place to edit it. A deploy that gets through `migrate` is the proof it is being found: without it, Laravel would fall back to SQLite and the pgvector migration would fail.
+Forge links this file into the app's folder on every deploy, so this tab is the only place to edit it. A deploy that gets through `migrate` is the proof it is being found: without it, Laravel would fall back to SQLite and the pgvector migration would fail.
 
 ## 4. Deploy script
 
@@ -55,8 +55,6 @@ In the site's deployment settings, replace the whole script with:
 
 ```bash
 $CREATE_RELEASE()
-
-cd $FORGE_RELEASE_DIRECTORY/api
 
 $FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
@@ -73,7 +71,6 @@ $RESTART_QUEUES()
 ```
 
 - `$CREATE_RELEASE()`, `$ACTIVATE_RELEASE()` and `$RESTART_QUEUES()` are Forge's zero-downtime steps. Each deploy is built in a new folder, switched live at the end, and the queue worker is restarted onto the new code.
-- `$FORGE_RELEASE_DIRECTORY` is the top of the new release, not its `api/` folder, so the script changes into `api/` itself. Without that, Composer fails with "could not find a composer.json".
 - Forge's default script has no `composer install`, so it is added here.
 - The two `mkdir` lines make the folders Laravel writes to. A new site's shared `storage` folder starts empty, and Forge's docs don't say whether it fills these in.
 - `optimize` caches the configuration, so **a changed environment variable only takes effect after a redeploy**.
@@ -88,12 +85,12 @@ There is no certificate yet, so check it over plain HTTP: `http://donna.josheven
 
 ### If the deploy fails
 
-Two failures have come up on this site, both from Forge's defaults:
+Two failures have come up on this site:
 
 | Error in the deploy log | Cause | Fix |
 |---|---|---|
 | `Could not read package.json` (npm) | Forge's default script has `npm ci` and `npm run build`; Donna has no frontend. | Use the script in step 4, which has no npm lines. |
-| `Composer could not find a composer.json` | `$FORGE_RELEASE_DIRECTORY` is the top of the release, not its `api/` folder. | Use the script in step 4, which starts with `cd $FORGE_RELEASE_DIRECTORY/api`. |
+| `Composer could not find a composer.json`, or `cd: api: No such file or directory` | The site's **Root directory** is still `/api` from an earlier version of this repo, where the app lived in an `api/` folder. | Set **Root directory** to `/` in the site's Advanced settings, point the queue worker and scheduler at `/home/forge/donna.joshevensen.com/current` (see [queue-and-scheduler.md](queue-and-scheduler.md)), and deploy again. |
 
 A failed deploy never goes live. Forge only switches to a release in `$ACTIVATE_RELEASE()`, so fix the script and deploy again.
 
@@ -106,19 +103,19 @@ Do this after the first deploy, once `dig +short donna.joshevensen.com` prints t
 
 Then `https://donna.joshevensen.com/up` should answer 200.
 
-## 7. Find the app's folder
+## 7. Check the app's folder
 
-Forge builds each deploy in its own folder and points `current` at the live one, so the app is not where you might guess. SSH in:
+Forge builds each deploy in its own folder and points `current` at the live one. SSH in and check that the app is where the other instructions run their commands:
 
 ```bash
 ssh forge@<server-ip>
 ```
 
 ```bash
-find -L /home/forge/donna.joshevensen.com/current -maxdepth 2 -name artisan
+ls /home/forge/donna.joshevensen.com/current/artisan
 ```
 
-The folder that holds `artisan` is the app's folder. The other instructions call it `<app-folder>`, and where they show a command that runs in it, replace `<app-folder>` with this path.
+It should print the path. The other instructions run their commands in `/home/forge/donna.joshevensen.com/current` *(unverified: Forge's own pre-filled scheduler command pointed at `current/api/artisan` while the root directory was `/api`, which implies `current/artisan` now)*. If `artisan` is somewhere else, use that folder in their commands instead.
 
 Next: [anthropic-api-key.md](anthropic-api-key.md).
 

@@ -26,13 +26,13 @@ Leave the rest as they are: `--backoff` 0, `--rest` 0, `--memory` 128 MB, `--env
 
 - **One process is deliberate.** Donna answers one message at a time, because each reply needs the one before it.
 - **The timeout must be raised.** Forge's default of 60 seconds would cut a reply off mid-thought.
-- **The three time limits nest.** A single reply is cut off after 600 seconds (`job_timeout` in `api/config/donna.php`). The worker's timeout is 630, and an unfinished job is handed to another worker after 660 (`DB_QUEUE_RETRY_AFTER`). If you raise one, raise the ones above it.
+- **The three time limits nest.** A single reply is cut off after 600 seconds (`job_timeout` in `config/donna.php`). The worker's timeout is 630, and an unfinished job is handed to another worker after 660 (`DB_QUEUE_RETRY_AFTER`). If you raise one, raise the ones above it.
 - **A shorter sleep makes her quicker.** An idle worker checks for work every `--sleep` seconds, so at the default a new message could wait up to 3 seconds before she starts on it.
 - **Deploys restart it.** `$RESTART_QUEUES()` in the deploy script restarts the worker onto the new code.
 
 ### Check which code it runs
 
-Forge's docs don't say which path a queue worker uses when zero-downtime deployments are on. It must be the live app, `/home/forge/donna.joshevensen.com/current/api`, not one old release folder, or it would keep running old code after every deploy. On the server:
+Forge's docs don't say which path a queue worker uses when zero-downtime deployments are on. It must be the live app, `/home/forge/donna.joshevensen.com/current`, not one old release folder, or it would keep running old code after every deploy. On the server:
 
 ```bash
 sudo grep -rH "directory\|command" /etc/supervisor/conf.d/
@@ -47,7 +47,7 @@ Open the site's **Processes** tab, then **Scheduler**, and create a new schedule
 | Field | Value |
 |---|---|
 | Name | `Donna scheduler` |
-| Command | `php8.4 /home/forge/donna.joshevensen.com/current/api/artisan schedule:run` |
+| Command | `php8.4 /home/forge/donna.joshevensen.com/current/artisan schedule:run` |
 | User | `forge` |
 | Frequency | Every minute. Forge's default is Weekly, so change it. If there is no such option, choose Custom and enter `* * * * *`. |
 | Monitor with heartbeats | Leave off |
@@ -61,7 +61,7 @@ That drives the daily memory extraction (03:00 in `DONNA_TIMEZONE`), the check f
 On the server, list the jobs Laravel will run:
 
 ```bash
-php8.4 /home/forge/donna.joshevensen.com/current/api/artisan schedule:list
+php8.4 /home/forge/donna.joshevensen.com/current/artisan schedule:list
 ```
 
 It should list three: `StartExtraction`, `PollExtractions` and `EmbedMissing`. To see the line Forge installed:

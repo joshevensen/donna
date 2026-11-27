@@ -102,16 +102,16 @@ Same names on every platform. Web: CSS custom properties. Swift: an asset catalo
 
 ## Icon
 
-The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored knot, framed by Lapel (`#5B21B6`) lapels, on an Accent (`#7C3AED`) background. Source of truth is [`api/public/favicon.svg`](../api/public/favicon.svg) (512 × 512 viewBox, square, full-bleed).
+The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored knot, framed by Lapel (`#5B21B6`) lapels, on an Accent (`#7C3AED`) background. Source of truth is [`public/favicon.svg`](../public/favicon.svg) (512 × 512 viewBox, square, full-bleed).
 
 - **Full-bleed square** — no baked-in rounded corners or padding. iOS, iPadOS, and macOS apply their own mask; the landing page rounds it with CSS.
 - **Derived files** — `favicon.ico` (16/32/48) and `apple-touch-icon.png` (180) are rasterized from the SVG. Regenerate them whenever the SVG changes; never edit them by hand.
-- **App icons** — Xcode's 1024 × 1024 App Icon asset is exported from the same SVG when the apple project is created. The watchOS and Home Node apps use the same icon.
+- **App icons** — Xcode's 1024 × 1024 App Icon asset is exported from the same SVG when the native app is created. The watchOS and Home Node apps use the same icon.
 - **Don't** — recolor it, add a wordmark inside it, or place it on a light background.
 
 ### Landing page
 
-Until Phase 2 is built, `api/public/index.html` shows the icon centered on a Canvas background and nothing else. In Phase 2 the web app's sign-in screen replaces it.
+Until Phase 2 is built, `public/index.html` shows the icon centered on a Canvas background and nothing else. In Phase 2 the web app's sign-in screen replaces it.
 
 ---
 

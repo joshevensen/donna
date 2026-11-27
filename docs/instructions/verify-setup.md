@@ -12,10 +12,10 @@ After setup, and again after anything big changes on the server.
 
 ## The morning after
 
-Daily extraction runs at 03:00 in `DONNA_TIMEZONE`. By morning, on the server (replace `<app-folder>` with the path from [forge-site.md](forge-site.md#7-find-the-apps-folder)):
+Daily extraction runs at 03:00 in `DONNA_TIMEZONE`. By morning, on the server:
 
 ```bash
-cd <app-folder> && php8.4 artisan tinker --execute 'echo App\Models\ExtractionRun::latest("id")->first()?->status->value;'
+cd /home/forge/donna.joshevensen.com/current && php8.4 artisan tinker --execute 'echo App\Models\ExtractionRun::latest("id")->first()?->status->value;'
 ```
 
 That prints `applied`. If it prints `submitted`, the batch is still processing and the check will pick it up within the day. If it prints `failed`, see `error` on that row and `storage/logs/laravel.log`. If it prints nothing, the scheduler isn't running ([queue-and-scheduler.md](queue-and-scheduler.md)).
@@ -25,7 +25,7 @@ Then ask her something you told her yesterday and see whether she knows.
 ## Failed jobs
 
 ```bash
-cd <app-folder> && php8.4 artisan queue:failed
+cd /home/forge/donna.joshevensen.com/current && php8.4 artisan queue:failed
 ```
 
 Lists anything that gave up after its retries.

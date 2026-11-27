@@ -12,7 +12,7 @@ updates:
           - "*"
 
   - package-ecosystem: "composer"
-    directory: "/api"
+    directory: "/"
     schedule:
       interval: "monthly"
     cooldown:
