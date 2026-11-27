@@ -72,7 +72,7 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 | Decision | Choice | Reason |
 |---|---|---|
 | Temporary or kept | Every file starts **working**. Donna decides which become **kept**, and says so; only kept files are chunked and embedded. | A reformatted pattern shouldn't be remembered, a context document should. Keeping is reversible and internal, so she needs no confirmation, and a wrong keep costs less than a wrong skip. |
-| Where the bytes live | Text files in Postgres, as versions. Original PDFs and images on the server's disk, in the app's private storage folder, behind Laravel's filesystem layer. | Edits are small, frequent, versioned and must change a file and its chunks together, which one database transaction does. Binaries never change. The server's disk needs no new account; moving to Spaces later is a configuration change. This departs from the stack table's "file storage: Spaces", which is updated in the build PR. |
+| Where the bytes live | Text files in Postgres, as versions. Original PDFs and images in DigitalOcean Spaces, in a private bucket of their own. | Edits are small, frequent, versioned and must change a file and its chunks together, which one database transaction does. Binaries never change, and Spaces keeps them off the droplet's disk, which can't be shrunk. Text living in the database departs from the stack table's "file storage: Spaces" for that part; the table is updated in the build PR. |
 | Versions | Every change creates a version: Josh's saves, each of Donna's edits, a revert. | "Undo that" and "I edited it, continue" both need it. Cheap for text of this size. |
 | Simple edits | Donna's tools do find-and-replace, append, delete lines and rename in code. Rewriting a section is her judgment, but applying it is code, by heading. | The vision's rule: no tokens spent on deterministic work, and no rewriting a whole file for a small edit. |
 | CSV maths | A `query_csv` tool: filter, sort, group, count, sum, average, evaluated in PHP. | `CLAUDE.md`: totals and filtering are always code. A Shopify export with thousands of rows can't go into a prompt anyway. |
@@ -88,8 +88,8 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 | `markdown` | `.md`, `.markdown`, `.txt` | Postgres | Rendered; **edit mode** |
 | `csv` | `.csv` | Postgres | Table, read-only |
 | `text` | Any other plain text: JSON, HTML, code, logs | Postgres | Monospace, read-only |
-| `pdf` | `.pdf` | Original on disk; extracted text in Postgres | The extracted text, with "Open original" |
-| `image` | JPEG, PNG, WebP, GIF | Disk | The image |
+| `pdf` | `.pdf` | Original in Spaces; extracted text in Postgres | The extracted text, with "Open original" |
+| `image` | JPEG, PNG, WebP, GIF | Spaces | The image |
 
 - 10 MB per file, five per message, the same limits in the client and the server. The server decides by sniffing the content (`finfo`), never by the extension or the browser's claimed type.
 - iPhone photos arrive as JPEG when picked through the file input *(unverified: iOS converts HEIC when the input accepts `image/jpeg`; check on the device)*.
@@ -116,9 +116,9 @@ All under `/api/v1`, JSON, `auth:sanctum`.
 | Endpoint | Detail |
 |---|---|
 | `POST /files` | Multipart, one file. Validates size and content, stores it, extracts text, returns the file. Throttled (30 a minute). The file belongs to no message until one names it |
-| `GET /files` | The list for `/files` and Donna's cards: kept first, then working files from the last 30 days; `?q=` filters by name |
+| `GET /files` | The list for `/files` and Donna's cards: kept first, then working files from the last 30 days; `?q=` filters by name and also finds older working files |
 | `GET /files/{id}` | Metadata, the current version's number and, for text kinds, its body |
-| `GET /files/{id}/content` | The bytes, for image display and "Open original". Served by the app after the session check, never as a public Spaces URL, with `X-Content-Type-Options: nosniff` and, for anything but images and PDFs, `Content-Disposition: attachment`. Read from the files disk, so it works the same on Spaces later |
+| `GET /files/{id}/content` | The bytes, for image display and "Open original". Served by the app after the session check, never as a public Spaces URL, with `X-Content-Type-Options: nosniff` and, for anything but images and PDFs, `Content-Disposition: attachment`. Read from the Spaces bucket |
 | `PUT /files/{id}` | Manual save: `{body, base_version}`. 409 with the current version if `base_version` is stale. Markdown only |
 | `PATCH /files/{id}` | `{kept?, name?}`: the keep switch and rename |
 | `POST /messages` | Gains optional `file_ids` (up to five of the user's uploaded, unattached files). `body` may be empty when there are files |
@@ -220,11 +220,11 @@ No new kind of model call. Embedding chunks is the existing embedding call and r
 
 ### Deployment and instructions
 
-- **Storage.** A `files` disk in `config/filesystems.php`, defaulting to the app's private storage folder, which Forge shares across deploys. `DONNA_FILES_DISK` (default `local`) names the disk, so moving to Spaces later needs an `s3` disk, a short `spaces.md` and one variable, with no code change. `forge-server.md` or `operating.md` gets a "check free disk space" step (`df -h`), since originals accumulate and the disk can't be shrunk or safely grown.
-- **Backups.** Droplet backups include the files folder; the database dumps (which hold all text files and versions) go to Spaces as before. The original PDFs and images are only as safe as the last droplet backup. `backups.md` says so.
+- **New `docs/instructions/spaces.md`**: a DigitalOcean Space for the app's files, separate from the backup Space, with its own access key limited to that bucket (so the app's key can't touch the backups); private, because files are served through the app; the environment variables (`DONNA_SPACES_KEY`, `DONNA_SPACES_SECRET`, `DONNA_SPACES_REGION`, `DONNA_SPACES_BUCKET`, `DONNA_SPACES_ENDPOINT`); and a check. Adds `league/flysystem-aws-s3-v3` and a `files` disk in `config/filesystems.php`. In tests and local development the disk is the local one.
+- **Backups.** Spaces is durable on its own, and the database dumps hold all text files and versions. `backups.md` notes the app's Space isn't part of the dumps.
 - **Upload limits on the server**: PHP's `upload_max_filesize` and `post_max_size` and Nginx's `client_max_body_size` must allow 10 MB per file and five files *(unverified: Forge's defaults are higher than this; check)*. Written into `forge-site.md`.
 - **PDF text extraction**: a pure-PHP package, chosen when building after trying it on real Stripe and Shopify PDFs *(unverified: quality on those)*; if it isn't good enough, `pdftotext` (poppler) is installed on the droplet and `forge-server.md` says how.
-- **Updated**: `environment-variables.md` (`DONNA_FILES_DISK`), `forge-site.md`, `backups.md`, `verify-setup.md` (attach a file, edit a markdown file, see it kept, get it back), `operating.md` (disk use, what working files accumulate).
+- **Updated**: `environment-variables.md` (the `DONNA_SPACES_*` variables), `forge-site.md`, `backups.md`, `verify-setup.md` (attach a file, edit a markdown file, see it kept, get it back), `operating.md` (what working files accumulate and the storage bill), and a `README.md` row for `spaces.md`.
 - `CLAUDE.md`'s stack row for file storage, `domain.md`'s File concept and invariants (working and kept, versions), `design.md`'s viewer and attachment components and `vision.md`'s Files section where the build departs from it are updated in the build PR.
 - The build PR's "Before deploying" lists these in order.
 
@@ -253,18 +253,14 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 - **PDF text from real files.** Stripe and Shopify PDFs vary; try the extractor on a handful of Josh's before building on it.
 - **The photo picker on iOS**, in Safari and the installed app: which formats arrive, and whether the file input works from the Home Screen app. Device check.
 - **The viewer beside the chat on a Mac** changes the Phase 2 layout; the keyboard and scroll behavior shouldn't regress. Re-run the Phase 2 device checks.
-- **Disk space.** Check `df -h` on the droplet before building; originals accumulate and the disk can't be shrunk.
 - **Token cost of files in context.** The inline limit and outlines exist for this; watch real `costs` rows in the first week and move the limit.
+- **Spaces from the server.** The bucket, key and region have to be right before the first upload can work; `spaces.md` ends with a check that stores and reads back a file.
 - **Embedding cost of large kept files.** The CSV caps exist for this; the first big kept export will show whether they're right.
 
 ### Open questions
 
-Settled in the discussion: any text file is accepted but only markdown is edited; Donna decides what to keep and says so; files live on the server's disk; provenance is when and which message, not who.
+Settled in the discussion: any text file is accepted but only markdown is edited; Josh doesn't use Word, Excel or Pages, and rarely Google Docs, so there are no extractors for them (a Google Doc is attached as PDF or markdown); Donna decides what to keep and says so; originals live in Spaces; provenance is when and which message, not who; **nothing is deleted automatically and working files don't expire**, so deleting unneeded files is left for a later phase; no lock on files, the preserved original is enough.
 
-1. **Other formats.** Which others do you actually use: Word, Excel, Pages, zip? Each needs an extractor, so I'd add them only if you do.
-2. **Working files and the "never deleted automatically" invariant.** I kept it: temporary files stay in storage, unindexed, forever, and show in `/files` only for 30 days. With the server's disk that is a real cost over time. The alternative is to let working files expire (for example after 90 days) and amend the invariant for them. Which do you prefer?
-3. **PDFs in the viewer.** Showing extracted text loses the layout of an invoice. Embedding the original is better on a Mac and poor on iPhone Safari. I chose text plus "Open original". Is that enough?
-4. **Image memory.** Images aren't searchable. If you want "find the photo of the yarn", a kept image would need a description written by the model, a new kind of model call. I left it out. Needed?
-5. **Skills (Phase 4) are files too.** I've assumed they get their own store, not this one.
-6. **A lock for evidence.** Donna asked for files to be read-only by default, mainly so a screenshot from Anita stays evidence. I kept the original as version 1 and never change PDFs or images. Do you also want a lock (a file Donna can't edit or delete until you unlock it)? It would be small.
-7. **Free disk space on the droplet.** `df -h` tells us whether the disk is enough or Spaces is needed from the start.
+1. **PDFs in the viewer.** Showing extracted text loses the layout of an invoice. Embedding the original is better on a Mac and poor on iPhone Safari. I chose text plus "Open original". Is that enough?
+2. **Image memory.** Images aren't searchable. If you want "find the photo of the yarn", a kept image would need a description written by the model, a new kind of model call. I left it out. Needed?
+3. **Skills (Phase 4) are files too.** I've assumed they get their own store, not this one.
