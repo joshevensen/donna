@@ -10,8 +10,10 @@ use App\Http\Requests\StoreMessageRequest;
 use App\Http\Resources\MessageResource;
 use App\Jobs\GenerateReply;
 use App\Models\Message;
+use App\Push\Presence;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 
@@ -23,10 +25,15 @@ class MessageController extends Controller
      * what is newer than that message, oldest first: how a client that is
      * already showing the conversation picks up what it hasn't seen.
      */
-    public function index(IndexMessagesRequest $request): AnonymousResourceCollection
+    public function index(IndexMessagesRequest $request, Presence $presence): AnonymousResourceCollection
     {
         $limit = $request->integer('limit', 20);
         $newer = $request->has('after');
+
+        // Asking for what's new is what an open app does: Josh is watching.
+        if ($newer) {
+            $presence->seen($request->user());
+        }
 
         $messages = Message::query()
             ->when($newer, fn ($query) => $query->where('id', '>', $request->integer('after'))->oldest('id'))
@@ -94,8 +101,10 @@ class MessageController extends Controller
     /**
      * One message. The client polls Donna's pending reply here.
      */
-    public function show(Message $message): MessageResource
+    public function show(Request $request, Message $message, Presence $presence): MessageResource
     {
+        $presence->seen($request->user());
+
         return new MessageResource($message);
     }
 

@@ -53,6 +53,8 @@ interface RequestOptions {
     headers?: Record<string, string>;
     /** A 401 here is an answer, not a session ending (asking who is signed in). */
     quietUnauthorized?: boolean;
+    /** Let the request finish even if the page is being hidden or closed. */
+    keepalive?: boolean;
 }
 
 async function request<T>(method: 'GET' | 'POST' | 'DELETE', path: string, options: RequestOptions = {}, retried = false): Promise<T> {
@@ -67,6 +69,7 @@ async function request<T>(method: 'GET' | 'POST' | 'DELETE', path: string, optio
         response = await fetch(`/api/v1${path}`, {
             method,
             credentials: 'same-origin',
+            keepalive: options.keepalive,
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -156,6 +159,9 @@ export const api = {
         }),
 
     deletePushSubscription: (endpoint: string) => request<null>('DELETE', '/push-subscriptions', { body: { endpoint } }),
+
+    /** The app is going to the background: a reply from here on should notify. */
+    away: () => request<null>('DELETE', '/presence', { keepalive: true, quietUnauthorized: true }),
 };
 
 function preferredEncoding(): string {

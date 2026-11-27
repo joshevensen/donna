@@ -310,6 +310,10 @@ export function useMessages(): Conversation {
             if (document.visibilityState === 'visible') {
                 clearTimeout(timer);
                 void poll();
+            } else {
+                // Tell the server nobody is watching, so a reply that lands a moment from
+                // now is pushed instead of being held back by the last poll.
+                api.away().catch(() => undefined);
             }
         };
 

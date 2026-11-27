@@ -122,6 +122,10 @@ export class FakeDonna {
             return json(204);
         }
 
+        if (path === '/presence' || path === '/push-subscriptions') {
+            return json(204);
+        }
+
         if (path === '/me') {
             return json(200, { data: this.me() });
         }

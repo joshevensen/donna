@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\MessageEvaluationController;
 use App\Http\Controllers\Api\V1\MessageRetryController;
+use App\Http\Controllers\Api\V1\PresenceController;
+use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -50,5 +52,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::post('messages/{message}/evaluation', [MessageEvaluationController::class, 'store'])
             ->name('messages.evaluation.store');
+
+        // Web Push for the device making the request, and whether the app is open on it.
+        Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+        Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
+        Route::delete('presence', [PresenceController::class, 'destroy'])->name('presence.destroy');
     });
 });

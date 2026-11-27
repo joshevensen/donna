@@ -71,6 +71,16 @@ return [
         ],
         'open_seconds' => 15,
         'body_characters' => 140,
+
+        // The push services a subscription may point at: Apple, Google (Chrome),
+        // Mozilla and Microsoft (Edge). The server posts to whatever address a
+        // subscription holds, so it only accepts ones that are really push services.
+        'services' => [
+            'push.apple.com',
+            'fcm.googleapis.com',
+            'push.services.mozilla.com',
+            'notify.windows.com',
+        ],
     ],
 
     /*

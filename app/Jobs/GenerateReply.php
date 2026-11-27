@@ -7,6 +7,9 @@ use App\Enums\MessageStatus;
 use App\Memory\ContextBuilder;
 use App\Memory\Embedder;
 use App\Models\Message;
+use App\Models\Person;
+use App\Notifications\ReplyReady;
+use App\Push\Presence;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
@@ -74,7 +77,7 @@ class GenerateReply implements ShouldQueue
         ];
     }
 
-    public function handle(Embedder $embedder, ContextBuilder $contexts): void
+    public function handle(Embedder $embedder, ContextBuilder $contexts, Presence $presence): void
     {
         if (! $this->reply->isPending()) {
             return;
@@ -115,6 +118,24 @@ class GenerateReply implements ShouldQueue
 
         EmbedMessage::dispatch($this->reply);
         TagTopics::dispatch($message, $this->reply);
+
+        $this->notifyUnlessWatching($presence);
+    }
+
+    /**
+     * Push the reply to Josh's devices, unless the app is open and polling:
+     * then he is already looking at it. A plain check, not a model's call.
+     */
+    private function notifyUnlessWatching(Presence $presence): void
+    {
+        $user = Person::josh()->user;
+
+        if ($user === null || blank(config('donna.push.vapid.private_key')) || $presence->isWatching($user)) {
+            return;
+        }
+
+        // The reply is saved either way; a notification that can't be queued is only logged.
+        rescue(fn () => $user->notify(new ReplyReady($this->reply)));
     }
 
     /**
