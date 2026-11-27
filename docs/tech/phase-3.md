@@ -259,8 +259,6 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 
 ### Open questions
 
-Settled in the discussion: any text file is accepted but only markdown is edited; Josh doesn't use Word, Excel or Pages, and rarely Google Docs, so there are no extractors for them (a Google Doc is attached as PDF or markdown); Donna decides what to keep and says so; originals live in Spaces; provenance is when and which message, not who; **nothing is deleted automatically and working files don't expire**, so deleting unneeded files is left for a later phase; no lock on files, the preserved original is enough.
+Settled in the discussion: any text file is accepted but only markdown is edited; Josh doesn't use Word, Excel or Pages, and rarely Google Docs, so there are no extractors for them (a Google Doc is attached as PDF or markdown); Donna decides what to keep and says so; originals live in Spaces; provenance is when and which message, not who; **nothing is deleted automatically and working files don't expire**, so deleting unneeded files is left for a later phase; no lock on files, the preserved original is enough; PDFs are shown as extracted text plus "Open original" for now; images aren't searchable.
 
-1. **PDFs in the viewer.** Showing extracted text loses the layout of an invoice. Embedding the original is better on a Mac and poor on iPhone Safari. I chose text plus "Open original". Is that enough?
-2. **Image memory.** Images aren't searchable. If you want "find the photo of the yarn", a kept image would need a description written by the model, a new kind of model call. I left it out. Needed?
-3. **Skills (Phase 4) are files too.** I've assumed they get their own store, not this one.
+1. **Skills (Phase 4) are files too.** I've assumed they get their own store, not this one.
