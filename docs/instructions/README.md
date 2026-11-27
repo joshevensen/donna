@@ -15,10 +15,11 @@ Each file is one task. Do them in this order the first time. Afterwards they are
 | 3 | [`anthropic-api-key.md`](anthropic-api-key.md) | The key Donna thinks with, and the spend limit on it |
 | 4 | [`voyage-api-key.md`](voyage-api-key.md) | The key her memory searches with |
 | 5 | [`queue-and-scheduler.md`](queue-and-scheduler.md) | The worker that writes her replies and the clock that runs the daily jobs |
-| 6 | [`backups.md`](backups.md) | Droplet backups and database dumps to Spaces |
-| 7 | [`mail.md`](mail.md) | The email provider that delivers sign-in codes, its DNS records, and signing in without email |
-| 8 | [`web-push.md`](web-push.md) | Notification keys, installing Donna to the iPhone's Home Screen, and turning notifications on |
-| 9 | [`verify-setup.md`](verify-setup.md) | How to tell it all works |
+| 6 | [`storage.md`](storage.md) | The Space where files live, and the key the app uses for it |
+| 7 | [`backups.md`](backups.md) | Droplet backups and database dumps to Spaces |
+| 8 | [`mail.md`](mail.md) | The email provider that delivers sign-in codes, its DNS records, and signing in without email |
+| 9 | [`web-push.md`](web-push.md) | Notification keys, installing Donna to the iPhone's Home Screen, and turning notifications on |
+| 10 | [`verify-setup.md`](verify-setup.md) | How to tell it all works |
 
 ## Optional and reference
 

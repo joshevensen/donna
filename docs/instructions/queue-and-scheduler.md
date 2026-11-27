@@ -73,7 +73,7 @@ crontab -l
 
 It should show `schedule:run` for this site, with a path that goes through `current`, not `releases`. If `crontab -l` is empty, look under the Scheduler tab instead.
 
-Next: [backups.md](backups.md).
+Next: [storage.md](storage.md).
 
 ---
 

@@ -67,6 +67,21 @@ Forge fills in `APP_KEY` and the database username and password. The mail lines 
 | `SANCTUM_STATEFUL_DOMAINS` | Server | `localhost` and the host in `APP_URL` | `donna.joshevensen.com`. The one address whose browser requests are trusted to carry the sign-in cookie. If it is wrong, signing in answers "Something went wrong" even with the right code. Never set it to an empty value. |
 | `DB_QUEUE_RETRY_AFTER` | Server | `660` | Seconds before an unfinished job is handed to another worker. Must be longer than the worker's timeout ([queue-and-scheduler.md](queue-and-scheduler.md)). Leave it. |
 
+## File storage
+
+The Space for files ([storage.md](storage.md)). Unused until Phase 3.
+
+| Variable | Where | Default | Secret | Notes |
+|---|---|---|---|---|
+| `FILESYSTEM_DISK` | Server | `local` | No | `s3` once Phase 3 is deployed. |
+| `AWS_ACCESS_KEY_ID` | Server | | Yes | The Space's access key (the `AWS_` names are Laravel's; the values are DigitalOcean's). |
+| `AWS_SECRET_ACCESS_KEY` | Server | | Yes | Its secret. |
+| `AWS_DEFAULT_REGION` | Server | | No | `nyc3`. |
+| `AWS_BUCKET` | Server | | No | `donna-joshevensen`. |
+| `AWS_ENDPOINT` | Server | | No | `https://nyc3.digitaloceanspaces.com`, without the bucket name. |
+| `AWS_URL` | Server | | No | `https://donna-joshevensen.nyc3.digitaloceanspaces.com`. |
+| `AWS_USE_PATH_STYLE_ENDPOINT` | Server | `false` | No | Leave `false`. |
+
 ## Mail
 
 Sign-in codes and the new-sign-in notice ([mail.md](mail.md)).
