@@ -85,7 +85,7 @@ Sign-in codes and the new-sign-in notice ([mail.md](mail.md)).
 | `ANTHROPIC_API_KEY` | Server | | Yes | [anthropic-api-key.md](anthropic-api-key.md). |
 | `ANTHROPIC_URL` | Server | `https://api.anthropic.com/v1` | No | Only to route through a proxy. |
 | `VOYAGEAI_API_KEY` | Server | | Yes | [voyage-api-key.md](voyage-api-key.md). |
-| `VOYAGEAI_URL` | Server | `https://ai.mongodb.com/v1` | No | Atlas keys only work against this address. |
+| `VOYAGEAI_URL` | Server | `https://api.voyageai.com/v1` | No | Keys made on voyageai.com work against this address. A MongoDB Atlas key needs `https://ai.mongodb.com/v1`. |
 
 ## Donna
 
