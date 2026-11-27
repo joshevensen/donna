@@ -27,6 +27,8 @@ class SessionController extends Controller
      */
     public function store(VerifyLoginCodeRequest $request, LoginCodes $codes): MeResource
     {
+        $this->ensureSession($request);
+
         $user = User::query()
             ->whereRaw('lower(email) = ?', [Str::lower($request->validated('email'))])
             ->first();
@@ -45,6 +47,8 @@ class SessionController extends Controller
      */
     public function storeFromLink(VerifyLoginLinkRequest $request, LoginCodes $codes): MeResource
     {
+        $this->ensureSession($request);
+
         $user = $codes->redeemLink($request->validated('token'));
 
         if ($user === null) {
@@ -87,11 +91,18 @@ class SessionController extends Controller
         return response()->noContent();
     }
 
+    /**
+     * Cookie sessions only exist for requests that come from the web app
+     * itself. Checked before a code is looked at, so a request that could
+     * never be signed in doesn't use one up.
+     */
+    private function ensureSession(Request $request): void
+    {
+        abort_unless($request->hasSession(), 400, 'Sign in from the web app.');
+    }
+
     private function signIn(Request $request, User $user): MeResource
     {
-        // Cookie sessions only exist for requests that come from the web app itself.
-        abort_unless($request->hasSession(), 400, 'Sign in from the web app.');
-
         $this->sessions->start($request, $user);
 
         // The sign-in stands even if the email about it can't be sent.

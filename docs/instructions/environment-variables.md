@@ -64,7 +64,7 @@ Forge fills in `APP_KEY` and the database username and password. The mail lines 
 | `SESSION_DRIVER` | Server, Mac | `database` | Must be `database` on the server: "sign out everywhere" works by deleting the sessions stored there. On the Mac use `array`, so the terminal client needs no database. |
 | `SESSION_LIFETIME` | Server | `43200` | Minutes a web sign-in lasts **after it was last used**: 43200 is 30 days. Using the app keeps renewing it, up to `DONNA_SESSION_MAX_DAYS`. |
 | `SESSION_SECURE_COOKIE` | Server | | `true`. The sign-in cookie is then only ever sent over HTTPS. Leave it unset on a Mac running the app over plain `http://localhost`. |
-| `SANCTUM_STATEFUL_DOMAINS` | Server | `localhost` and the host in `APP_URL` | `donna.joshevensen.com`. The one address whose browser requests are trusted to carry the sign-in cookie. If it is wrong, the sign-in page accepts the code and then every request says you are signed out. Never set it to an empty value. |
+| `SANCTUM_STATEFUL_DOMAINS` | Server | `localhost` and the host in `APP_URL` | `donna.joshevensen.com`. The one address whose browser requests are trusted to carry the sign-in cookie. If it is wrong, signing in answers "Something went wrong" even with the right code. Never set it to an empty value. |
 | `DB_QUEUE_RETRY_AFTER` | Server | `660` | Seconds before an unfinished job is handed to another worker. Must be longer than the worker's timeout ([queue-and-scheduler.md](queue-and-scheduler.md)). Leave it. |
 
 ## Mail

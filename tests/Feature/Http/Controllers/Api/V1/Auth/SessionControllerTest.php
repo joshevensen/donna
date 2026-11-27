@@ -86,6 +86,18 @@ describe('signing in', function () {
         }],
     ]);
 
+    it('does not use up a code on a request that could never be signed in', function () {
+        ['user' => $user] = donnaExists();
+        fromWebApp();
+        ['code' => $code] = requestSignInEmail($user->email);
+
+        // Not from the web app's own address, so there is no cookie session to sign in.
+        test()->flushHeaders()->postJson('/api/v1/auth/verify', ['email' => $user->email, 'code' => $code])->assertBadRequest();
+
+        fromWebApp();
+        postJson('/api/v1/auth/verify', ['email' => $user->email, 'code' => $code])->assertOk();
+    });
+
     it('emails Josh about every sign-in, naming the device', function () {
         ['user' => $user] = donnaExists();
         test()->withHeader('User-Agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Mobile/15E148 Safari/604.1');

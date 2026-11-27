@@ -14,7 +14,8 @@ it('prints a code and a link that sign Josh in when email is not working', funct
     $signInWith(Artisan::output(), $user->email)->assertOk();
 
     getJson('/api/v1/messages')->assertOk();
-    expect(sentEmails()->pluck('subject'))->not->toContain('is your Donna sign-in code');
+    // No code was emailed: the only mail is the notice that a device signed in.
+    expect(sentEmails()->map->getSubject()->all())->toBe(['New sign-in to Donna']);
 })->with([
     'the code' => [fn (string $output, string $email) => postJson('/api/v1/auth/verify', [
         'email' => $email,

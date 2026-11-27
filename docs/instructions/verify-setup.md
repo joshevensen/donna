@@ -8,8 +8,9 @@ After setup, and again after anything big changes on the server.
 - `https://donna.joshevensen.com` shows Donna's icon and a sign-in form.
   - A 500 instead means the web app wasn't built: check the deploy script has its `npm` lines ([forge-site.md](forge-site.md)).
 - **Sign in.** Enter your address, press **Email me a code**, and type the code from the email.
-  - No email: [mail.md](mail.md). To get in anyway, `php8.4 artisan donna:login` on the server prints a code.
-  - The code is accepted and you are straight back at the sign-in form: `SANCTUM_STATEFUL_DOMAINS` or `SESSION_SECURE_COOKIE` is wrong ([environment-variables.md](environment-variables.md)).
+  - No email: [mail.md](mail.md). To get in anyway, `php8.4 artisan donna:login` on the server prints a code; enter it with **I already have a code**.
+  - The right code only ever gets "Something went wrong": `SANCTUM_STATEFUL_DOMAINS` doesn't match the site's address ([environment-variables.md](environment-variables.md)). The code isn't used up by those tries.
+  - The code is accepted and you are straight back at the sign-in form: `SESSION_SECURE_COOKIE=true` on a site without its certificate, or opened over `http://`.
   - A "New sign-in to Donna" email follows every sign-in. That is working as intended.
 - **Send her a message.** Your message appears at once, three dots bounce, and a reply arrives.
   - If the dots go on forever, the queue worker isn't running ([queue-and-scheduler.md](queue-and-scheduler.md)).

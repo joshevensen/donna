@@ -85,3 +85,17 @@ test('"sign out everywhere" from the email asks first, then signs everything out
     await expect(page.getByRole('heading', { name: 'Every device is signed out' })).toBeVisible();
     expect(donna.signedIn).toBe(false);
 });
+
+test('a code printed on the server signs in without asking for an email, which would cancel it', async ({ page, donna }) => {
+    donna.signedIn = false;
+
+    await page.goto('/login');
+    await page.getByLabel('Email address').fill('josh@example.com');
+    await page.getByRole('button', { name: 'I already have a code' }).click();
+
+    await page.getByLabel('6-digit code').fill('123456');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+
+    await expect(page).toHaveURL(/\/$/);
+    expect(donna.codeRequests).toBe(0);
+});

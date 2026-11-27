@@ -14,7 +14,8 @@ class LoginCodeController extends Controller
 {
     /**
      * Email a sign-in code and link. The answer is the same whether or not
-     * the address is Josh's, so it never confirms which address is.
+     * the address is Josh's, and comes back before the code is made or sent,
+     * so neither its content nor how long it took confirms which address is.
      */
     public function store(RequestLoginCodeRequest $request, LoginCodes $codes): JsonResponse
     {
@@ -24,7 +25,7 @@ class LoginCodeController extends Controller
 
         if ($user !== null) {
             // A mail failure is logged, not shown: `donna:login` is the way in when mail is down.
-            rescue(fn () => $user->notify(new LoginCodeNotification($codes->issue($user))));
+            defer(fn () => rescue(fn () => $user->notify(new LoginCodeNotification($codes->issue($user)))));
         }
 
         return response()->json(status: 202);

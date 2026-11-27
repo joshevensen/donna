@@ -93,7 +93,9 @@ export function useMessages(): Conversation {
             for (const message of incoming) {
                 const known = messages.current.get(message.id);
 
-                if (known?.status === 'pending' && message.status === 'complete') {
+                // Arriving a text at a time is for a reply that finishes while he is waiting
+                // on it. One that finished long ago, found on coming back, shows whole.
+                if (known !== undefined && isWaiting(known) && message.status === 'complete') {
                     reveal.current?.enqueue(message.id, message.bubbles);
                 }
 
@@ -111,7 +113,7 @@ export function useMessages(): Conversation {
 
             render();
         },
-        [updateOutbox],
+        [isWaiting, updateOutbox],
     );
 
     /** Run a request, tracking whether the server can be reached at all. */
@@ -276,6 +278,7 @@ export function useMessages(): Conversation {
 
         let timer: ReturnType<typeof setTimeout> | undefined;
         let stopped = false;
+        let inFlight: Promise<void> | null = null;
 
         const poll = async () => {
             if (stopped || document.visibilityState !== 'visible') {
@@ -284,7 +287,11 @@ export function useMessages(): Conversation {
 
             const known = [...messages.current.values()];
             const newest = known.reduce((max, message) => Math.max(max, message.id), 0);
-            const pending = known.filter(isWaiting);
+
+            // Every reply still pending here is asked about, however old. The app may have
+            // been asleep in the background for an hour while she finished it; only the
+            // dots, not the checking, give up on an old one.
+            const pending = known.filter((message) => message.author === 'donna' && message.status === 'pending');
 
             try {
                 const [fresh, ...replies] = await reach(() =>
@@ -299,25 +306,38 @@ export function useMessages(): Conversation {
             }
 
             if (!stopped) {
-                timer = setTimeout(poll, delay());
+                timer = setTimeout(run, delay());
             }
         };
 
         const delay = () =>
             unreachableRef.current || [...messages.current.values()].some(isWaiting) ? POLL_WHILE_WAITING_MS : POLL_WHILE_IDLE_MS;
 
+        // One poll at a time: a second chain would double every request from then on.
+        const run = () => {
+            inFlight ??= poll().finally(() => {
+                inFlight = null;
+            });
+        };
+
         const onVisible = () => {
             if (document.visibilityState === 'visible') {
                 clearTimeout(timer);
-                void poll();
-            } else {
-                // Tell the server nobody is watching, so a reply that lands a moment from
-                // now is pushed instead of being held back by the last poll.
-                api.away().catch(() => undefined);
+                run();
+
+                return;
             }
+
+            // Tell the server nobody is watching, so a reply that lands a moment from now is
+            // pushed instead of being held back by the last poll. A poll still on its way
+            // would mark him as watching again when it lands, so say it once more after it.
+            const away = () => api.away().catch(() => undefined);
+
+            void away();
+            void inFlight?.finally(away);
         };
 
-        timer = setTimeout(poll, delay());
+        timer = setTimeout(run, delay());
         document.addEventListener('visibilitychange', onVisible);
 
         return () => {

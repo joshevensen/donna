@@ -37,8 +37,8 @@ class LoginCodes
     }
 
     /**
-     * Spend the user's code. A wrong guess counts against it, and enough of
-     * them kill it.
+     * Spend the user's code. Every try counts against it, and enough of them
+     * kill it.
      */
     public function redeemCode(User $user, string $code): bool
     {
@@ -48,9 +48,11 @@ class LoginCodes
             return false;
         }
 
-        if (! Hash::check($code, $login->code_hash)) {
-            $login->increment('attempts');
+        // The try is counted before the code is looked at, in one statement, so a
+        // burst of guesses sent at once can't all slip in under the limit.
+        $counted = LoginCode::query()->whereKey($login->id)->usable()->increment('attempts');
 
+        if ($counted === 0 || ! Hash::check($code, $login->code_hash)) {
             return false;
         }
 

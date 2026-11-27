@@ -61,6 +61,15 @@ export function LoginPage() {
         void requestCode();
     };
 
+    // For a code that didn't come by email: one printed on the server by `donna:login`.
+    // Asking for an emailed code here would cancel it, so this goes straight to the field.
+    const haveCode = () => {
+        setError(null);
+        setNotice(null);
+        setCode('');
+        setStep('code');
+    };
+
     const onCode = async (event: FormEvent) => {
         event.preventDefault();
         setBusy(true);
@@ -114,13 +123,22 @@ export function LoginPage() {
                 </form>
                 {error !== null && <GateError>{error}</GateError>}
                 {error === null && unreachable && <GateError>Can&rsquo;t reach Donna right now.</GateError>}
+                <button type="button" className="button button--quiet" disabled={busy || email.trim() === ''} onClick={haveCode}>
+                    I already have a code
+                </button>
             </Gate>
         );
     }
 
+    const emailed = storage.login() !== null;
+
     return (
-        <Gate title="Check your email">
-            <p className="gate__text">If {email.trim()} is the address Donna knows, a 6-digit code is on its way. It works for 10 minutes.</p>
+        <Gate title={emailed ? 'Check your email' : 'Enter your code'}>
+            <p className="gate__text">
+                {emailed
+                    ? `If ${email.trim()} is the address Donna knows, a 6-digit code is on its way. It works for 10 minutes.`
+                    : 'Type the 6-digit code you were given. It works once, for 10 minutes.'}
+            </p>
             <form className="gate__form" onSubmit={onCode} noValidate>
                 <label htmlFor="code" className="visually-hidden">
                     6-digit code

@@ -43,6 +43,9 @@ export class FakeDonna {
     /** The code that signs in. */
     code = '123456';
 
+    /** How many times a sign-in email was asked for. */
+    codeRequests = 0;
+
     private nextId = 1;
     private plans = new Map<number, { polls: number; plan: ReplyPlan }>();
 
@@ -87,6 +90,8 @@ export class FakeDonna {
             route.fulfill({ status, contentType: 'application/json', body: body === null ? '' : JSON.stringify(body) });
 
         if (path === '/auth/login-code' && method === 'POST') {
+            this.codeRequests += 1;
+
             return json(202);
         }
 

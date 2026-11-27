@@ -47,6 +47,8 @@ MAIL_FROM_NAME=Donna
 
 `.env.example` starts with `MAIL_MAILER=log`, which writes mail into the log file instead of sending it, so this line must be changed. The address before the `@` can be anything; the part after it must be the domain you verified.
 
+**Until you change it, every sign-in email is written to `storage/logs/laravel.log` on the server, code and link included.** Each works once and for 10 minutes, and the file is only readable from the server, but don't leave it that way: finish this file, or don't press **Email me a code** until you have (use [step 6](#6-the-way-in-without-email) instead).
+
 **Redeploy.** The deploy script caches the configuration, so nothing changes until it runs.
 
 ## 5. Check it
@@ -68,9 +70,12 @@ On the server:
 cd /home/forge/donna.joshevensen.com/current && php8.4 artisan donna:login
 ```
 
-It prints a 6-digit code and a link. Either signs you in once, within 10 minutes. On the sign-in page, enter your address, press **Email me a code** (no email needs to arrive), and type the printed code. Or open the printed link in the browser you want signed in and press **Sign in**.
+It prints a 6-digit code and a link. Either signs you in once, within 10 minutes.
 
-Running it cancels any code that was emailed before it.
+- **The code:** on the sign-in page, enter your address and press **I already have a code**, then type the printed code. Do not press **Email me a code**: asking for a new code cancels the printed one.
+- **The link:** open it in the browser you want signed in and press **Sign in**. This is no use for the app on the iPhone's Home Screen, which a link can't reach; use the code there.
+
+Running the command also cancels any code that was emailed before it.
 
 Use this before mail is set up, when Resend is down, or if you lose access to the inbox.
 
