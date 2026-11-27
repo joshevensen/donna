@@ -28,8 +28,9 @@ Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Scre
 
 ### Signing in
 
-- I sign in with my email: Donna sends a 6-digit code and a link. On my iPhone I type the code into the installed app; on my Mac I tap the link. I stay signed in on each device for 30 days after I last use it, so in practice I almost never sign in again.
+- I sign in with my email: Donna sends a 6-digit code and a link. On my iPhone I type the code into the installed app; on my Mac I tap the link. I stay signed in on each device for 30 days after I last use it, so in practice I almost never sign in again. After 90 days in a row I sign in again whatever I do.
 - There are no passwords. If I lose a phone, I can sign out everywhere.
+- Every time a new device signs in, I get an email saying which device and when, with a button to sign everything out. If it wasn't me, I know within minutes.
 - I can sign out, and turn notifications on or off, by telling Donna ("sign me out", "sign me out everywhere", "turn on notifications") and tapping the button she gives me, or with `/signout` (or `/signout all`) and `/notifications`.
 
 ### Not in this phase
@@ -124,8 +125,10 @@ All still under `/api/v1`, JSON, `auth:sanctum` (cookie session for the web app,
 - There is one account. `DONNA_USER_EMAIL` (exists) is the only address that can sign in; no password is stored or used (the `users.password` column keeps the random value the seeder generates).
 - **Sign-in codes:** a `login_codes` table: `user_id`, `code_hash`, `link_token_hash`, `expires_at`, `used_at`, `attempts`. Asking for one creates a random 6-digit code and a 40-character link token (both stored hashed), valid for 10 minutes and usable once; asking again invalidates the old one. Five wrong guesses invalidate the code. Requests are throttled per IP and per email. `LoginCodeNotification` sends one email with the code and the link (`{APP_URL}/login/link/{token}`).
 - **Fallback with no mail:** `php artisan donna:login` (run on the server) prints a fresh code and link. It is the way in until mail is set up, or if the provider is down.
-- **Sessions:** Sanctum cookie sessions on the database driver. `SESSION_LIFETIME=43200` (30 days). Laravel's session lifetime is an idle timeout renewed by activity, so using the app keeps it alive and 30 days unused ends it. `SESSION_SECURE_COOKIE=true`, same-site lax, `SANCTUM_STATEFUL_DOMAINS=donna.joshevensen.com`. Signing in on a new device creates its own session.
+- **Sessions:** Sanctum cookie sessions on the database driver. `SESSION_LIFETIME=43200` (30 days). Laravel's session lifetime is an idle timeout renewed by activity, so using the app keeps it alive and 30 days unused ends it. `SESSION_SECURE_COOKIE=true`, same-site lax, `SANCTUM_STATEFUL_DOMAINS=donna.joshevensen.com`. Signing in on a new device creates its own session. **Absolute cap:** a session also ends 90 days after it was created however much it's used (`DONNA_SESSION_MAX_DAYS`, default 90). The sign-in stamps `signed_in_at` into the session, and a small middleware on the stateful routes ends any session older than the cap. This bounds a stolen session that would otherwise be kept alive by use, since a sliding timeout only helps if the thief stops.
 - **Sign out everywhere** deletes all of the user's session rows and push subscriptions. The terminal's tokens are left alone; revoke those from the server.
+- **New-device email:** every successful sign-in sends `NewSignInNotification` to Josh: the device and browser (parsed locally with a few patterns, no package), the time, and the IP address, with a "Sign out everywhere" link. The link opens `/security/revoke/:token` in the app, a page with one button, so mail scanners that prefetch it don't trigger it; the button posts to `POST /auth/revoke` with the link's signature (a temporary signed URL, valid 7 days) and ends every session, so it works from any device, even one that isn't signed in. Checking the signature is code; there is no model call.
+- **Later (Phases 4–5):** when Donna can take actions that can't be undone, those require a fresh emailed code first (step-up), on top of Graduated Autonomy's confirm-first. Not built in this phase.
 - `PeopleSeeder` keeps the user's email in sync with `DONNA_USER_EMAIL`, looking the user up through Josh's Person rather than by email, so changing the variable doesn't create a second user.
 - Sign-out ends that device's session and unsubscribes it from push.
 
@@ -164,7 +167,7 @@ No new kind of model call, and no new `costs` rows.
 
 - **Deploy script:** after `composer install`, add `npm ci` and `npm run build` . Node 22 or newer on the server *(unverified; check Forge's Node version)*. This reverses the removal of the npm lines in Phase 1, so update [`forge-site.md`](../instructions/forge-site.md) with the new script and its failure modes.
 - **New instruction files:** `mail.md` (a transactional email provider for sign-in codes (the only way in besides `donna:login`, so deliverability matters): Postmark or Resend, both have first-party Laravel mail drivers, pick one when writing it; DNS records for sending; the `MAIL_*` variables) and `web-push.md` (generating VAPID keys, the variables, installing the app to the iPhone Home Screen, testing a notification). Add both to the README's first-time table.
-- **Updated:** `environment-variables.md` (`VAPID_*`, `MAIL_*`, `SESSION_*`, `SANCTUM_STATEFUL_DOMAINS`), `forge-site.md`, `verify-setup.md` (sign in, send a message, get a notification), `terminal-on-mac.md` and `blink-iphone.md` (now the fallback, not the main way), `operating.md`.
+- **Updated:** `environment-variables.md` (`VAPID_*`, `MAIL_*`, `SESSION_*`, `DONNA_SESSION_MAX_DAYS`, `SANCTUM_STATEFUL_DOMAINS`), `forge-site.md`, `verify-setup.md` (sign in, send a message, get a notification), `terminal-on-mac.md` and `blink-iphone.md` (now the fallback, not the main way), `operating.md`.
 - `CLAUDE.md`: Layout (already updated: the repo is one Laravel app), the Backend and Web client rows, and Instructions. `design.md`'s "Landing page" section becomes the sign-in screen.
 - The PR's "Before deploying" lists the instruction files touched, in order.
 
@@ -173,7 +176,7 @@ No new kind of model call, and no new `costs` rows.
 Follow the Testing rules in the root `CLAUDE.md`. Fake every model, mail and push service.
 
 **API (Pest feature tests):**
-- Sign-in: asking for a code sends one email to Josh's address and nothing to any other (both answer 202); the code or the link starts a session once; it expires after 10 minutes, dies after five wrong guesses, and a new request invalidates the old one; throttling. With `Mail::fake()`. The cookie session can then use the message endpoints exactly as a token can; sign out everywhere ends every session.
+- Sign-in: asking for a code sends one email to Josh's address and nothing to any other (both answer 202); the code or the link starts a session once; it expires after 10 minutes, dies after five wrong guesses, and a new request invalidates the old one; throttling. With `Mail::fake()`. The cookie session can then use the message endpoints exactly as a token can; sign out everywhere ends every session. A session older than the 90-day cap is rejected even if it was used yesterday. Each successful sign-in sends the new-device email, and its revoke link ends every session only when the button's request is made (a plain GET of the link changes nothing).
 - Idempotent send: the same key twice creates one pair of messages.
 - Retry only works on a failed reply and re-dispatches the job.
 - `after` returns only newer messages, oldest first.
