@@ -11,9 +11,14 @@ use App\Models\Person;
 use App\Models\Project;
 use App\Models\Topic;
 use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\DevCommands;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,5 +48,34 @@ class AppServiceProvider extends ServiceProvider
             'message' => Message::class,
             'extraction_run' => ExtractionRun::class,
         ]);
+
+        // The push package reads its own config; Donna's is the one place the keys are set.
+        config(['webpush.vapid' => [...config('donna.push.vapid'), 'pem_file' => null]]);
+
+        $this->configureRateLimits();
+
+        // `composer dev` has to work the queue replies are written on, not just the default one.
+        DevCommands::artisan('queue:listen --queue=replies,default --tries=1 --timeout=0', 'queue');
+    }
+
+    /**
+     * Limits that keep the sign-in email from being used to flood Josh's
+     * inbox, a code from being guessed, and a stolen session from running up
+     * the model bill.
+     */
+    private function configureRateLimits(): void
+    {
+        RateLimiter::for('login-code', function (Request $request): array {
+            $email = is_string($request->input('email')) ? Str::lower($request->input('email')) : '';
+
+            return [
+                Limit::perMinutes(10, 3)->by("login-code:email:{$email}"),
+                Limit::perHour(10)->by("login-code:ip:{$request->ip()}"),
+            ];
+        });
+
+        RateLimiter::for('sign-in', fn (Request $request): Limit => Limit::perMinute(10)->by("sign-in:{$request->ip()}"));
+
+        RateLimiter::for('messages', fn (Request $request): Limit => Limit::perMinute(60)->by('messages:'.($request->user()?->id ?? $request->ip())));
     }
 }

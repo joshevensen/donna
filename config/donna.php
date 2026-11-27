@@ -19,14 +19,68 @@ return [
     | The One User
     |--------------------------------------------------------------------------
     |
-    | Seeded on first deploy. Josh never logs in with a password: access is by
-    | the Sanctum token `donna:token` prints.
+    | Seeded on first deploy. There is no password: the web app signs in with
+    | a code emailed to this address, and the terminal with the Sanctum token
+    | `donna:token` prints. No other address can sign in.
     |
     */
 
     'user' => [
         'name' => env('DONNA_USER_NAME', 'Josh'),
         'email' => env('DONNA_USER_EMAIL', 'josh@heydonna.app'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Signing In
+    |--------------------------------------------------------------------------
+    |
+    | A sign-in code and its link work once, for `code_minutes`, and die after
+    | `max_attempts` wrong guesses. A web session lasts SESSION_LIFETIME
+    | minutes from its last use, and never longer than `session_max_days`
+    | from sign-in, however much it is used.
+    |
+    */
+
+    'login' => [
+        'code_minutes' => 10,
+        'max_attempts' => 5,
+        'session_max_days' => (int) env('DONNA_SESSION_MAX_DAYS', 90),
+
+        // How long the "Sign out everywhere" link in the new-sign-in email works.
+        'revoke_link_days' => 7,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Web Push
+    |--------------------------------------------------------------------------
+    |
+    | The VAPID keys that identify this server to browsers' push services
+    | (`php artisan webpush:vapid --show` makes a pair). Without them push is
+    | off and everything else works. A reply is only pushed when the app has
+    | not polled within `open_seconds`: if it has, Josh is looking at it.
+    |
+    */
+
+    'push' => [
+        'vapid' => [
+            'subject' => env('VAPID_SUBJECT'),
+            'public_key' => env('VAPID_PUBLIC_KEY'),
+            'private_key' => env('VAPID_PRIVATE_KEY'),
+        ],
+        'open_seconds' => 15,
+        'body_characters' => 140,
+
+        // The push services a subscription may point at: Apple, Google (Chrome),
+        // Mozilla and Microsoft (Edge). The server posts to whatever address a
+        // subscription holds, so it only accepts ones that are really push services.
+        'services' => [
+            'push.apple.com',
+            'fcm.googleapis.com',
+            'push.services.mozilla.com',
+            'notify.windows.com',
+        ],
     ],
 
     /*
@@ -130,6 +184,11 @@ return [
         'topic_max_distance' => 0.6,
         'stale_topic_days' => 14,
         'mention_windows' => [7, 30, 90],
+
+        // "What I looked at": how many context items a reply lists, and how
+        // many of those places are kept for people and topics.
+        'sources' => 8,
+        'sources_named' => 2,
 
         'recall_limit' => 15,
         'what_i_know_limit' => 50,

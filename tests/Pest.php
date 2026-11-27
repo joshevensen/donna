@@ -9,7 +9,12 @@ use App\Models\CharacterProfile;
 use App\Models\Message;
 use App\Models\Person;
 use App\Models\User;
+use GuzzleHttp\Psr7\Request as Psr7Request;
+use GuzzleHttp\Psr7\Response as Psr7Response;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -19,6 +24,11 @@ use Laravel\Ai\Events\ToolFailed;
 use Laravel\Ai\Events\ToolInvoked;
 use Laravel\Ai\Prompts\EmbeddingsPrompt;
 use Laravel\Ai\Responses\Data\ToolCall;
+use Minishlink\WebPush\MessageSentReport;
+use Minishlink\WebPush\Subscription;
+use Minishlink\WebPush\WebPush;
+use NotificationChannels\WebPush\WebPushChannel;
+use Symfony\Component\Mime\Email;
 use Tests\Fakes\FakeBatchClient;
 use Tests\TestCase;
 
@@ -77,6 +87,56 @@ function donnaExists(): array
         'user' => $user,
         'josh' => Person::factory()->josh()->create(['user_id' => $user->id]),
         'donna' => Person::factory()->donna()->create(),
+    ];
+}
+
+/**
+ * Make the requests that follow come from the web app, so they carry its
+ * cookie session the way a browser's do.
+ *
+ * A test's requests share one application, which would remember who was
+ * signed in. Forgetting that after each request leaves the session as the
+ * only thing that carries a sign-in, as it is in a real browser.
+ */
+function fromWebApp(): void
+{
+    test()->withHeader('Origin', config('app.url'));
+
+    Event::listen(RequestHandled::class, function (): void {
+        Auth::forgetGuards();
+        Auth::setDefaultDriver('web');
+        app()->forgetInstance('auth.driver');
+    });
+}
+
+/**
+ * Every email "sent" so far. Mail goes to an in-memory transport in tests,
+ * so each one is the fully rendered message Josh would get.
+ *
+ * @return Collection<int, Email>
+ */
+function sentEmails(): Collection
+{
+    return collect(app('mailer')->getSymfonyTransport()->messages())
+        ->map(fn ($sent): Email => $sent->getOriginalMessage())
+        ->values();
+}
+
+/**
+ * Ask for a sign-in email the way the web app does, and return the code and
+ * link token it carried.
+ *
+ * @return array{code: string, token: string}
+ */
+function requestSignInEmail(string $email): array
+{
+    test()->postJson('/api/v1/auth/login-code', ['email' => $email])->assertAccepted();
+
+    $body = sentEmails()->last()->getTextBody();
+
+    return [
+        'code' => str($body)->match('/\b(\d{6})\b/')->value(),
+        'token' => str($body)->match('#/login/link/(\w{40})#')->value(),
     ];
 }
 
@@ -140,6 +200,38 @@ function donnaCalls(array $calls, string $said = 'Go ahead.'): array
     GenerateReply::dispatchSync(pendingReplyTo($said));
 
     return $results;
+}
+
+/**
+ * Swap the push services for a stand-in that answers each device the way
+ * the test says, and records what was sent to it.
+ *
+ * @param  array<string, int>  $statuses  HTTP status by endpoint; anything not listed is accepted with 201.
+ * @return Collection<int, array{endpoint: string, payload: array<string, mixed>, options: array<string, mixed>}> Filled as pushes go out.
+ */
+function fakePushServices(array $statuses = []): Collection
+{
+    $sent = collect();
+
+    $webPush = Mockery::mock(WebPush::class);
+
+    $webPush->shouldReceive('queueNotification')->andReturnUsing(function (Subscription $subscription, string $payload, array $options) use ($sent): void {
+        $sent->push(['endpoint' => $subscription->getEndpoint(), 'payload' => json_decode($payload, true), 'options' => $options]);
+    });
+
+    $webPush->shouldReceive('flush')->andReturnUsing(function () use ($sent, $statuses): Generator {
+        foreach ($sent as $push) {
+            $status = $statuses[$push['endpoint']] ?? 201;
+
+            yield new MessageSentReport(new Psr7Request('POST', $push['endpoint']), new Psr7Response($status), $status < 300);
+        }
+    });
+
+    app()->when(WebPushChannel::class)->needs(WebPush::class)->give(fn () => $webPush);
+
+    config(['donna.push.vapid' => ['subject' => null, 'public_key' => 'public', 'private_key' => 'private']]);
+
+    return $sent;
 }
 
 /**

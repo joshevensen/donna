@@ -9,6 +9,7 @@ use App\Jobs\TagTopics;
 use App\Models\Cost;
 use App\Models\Fact;
 use App\Models\Message;
+use App\Models\Person;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
@@ -20,6 +21,8 @@ use Laravel\Ai\Responses\Data\TextUsage;
 use Laravel\Ai\Responses\Data\ToolCall;
 use Laravel\Ai\Responses\Data\UrlCitation;
 use Laravel\Ai\Responses\TextResponse;
+
+use function Pest\Laravel\travelTo;
 
 it('writes Donna\'s reply onto the pending message and queues embedding and tagging', function () {
     Queue::fake([EmbedMessage::class, TagTopics::class]);
@@ -81,6 +84,35 @@ it('keeps the web sources Donna cited with her reply', function () {
     GenerateReply::dispatchSync($reply);
 
     expect($reply->refresh()->meta['citations'])->toBe([['url' => 'https://example.com/ship', 'title' => 'Shipping']]);
+});
+
+it('records what the reply\'s context held, best match first, as what she looked at', function () {
+    Queue::fake([EmbedMessage::class, TagTopics::class]);
+    donnaExists();
+    fakeEmbeddings(['checkout' => 1]);
+    config(['donna.context.recent_messages' => 0]);
+    travelTo('2026-11-27 15:00:00');
+    Donna::fake(['You kept guest checkout.']);
+    $kristen = Person::factory()->create(['name' => 'Kristen', 'relationship' => 'wife']);
+    Fact::factory()->hasAttached($kristen, relationship: 'people')->create([
+        'statement' => 'Guest checkout was kept over account-first.',
+        'embedding' => embedding(1),
+        'created_at' => '2026-11-03 18:00:00',
+    ]);
+    Message::factory()->create([
+        'body' => "Let's keep guest checkout.\nKristen agrees.",
+        'embedding' => embedding(1),
+        'created_at' => '2025-12-30 18:00:00',
+    ]);
+    $reply = pendingReplyTo('Where did we land on checkout?');
+
+    GenerateReply::dispatchSync($reply);
+
+    expect($reply->refresh()->meta['sources'])->toBe([
+        ['type' => 'fact', 'label' => 'Guest checkout was kept over account-first. · Nov 3'],
+        ['type' => 'message', 'label' => 'You, Dec 30, 2025 — "Let\'s keep guest checkout."'],
+        ['type' => 'person', 'label' => 'Kristen — wife'],
+    ]);
 });
 
 it('sends Anthropic the cached system blocks, the recent turns, and its tools, and bills web searches', function () {

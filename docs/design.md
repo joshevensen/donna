@@ -2,15 +2,15 @@
 
 How Donna looks and feels. [`vision.md`](vision.md) (UI section) says what the interface is — chat, dark mode only; this doc says what it's made of. Phase docs reference this for color, type, and components rather than redefining them, and put their own mockups in `docs/tech/phase-N.md`.
 
-Status: foundation. Color, icon, and principles are settled (the palette was reworked before Phase 2: dark neutrals and a purple icon); type, spacing, and component specs are first drafts to be firmed up in the phase doc that first builds the UI (Phase 2).
+Status: color, icon, and principles are settled (the palette was reworked before Phase 2: dark neutrals and a purple icon). The chat, its input, errors and the sign-in screen were built in Phase 2 ([`tech/phase-2.md`](tech/phase-2.md)), and the web app's stylesheet, `resources/css/app.css`, is where their exact sizes live. The components nothing has built yet (file viewer, quick capture, attachments) are still first drafts.
 
 ---
 
 ## Principles
 
-- **Dark only** — one theme, no toggle, no light variant. The web app, the native apps and the landing page all declare dark.
+- **Dark only** — one theme, no toggle, no light variant. The web app and the native apps all declare dark.
 - **Chat is the interface** — the design is a quiet frame around a conversation. Chrome is minimal; color is used for meaning, not decoration.
-- **Dark neutrals, one purple** — surfaces are a ramp of warm near-blacks. Purple is the brand and the single interactive color, so it appears in small doses: the send button, the selected marker. If a screen looks purple, something is overusing it.
+- **Dark neutrals, one purple** — surfaces are a ramp of warm near-blacks. Purple is the brand and the single interactive color: Donna's bubbles, the send button, the selected marker. Nothing else is purple, so in a conversation purple means her.
 - **Doesn't beg for attention** — no badges that count up, no streaks, no decorative motion. Donna is measured by how much she helps, not how much she's used (see vision, Presence).
 - **Tailored, not flashy** — the icon is a suit and tie; the app should feel the same: deep, restrained, well-fitted.
 - **Web first, native later** — the web app is the first front end (see vision, UI). It uses plain HTML and CSS with system fonts and the tokens below. When the native apps arrive they use SwiftUI system components, Dynamic Type and platform conventions, with the same tokens.
@@ -30,14 +30,14 @@ Warm near-blacks, tinted a few degrees toward red so they don't read as cold gra
 | 1 | Canvas | `#0F0B0B` | Page and window background — what everything sits on |
 | 2 | Inset | `#1A1414` | Hairlines and separators on Canvas; recessed fills (code blocks, table stripes, error banner) |
 | 3 | Panel | `#1F1718` | Sidebar, top bar, input bar, the project detail pane |
-| 4 | Raised | `#2D2223` | Donna's chat bubbles, cards, the input field, sheets |
+| 4 | Raised | `#2D2223` | Josh's chat bubbles, cards, the input field, items in a sheet |
 | 5 | Hover | `#3A2D2E` | Hover and pressed backgrounds, the selected row, borders on Raised |
 
 ### Purple — the brand and the interactive color
 
 | Name | Hex | Role |
 |---|---|---|
-| Accent | `#7C3AED` | The icon's background, and the single interactive color, used in small amounts: the send button, the selected-item marker, the Active dot. Never a large surface inside the app. |
+| Accent | `#7C3AED` | The icon's background, Donna's chat bubbles, and the single interactive color: the send button, the selected-item marker, the Active dot. Never a page or panel background. |
 | Lapel | `#5B21B6` | The icon's lapels only. |
 
 ### Error
@@ -52,14 +52,14 @@ Two colors come straight from the icon (shirt and tie).
 
 | Name | Hex | Role |
 |---|---|---|
-| Shirt | `#F4EBE1` | Primary text and icons; Josh's chat bubbles; primary buttons (with Tie text) |
+| Shirt | `#F4EBE1` | Primary text and icons, on every surface including both kinds of bubble; primary buttons (with Tie text) |
 | Tie | `#1E1718` | Text on Shirt-colored fills |
 
 Secondary text is Shirt at 65% opacity; disabled is 35%. Don't introduce a pure white or pure black.
 
 ### Layering
 
-Canvas (1) → Inset (2) → Panel (3) → Raised (4) → Hover (5). Accent is never a surface.
+Canvas (1) → Inset (2) → Panel (3) → Raised (4) → Hover (5). Accent is not a step in the ramp: it is Donna's bubbles and the things you press.
 
 ### Contrast
 
@@ -104,14 +104,14 @@ Same names on every platform. Web: CSS custom properties. Swift: an asset catalo
 
 The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored knot, framed by Lapel (`#5B21B6`) lapels, on an Accent (`#7C3AED`) background. Source of truth is [`public/favicon.svg`](../public/favicon.svg) (512 × 512 viewBox, square, full-bleed).
 
-- **Full-bleed square** — no baked-in rounded corners or padding. iOS, iPadOS, and macOS apply their own mask; the landing page rounds it with CSS.
-- **Derived files** — `favicon.ico` (16/32/48) and `apple-touch-icon.png` (180) are rasterized from the SVG. Regenerate them whenever the SVG changes; never edit them by hand.
+- **Full-bleed square** — no baked-in rounded corners or padding. iOS, iPadOS, and macOS apply their own mask; the sign-in screen rounds it with CSS.
+- **Derived files** — `favicon.ico` (16/32/48), `apple-touch-icon.png` (180), and `icon-192.png` and `icon-512.png` (the web app manifest's icons) are rasterized from the SVG. Regenerate them whenever the SVG changes; never edit them by hand.
 - **App icons** — Xcode's 1024 × 1024 App Icon asset is exported from the same SVG when the native app is created. The watchOS and Home Node apps use the same icon.
 - **Don't** — recolor it, add a wordmark inside it, or place it on a light background.
 
-### Landing page
+### Sign-in screen
 
-Until Phase 2 is built, `public/index.html` shows the icon centered on a Canvas background and nothing else. In Phase 2 the web app's sign-in screen replaces it.
+Anyone who isn't signed in sees the icon centered on Canvas, rounded like an app icon, with one line of text and one field under it: the email address, then the 6-digit code. The primary button is Shirt with Tie text. The two pages that arrive from an email (the sign-in link, and "sign out everywhere") use the same frame with a single button. This replaced the old static landing page.
 
 ---
 
@@ -126,33 +126,40 @@ Until Phase 2 is built, `public/index.html` shows the icon centered on a Canvas 
 
 ## Components
 
-First drafts, tried out in the Phase 2 mockup; see vision UI section for behavior.
+The chat components below are built (Phase 2); the rest are first drafts. See vision UI section for behavior.
 
-- **Chat history** — one continuous conversation on Canvas, texting-style. Josh's bubbles are Raised with Shirt text, on the right; Donna's are Accent purple with Shirt text, on the left. Consecutive bubbles from one sender sit 2px apart and only the last has the tail. Donna usually answers in one bubble and may split a reply into several when the content calls for it, each preceded by the typing dots.
+- **Chat history** — one continuous conversation on Canvas, texting-style. Josh's bubbles are Raised with Shirt text, on the right; Donna's are Accent purple with Shirt text, on the left. Every corner is round (20px) except where consecutive bubbles from one sender meet: those sit 2px apart with square inner corners, so a run reads as one bubble cut by thin lines. Runs are 10px apart. Donna usually answers in one bubble and may split a reply into several when the content calls for it, each preceded by the typing dots.
 - **Time and sources** — nothing is printed under bubbles. Tapping any bubble shows its time; on Donna's bubbles the same line has "N sources", which opens a bottom sheet of what she used. A small centered date ("Today", "Yesterday", or "Tuesday, Nov 24" for older days, with no time) marks each new day. There are no ratings.
 - **No header** — no title bar, no icon, no menu button: the messages run to the top of the screen. Sign-out, search, cost and notification settings all happen by talking to her.
-- **Chat input** — fixed to the bottom. When it's empty and unfocused it collapses to a slim bar with just the plus, a "Message Donna" tap target and a disabled send, so more of the conversation shows. Tapping it opens a Raised field three lines tall that grows to six, then scrolls. Plus (attach) is bottom-left and send is bottom-right; send is the one Accent button. Enter makes a new line on the phone. The focus ring is Shirt.
-- **Attachments** — the plus opens a bottom sheet (Choose a file, Choose a photo). Chosen files sit as chips above the text, each with a remove button; a bad file's chip has an Error border and says why. Sent files show as a small card at the top of your bubble.
+- **Chat input** — fixed to the bottom. When it's empty and unfocused it collapses to a slim bar with just the plus, a "Message Donna" tap target and a disabled send, so more of the conversation shows. Tapping it opens a Raised field three lines tall that grows to six, then scrolls. Plus (attach) is bottom-left and send is bottom-right; send is the one Accent button. Enter makes a new line on the phone; with a keyboard and mouse it sends, and Shift+Enter is the new line. The focus ring is Shirt. (The plus arrives with attachments, in Files; until then the bar has only the field and send.)
+- **Action buttons** — when Donna offers to do something only the app can do (sign out, turn notifications on), a Shirt button sits under her reply. Tapping it does it and the button reads "Done".
+- **Attachments** *(not built; Files)* — the plus opens a bottom sheet (Choose a file, Choose a photo). Chosen files sit as chips above the text, each with a remove button; a bad file's chip has an Error border and says why. Sent files show as a small card at the top of your bubble.
 - **Typing indicator** — three dots in a Donna bubble that bounce in turn (a deliberate exception to the quiet principle; reduced-motion users get static dots). No progress messages and no "thinking" text: it should feel like texting, not like watching a tool work.
 - **Errors** — all in Error red with an icon and words, never color alone, and the input stays usable. A message that didn't send keeps its bubble with "Not delivered. Tap to retry" under it. If she couldn't answer, a centered line says "Donna couldn't reply." with Try again. While offline a slim strip above the input says messages will send when you're back. A bad attachment's chip explains itself.
 - **Buttons** — primary is Shirt with Tie text; secondary is transparent with Shirt text. Accent fills are reserved for Donna's bubbles and send.
-- **Code blocks** — Canvas-colored inside Donna's bubble, with a monospace font, a language label and a copy button.
+- **Code blocks** — Canvas-colored inside Donna's bubble, with a monospace font, a language label and a copy button. No syntax coloring.
 - **File viewer** — Panel. Visual mode renders on Panel; edit mode is visually distinct (Inset, monospace) so Josh always knows which he's in. Metadata is expandable at the bottom.
 - **Quick capture** — a single Raised field that gets out of the way; same tokens as chat input.
 - **Notifications** — system styling only; Donna's icon and plain text.
 
 ### Platform layout
 
-- **iPhone (web, installed to the Home Screen)** — the chat fills the screen, with the input pinned to the bottom. This is the screen the Phase 2 mockup designs.
-- **Mac (web)** — the same single chat in a centered column; not yet mocked up.
+- **iPhone (web, installed to the Home Screen)** — the chat fills the screen, with the input pinned to the bottom and riding above the keyboard. This is the screen the Phase 2 mockup designs.
+- **Mac (web)** — the same single chat in a centered column, 600px at most, from 768px wide; not mocked up.
 - **Native apps (later)** — the same chat in SwiftUI. **Watch** is capture only: dictation, then a confirmation, on Canvas with Shirt text.
 
 ---
 
-## Decisions to make with the first UI phase
+## Decisions
 
-- Final type scale and spacing grid
-- Whether error/success need dedicated hues (see Status colors)
-- Motion: default to system animations, nothing decorative
-- Haptics and sound for capture confirmation
-- Mockups (live in the phase doc, approved by Josh before building)
+Settled by Phase 2:
+
+- **Type scale** — 1rem (16px) for messages and inputs, which also stops iOS zooming on focus; 0.8125rem for errors and notes; 0.75rem for dates, times and labels. Weight and opacity carry the hierarchy.
+- **Status hues** — none added. Error red with an icon and words has been enough.
+- **Motion** — the typing dots, and nothing else.
+- **Mockups** — live with the phase doc, approved by Josh before building.
+
+Still open:
+
+- A spacing grid, once there is more than one screen to keep consistent
+- Haptics and sound for capture confirmation (native apps)

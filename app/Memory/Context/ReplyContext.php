@@ -15,6 +15,7 @@ final readonly class ReplyContext
      * @param  string  $profile  Josh's summary and his tracked projects.
      * @param  list<Turn>  $turns  The recent conversation, oldest first.
      * @param  string  $prompt  The memory block followed by Josh's message.
+     * @param  list<array{type: string, label: string}>  $sources  The top of the memory block, named for "What I looked at".
      */
     public function __construct(
         public string $character,
@@ -22,5 +23,6 @@ final readonly class ReplyContext
         public array $turns,
         public string $prompt,
         public Memory $memory,
+        public array $sources = [],
     ) {}
 }

@@ -244,6 +244,42 @@ describe('people', function () {
 
         expect($context->memory->people->map(fn (RelatedPerson $related): string => $related->person->name)->all())->toBe(['Sarah']);
     });
+
+    it('brings in the person Josh points at with @, where the name alone would not', function () {
+        donnaExists();
+        fakeEmbeddings();
+        Person::factory()->create(['name' => 'Sarah Lark', 'relationship' => 'yarn vendor']);
+        Person::factory()->create(['name' => 'Mark']);
+
+        $context = contextFor('Loop @Sarah in on the invoice.');
+
+        expect($context->memory->people->map(fn (RelatedPerson $related): string => $related->person->name)->all())->toBe(['Sarah Lark'])
+            ->and($context->memory->mentions->unknown)->toBe([]);
+    });
+
+    it('tells Donna when Josh points at someone she does not know, without inventing them', function () {
+        donnaExists();
+        fakeEmbeddings();
+
+        $context = contextFor('@Dave is coming Friday. Also bump @vitejs/plugin-react.');
+
+        expect($context->memory->mentions->unknown)->toBe(['Dave'])
+            ->and($context->prompt)->toContain('@Dave')
+            ->and(Person::where('name', 'Dave')->exists())->toBeFalse();
+    });
+
+    it('gives Donna everyone an @ could mean when more than one person fits', function () {
+        donnaExists();
+        fakeEmbeddings();
+        Person::factory()->create(['name' => 'Dave Miller']);
+        Person::factory()->create(['name' => 'Dave Chen']);
+
+        $context = contextFor('Call @Dave back.');
+
+        expect($context->memory->people->map(fn (RelatedPerson $related): string => $related->person->name)->all())->toBe(['Dave Miller', 'Dave Chen'])
+            ->and(array_keys($context->memory->mentions->ambiguous))->toBe(['Dave'])
+            ->and($context->prompt)->toContain('@Dave', 'Dave Miller, Dave Chen');
+    });
 });
 
 describe('topics', function () {

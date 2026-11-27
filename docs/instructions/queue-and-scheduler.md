@@ -8,7 +8,7 @@ Two things run in the background on the server. Without the first Donna never an
 
 ## 1. Queue worker
 
-Replies are written by a queue worker, not by the web request. That is why closing the terminal loses nothing.
+Replies are written by a queue worker, not by the web request. That is why closing the app loses nothing. The same worker sends the notification when a reply finishes while the app is closed ([web-push.md](web-push.md)).
 
 Open the site's **Processes** tab, then **Background processes**, and create a new background process on the **Queue worker** tab. Name it `Donna queue` if the form asks for a name. Set:
 
@@ -25,6 +25,7 @@ Open the site's **Processes** tab, then **Background processes**, and create a n
 Leave the rest as they are: `--backoff` 0, `--rest` 0, `--memory` 128 MB, `--env` blank, `--force` off. Forge shows a preview of the command; it should contain `--queue=replies,default`, `--sleep=1`, `--timeout=630` and `--tries=1`.
 
 - **One process is deliberate.** Donna answers one message at a time, because each reply needs the one before it.
+- **Both queues are needed.** Replies are on `replies`; notifications, memory indexing and the daily extraction are on `default`. Listing `replies` first means an answer never waits behind the rest.
 - **The timeout must be raised.** Forge's default of 60 seconds would cut a reply off mid-thought.
 - **The three time limits nest.** A single reply is cut off after 600 seconds (`job_timeout` in `config/donna.php`). The worker's timeout is 630, and an unfinished job is handed to another worker after 660 (`DB_QUEUE_RETRY_AFTER`). If you raise one, raise the ones above it.
 - **A shorter sleep makes her quicker.** An idle worker checks for work every `--sleep` seconds, so at the default a new message could wait up to 3 seconds before she starts on it.

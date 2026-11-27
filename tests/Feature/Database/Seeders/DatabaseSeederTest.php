@@ -43,3 +43,13 @@ it('does not overwrite who Donna has become when seeded again', function () {
         ->and(InterviewArea::count())->toBe(7)
         ->and(InterviewArea::where('area', 'Work')->value('notes'))->toBe('Covered Fibermade.');
 });
+
+it('moves the one user to a changed DONNA_USER_EMAIL instead of creating a second', function () {
+    seed(DatabaseSeeder::class);
+    config(['donna.user.email' => 'new-address@example.com']);
+
+    seed(DatabaseSeeder::class);
+
+    expect(User::sole()->email)->toBe('new-address@example.com')
+        ->and(Person::josh()->user->is(User::sole()))->toBeTrue();
+});
