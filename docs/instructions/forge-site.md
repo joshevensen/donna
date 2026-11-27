@@ -56,6 +56,8 @@ In the site's deployment settings, replace the whole script with:
 ```bash
 $CREATE_RELEASE()
 
+cd $FORGE_RELEASE_DIRECTORY
+
 $FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 npm ci
@@ -75,7 +77,9 @@ $RESTART_QUEUES()
 ```
 
 - `$CREATE_RELEASE()`, `$ACTIVATE_RELEASE()` and `$RESTART_QUEUES()` are Forge's zero-downtime steps. Each deploy is built in a new folder, switched live at the end, and the queue worker is restarted onto the new code.
+- **`cd $FORGE_RELEASE_DIRECTORY` has to be there.** `$CREATE_RELEASE()` makes the new release folder but does not move into it; Forge's own default script has this line right after it for that reason. Without it every command runs in `/home/forge` and the deploy fails at the first one.
 - Forge's default script has no `composer install`, so it is added here.
+- **The order matters: build first, migrate last.** If the build fails after `migrate` has run, the old release keeps serving against a database that has already changed. With the build first, a failed build changes nothing.
 - The two `mkdir` lines make the folders Laravel writes to. A new site's shared `storage` folder starts empty, and Forge's docs don't say whether it fills these in.
 - `optimize` caches the configuration, so **a changed environment variable only takes effect after a redeploy**.
 - `db:seed` is safe on every deploy. It creates Josh, Donna, Kristen, the first character profile and the interview areas if they are missing, and never overwrites anything Donna has learned.
@@ -97,7 +101,8 @@ There is no certificate yet, so check it over plain HTTP: `http://donna.josheven
 | `npm: command not found` in the deploy log, or npm complaining about the Node version | Node isn't installed, or is older than 22. | Install or upgrade Node on the server (step 4), then deploy again. |
 | The deploy dies during `npm ci` or `npm run build` with `Killed`, or just stops | The droplet ran out of memory. | Check the swap file from [forge-server.md](forge-server.md) exists (`swapon --show`). If it does and builds still die, the droplet needs more memory ([operating.md](operating.md)). |
 | Every page of the site answers 500 and the log says `Vite manifest not found` | The deploy script has no `npm run build`, so the web app was never built. | Use the script in step 4 and deploy again. |
-| `Composer could not find a composer.json`, or `cd: api: No such file or directory` | The site's **Root directory** is still `/api` from an earlier version of this repo, where the app lived in an `api/` folder. | Set **Root directory** to `/` in the site's Advanced settings, point the queue worker and scheduler at `/home/forge/donna.joshevensen.com/current` (see [queue-and-scheduler.md](queue-and-scheduler.md)), and deploy again. |
+| `Composer could not find a composer.json file in /home/forge` | The script has no `cd $FORGE_RELEASE_DIRECTORY` after `$CREATE_RELEASE()`, so it is running in the home folder, not the release. | Add the line (step 4) and deploy again. |
+| `Composer could not find a composer.json` in a `releases/...` folder, or `cd: api: No such file or directory` | The site's **Root directory** is still `/api` from an earlier version of this repo, where the app lived in an `api/` folder. | Set **Root directory** to `/` in the site's Advanced settings, point the queue worker and scheduler at `/home/forge/donna.joshevensen.com/current` (see [queue-and-scheduler.md](queue-and-scheduler.md)), and deploy again. |
 
 A failed deploy never goes live. Forge only switches to a release in `$ACTIVATE_RELEASE()`, so fix the script and deploy again.
 
