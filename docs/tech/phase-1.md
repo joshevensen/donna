@@ -72,8 +72,8 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 
 - Reminders and nudges, including reminding me about events at the right time (Presence, Phase 7)
 - A front end — Phase 1 is terminal only (the web chat is Phase 2; the native app comes with Presence)
-- Files and attachments (Phase 6)
-- Donna doing anything outside the conversation — email, calendar, messages (Phases 3–4 for GitHub, Phase 7 for email and calendar)
+- Files and attachments (Phase 3)
+- Donna doing anything outside the conversation — email, calendar, messages (Phases 4–5 for GitHub, Phase 7 for email and calendar)
 
 ---
 
@@ -96,7 +96,7 @@ The build follows this section. Where it's silent, follow Laravel and Swift best
 | Message Batches (daily extraction) | Anthropic's official PHP SDK — `laravel/ai` doesn't support the Batch API. Wrap it behind an app interface so tests use a fake. |
 | Embeddings | Voyage AI through `laravel/ai`. Use `voyage-4` (general purpose; $0.06/M tokens, first 200M free); set dimensions from its docs and keep model + dimensions in config. Voyage is now owned by MongoDB: keys come from a MongoDB Atlas account and call `https://ai.mongodb.com/v1` (set the provider `url` if the driver defaults to `api.voyageai.com`). No MongoDB database is involved. |
 | Queue | Laravel's database queue driver — one user, no Redis needed |
-| Scheduling | Laravel scheduler. Durable workflows aren't needed until Orchestration (Phase 5). |
+| Scheduling | Laravel scheduler. Durable workflows aren't needed until Orchestration (Phase 6). |
 
 - **Not DigitalOcean Inference** — it resells the same models at provider rates, but its batch flow is its own, its web search is a third-party service rather than Anthropic's, and it adds a layer for no gain. Revisit only if one bill becomes worth it.
 - **Don't use the SDK's conversation storage** (`RemembersConversations`, `agent_conversations` tables). Donna has exactly one conversation and rebuilds context per message from her own tables. *(as built)* The SDK only publishes those migrations on request, so they were never published and the tables don't exist.

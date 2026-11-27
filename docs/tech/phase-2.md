@@ -40,7 +40,7 @@ Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Scre
 
 ### Not in this phase
 
-- Attachments and the plus button (Files, Phase 6)
+- Attachments and the plus button (Files, Phase 3)
 - Autocomplete while typing `@` or `/` (a menu of people and commands). Both are plain text that works without it.
 - A projects page, ratings, search, a cost page, or any menu. I ask Donna instead. (Phase 1's rating endpoint stays in the API, unused.)
 - Streaming a reply word by word. Replies arrive as whole bubbles.
@@ -104,7 +104,7 @@ The look is in `design.md` and the mockup; these are the behaviors to build:
 | Action buttons | When her reply carries an action (below), a button sits under her last bubble. Tapping runs it client-side and then shows "Done". |
 | Sources sheet | Web citations first, then the memory items she was given (see Sources), capped at 8. |
 
-The mockup shows a plus button and attachment chips; both wait for Files (Phase 6) and are not built here.
+The mockup shows a plus button and attachment chips; both wait for Files (Phase 3) and are not built here.
 
 ### API changes
 

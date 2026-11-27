@@ -18,7 +18,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Web client | Browser app, installable to the iPhone Home Screen; chat only; dark mode only. The first front end (Phase 2): React + TypeScript + Vite inside the Laravel app (`resources/js`) |
 | Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only. Arrives with Presence (Phase 7) |
 | Home Node | Mac mini — headless Swift agent, outbound-only over Tailscale, EventKit, Messages database, Foundation Models framework |
-| Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive with Orchestration (Phase 5) |
+| Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive with Orchestration (Phase 6) |
 | Durable workflows | `durable-workflow/workflow` — Presence and Orchestration jobs |
 | AI SDK | Laravel AI SDK (`laravel/ai`) — provider-agnostic, Anthropic by default; the Batch API (daily extraction) uses Anthropic's official PHP SDK, which `laravel/ai` doesn't cover |
 | LLM provider | Anthropic (Haiku / Sonnet / Opus by task), called directly; Anthropic server-side web search; Apple on-device model for Home Node triage |

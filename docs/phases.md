@@ -13,7 +13,7 @@ Source of truth is [`vision.md`](vision.md); concepts are defined in [`domain.md
 - **Builds survive interruptions** — the build works on a branch, opens a draft PR early with a progress checklist from the phase doc, and commits and pushes after each larger area of work, ticking that area's checklist item in the same step. If a session ends or hits a usage limit, a new session resumes from the branch, the checklist, and the phase doc; nothing is lost.
 - **Data is protected, not precious** — the database is never wiped casually; changes go through migrations. But this is a personal project, not a product with customers: basic backups are enough, and losing data would hurt, not end things.
 - **Done means daily use** — a phase is finished when Josh is using it day to day, not when every bullet is checked. Leftover bullets move to a later phase.
-- **Code projects first, web first** — Josh's main goal is to replace Claude and Claude Code, the Donna way, with Donna in charge of his code projects. Phase 1 is used through `php artisan donna:chat`; Phase 2 is a web chat that works on the Mac and the phone; Code Work follows. The native apps wait for Presence, which can't work without Siri, Action Button capture and device context. Travel, email, driving and reminders come after.
+- **Code projects first, web first** — Josh's main goal is to replace Claude and Claude Code, the Donna way, with Donna in charge of his code projects. Phase 1 is used through `php artisan donna:chat`; Phase 2 is a web chat that works on the Mac and the phone; Files (Phase 3), then Code Work, follow. The native apps wait for Presence, which can't work without Siri, Action Button capture and device context. Travel, email, driving and reminders come after.
 - **This doc changes** — reorder, split, or cut phases as things are learned. Update it in the same PR as the change.
 
 ---
@@ -62,12 +62,24 @@ The first front end, so Josh can leave the terminal. A web app he opens in a bro
 - Tapping a bubble shows its time; "sources" shows what she looked at. No ratings in the UI (Phase 1's flagging endpoint stays, unused for now)
 - The repo becomes one Laravel app at the root (no `api/` folder, `apple/` removed); this ships in the Phase 2 PR, and the Forge site's root directory changes with it
 - The API gains a `web` message source, idempotent sends, retry, `after` polling, bubbles, sources and actions
-- No attachments (Phase 6), no projects page, no menu
+- No attachments (Phase 3), no projects page, no menu
 - `donna:chat` and Blink stay as the fallback
 
 **Done when:** Josh uses the web chat daily instead of the terminal, on his Mac and on his phone.
 
-## Phase 3 — Skills, Integrations, Code Work awareness
+## Phase 3 — Files + Archive Memory
+
+- Files (MD, CSV) — create, view, manual edit, Donna-edit
+- Deterministic operations without the LLM (replace, rename, append, delete line)
+- Chunking at logical boundaries + embeddings; files join per-message context
+- File viewer in the web chat (side panel on wide screens, sheet on the phone)
+- Attachments in chat
+
+Moved ahead of the code-project phases because Josh wants files sooner: code projects don't need them, but nothing else waits on them either. Spaces, the Files storage, arrives here; the skills loader in the next phase reuses it.
+
+**Done when:** Josh keeps and edits files with Donna in the web chat.
+
+## Phase 4 — Skills, Integrations, Code Work awareness
 
 Donna learns what is going on in Josh's code projects, read-only first. Nothing is changed, so trust doesn't have to exist yet.
 
@@ -80,7 +92,7 @@ Donna learns what is going on in Josh's code projects, read-only first. Nothing 
 
 **Done when:** Josh asks Donna about his code projects instead of opening GitHub.
 
-## Phase 4 — Graduated Autonomy
+## Phase 5 — Graduated Autonomy
 
 Donna starts acting, so trust has to exist first.
 
@@ -89,7 +101,7 @@ Donna starts acting, so trust has to exist first.
 - The first writes, on GitHub: comment, label, create an issue (never merge)
 - Presence "doing it for him" — work done first, surfaced ready to approve (the full form arrives with Presence)
 
-## Phase 5 — Orchestration + Code Work
+## Phase 6 — Orchestration + Code Work
 
 Donna runs the work, not just watches it.
 
@@ -101,16 +113,6 @@ Donna runs the work, not just watches it.
 - The token-economics question (Max subscription vs. headless credit or API) gets answered with real usage data
 
 **Done when:** Josh can hand Donna a specced issue and come back to a PR.
-
-## Phase 6 — Files + Archive Memory
-
-- Files (MD, CSV) — create, view, manual edit, Donna-edit
-- Deterministic operations without the LLM (replace, rename, append, delete line)
-- Chunking at logical boundaries + embeddings; files join per-message context
-- File viewer in the web chat (side panel on wide screens, sheet on the phone)
-- Attachments in chat
-
-Placed here because code projects don't need it. If Josh starts wanting files sooner, move it up.
 
 ## Phase 7 — Presence v1 + the native iOS app
 
