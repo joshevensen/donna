@@ -17,6 +17,8 @@ The key Donna's memory searches with. Voyage turns every message and fact into n
 - Donna uses the `voyage-4` model. The first 200 million tokens are free; she prices them at list anyway, so her cost report runs slightly high.
 - The vectors are 1024 numbers long and the database columns are built for that. Changing `DONNA_EMBEDDING_MODEL` to a model with a different length needs a migration, and every existing row needs embedding again.
 - If the key is rejected, check it came from Atlas. `VOYAGEAI_URL` can point the app somewhere else.
+- A `403` with "This API key cannot access this endpoint" in the failed jobs, and a Voyage dashboard that says the key was never used, means the key came from voyageai.com but the app is calling `ai.mongodb.com`. Either make an Atlas key (step 1), or keep the voyageai.com key and set `VOYAGEAI_URL=https://api.voyageai.com/v1` *(unverified)*, then redeploy and restart the queue worker.
+- Until embeddings work, Donna still saves messages, facts and topics without vectors and finds them by full-text search. Once the key works, the `EmbedMissing` job fills them in.
 
 Next: [queue-and-scheduler.md](queue-and-scheduler.md).
 

@@ -103,7 +103,9 @@ class TagTopics implements ShouldQueue
 
     /**
      * Create the topics the model named that really are new, embedding them
-     * in one call. A name that matches an existing topic reuses it.
+     * in one call. A name that matches an existing topic reuses it. If
+     * embeddings are down the topics are saved without a vector and
+     * EmbedMissing fills them in later; tagging never waits on Voyage.
      *
      * @param  list<string>  $names
      * @return Collection<int, Topic>
@@ -128,7 +130,7 @@ class TagTopics implements ShouldQueue
             fn (Topic $topic): bool => NameMatcher::same($topic->name, $name),
         ))->values();
 
-        $embeddings = $embedder->embedMany($unknown->all(), $this->message);
+        $embeddings = $embedder->attemptMany($unknown->all(), $this->message);
 
         return $known->concat($unknown->map(fn (string $name, int $index): Topic => Topic::create([
             'name' => $name,
