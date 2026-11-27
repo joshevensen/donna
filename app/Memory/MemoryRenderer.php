@@ -3,6 +3,7 @@
 namespace App\Memory;
 
 use App\Memory\Context\Memory;
+use App\Memory\Context\Mentions;
 use App\Memory\Context\RelatedExchange;
 use App\Memory\Context\RelatedFact;
 use App\Memory\Context\RelatedPerson;
@@ -27,7 +28,10 @@ class MemoryRenderer
             $this->clock($memory),
             $this->section('Related past exchanges', $memory->exchanges->map($this->exchange(...))),
             $this->section('What you know', $memory->facts->map(fn (RelatedFact $related): string => $this->fact($related->fact))),
-            $this->section('People', $memory->people->map($this->person(...))),
+            $this->section('People', collect([
+                ...$memory->people->map($this->person(...)),
+                ...$this->mentionNotes($memory->mentions),
+            ])),
             $this->section('Topics', $memory->topics->map($this->topic(...))),
             $this->section('Projects', $memory->projects->map(fn (Project $project): string => $this->projectActivity($project, $memory))),
             $this->section('Interview: areas still open', $memory->interviewAreas->map($this->interviewArea(...))),
@@ -139,6 +143,25 @@ class MemoryRenderer
             $person->summary,
             ...$related->facts->map(fn (Fact $fact): string => $this->fact($fact)),
         ]));
+    }
+
+    /**
+     * What `@` matching couldn't settle, for Donna to deal with in her reply.
+     *
+     * @return list<string>
+     */
+    private function mentionNotes(Mentions $mentions): array
+    {
+        return [
+            ...array_map(
+                fn (string $name): string => "- Josh mentioned @{$name} with @, but you don't know who that is.",
+                $mentions->unknown,
+            ),
+            ...collect($mentions->ambiguous)->map(
+                fn (Collection $people, string $name): string => "- Josh mentioned @{$name} with @, and more than one person fits: "
+                    .$people->pluck('name')->implode(', ').'. Ask which one he means.',
+            )->values(),
+        ];
     }
 
     private function topic(RelatedTopic $related): string

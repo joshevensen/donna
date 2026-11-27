@@ -4,6 +4,7 @@ namespace App\Ai\Agents;
 
 use App\Ai\Contracts\TracksCost;
 use App\Ai\Middleware\AnswerOnFinalStep;
+use App\Ai\Tools\AppAction;
 use App\Ai\Tools\CorrectFact;
 use App\Ai\Tools\CostReport;
 use App\Ai\Tools\DecideCharacterChange;
@@ -37,10 +38,12 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
 
     /**
      * @param  Message  $message  The message of Josh's being answered.
+     * @param  Message  $reply  The reply being written.
      */
     public function __construct(
         public ReplyContext $context,
         public Message $message,
+        public Message $reply,
     ) {}
 
     public function instructions(): string
@@ -76,6 +79,7 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
             resolve(DecideCharacterChange::class, $about),
             resolve(UpdateInterview::class),
             resolve(CostReport::class),
+            resolve(AppAction::class, ['reply' => $this->reply]),
             (new WebSearch)->max(config('donna.web_search.max_uses')),
         ];
     }

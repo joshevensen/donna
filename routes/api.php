@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Api\V1\Auth\LoginCodeController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\MessageEvaluationController;
+use App\Http\Controllers\Api\V1\MessageRetryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -35,7 +37,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::apiResource('messages', MessageController::class)->only(['index', 'store', 'show']);
+        Route::get('me', [MeController::class, 'show'])->name('me.show');
+
+        // Sends and retries start a model call, so they are the ones that are limited.
+        Route::apiResource('messages', MessageController::class)
+            ->only(['index', 'store', 'show'])
+            ->middlewareFor('store', 'throttle:messages');
+
+        Route::post('messages/{message}/retry', [MessageRetryController::class, 'store'])
+            ->middleware('throttle:messages')
+            ->name('messages.retry.store');
 
         Route::post('messages/{message}/evaluation', [MessageEvaluationController::class, 'store'])
             ->name('messages.evaluation.store');

@@ -89,7 +89,7 @@ class GenerateReply implements ShouldQueue
 
         $context = $contexts->build($message);
 
-        $response = Donna::make(context: $context, message: $message)->prompt($context->prompt);
+        $response = Donna::make(context: $context, message: $message, reply: $this->reply)->prompt($context->prompt);
 
         $declined = $response->steps->last()?->finishReason === FinishReason::ContentFilter;
 
@@ -107,6 +107,9 @@ class GenerateReply implements ShouldQueue
                 'model' => $response->meta->model,
                 'declined' => $declined,
                 'citations' => $this->citations($response),
+                'sources' => $context->sources,
+                // Buttons Donna offered with `app_action` while writing this reply.
+                'actions' => $this->reply->meta['actions'] ?? [],
             ]),
         ]);
 
@@ -116,10 +119,13 @@ class GenerateReply implements ShouldQueue
 
     /**
      * Out of retries: say so on the reply itself. Josh's message is safe and
-     * the terminal shows the failure.
+     * the client shows the failure, with a way to try again.
      */
     public function failed(?Throwable $exception): void
     {
+        // As it is in the database: anything a tool set on it in memory is dropped.
+        $this->reply->refresh();
+
         if (! $this->reply->isPending()) {
             return;
         }

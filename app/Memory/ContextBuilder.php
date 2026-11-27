@@ -8,6 +8,7 @@ use App\Enums\MessageAuthor;
 use App\Enums\PersonKind;
 use App\Enums\ProjectStatus;
 use App\Memory\Context\Memory;
+use App\Memory\Context\Mentions;
 use App\Memory\Context\RelatedExchange;
 use App\Memory\Context\RelatedFact;
 use App\Memory\Context\RelatedPerson;
@@ -36,6 +37,8 @@ class ContextBuilder
         private HybridSearch $search,
         private Recollection $recollection,
         private MemoryRenderer $renderer,
+        private MentionResolver $mentions,
+        private ContextSources $sources,
     ) {}
 
     public function build(Message $message): ReplyContext
@@ -52,6 +55,7 @@ class ContextBuilder
             turns: $this->turns($recent),
             prompt: $this->renderer->render($memory)."\n\n".$message->body,
             memory: $memory,
+            sources: $this->sources->from($memory),
         );
     }
 
@@ -110,12 +114,15 @@ class ContextBuilder
 
         $facts = $this->relatedFacts($message, $embedding, $relatedProjectIds);
 
+        $everyone = Person::query()->orderBy('id')->get();
+        $mentions = $this->mentions->resolve($message->body, $everyone);
+
         return new Memory(
             now: CarbonImmutable::now(config('donna.timezone')),
             previousMessageAt: $this->previousMessageAt($message),
             exchanges: $this->relatedExchanges($message, $embedding, $recent, $relatedProjectIds),
             facts: $facts,
-            people: $this->relatedPeople($message, $facts),
+            people: $this->relatedPeople($message, $facts, $everyone, $mentions),
             topics: $topics,
             projects: $projects,
             relatedProjectIds: $relatedProjectIds,
@@ -131,6 +138,7 @@ class ContextBuilder
                 ->where('status', ProjectStatus::Proposed)
                 ->orderBy('id')
                 ->get(),
+            mentions: $mentions,
         );
     }
 
@@ -199,22 +207,23 @@ class ContextBuilder
     }
 
     /**
-     * Anyone named in the message, by plain string match, or who a retrieved
-     * fact is about. Josh and Donna are always in context already.
+     * Anyone named in the message, by plain string match or with `@`, or who
+     * a retrieved fact is about. Josh and Donna are always in context already.
      *
      * @param  Collection<int, RelatedFact>  $facts
+     * @param  Collection<int, Person>  $everyone
      * @return Collection<int, RelatedPerson>
      */
-    private function relatedPeople(Message $message, Collection $facts): Collection
+    private function relatedPeople(Message $message, Collection $facts, Collection $everyone, Mentions $mentions): Collection
     {
         $aboutIds = $facts->flatMap(fn (RelatedFact $related) => $related->fact->people->modelKeys())->unique();
+        $mentionedIds = $mentions->people()->pluck('id')->all();
         $shownFactIds = $facts->map(fn (RelatedFact $related): int => $related->fact->id)->all();
 
-        return Person::query()
+        return $everyone
             ->where('kind', PersonKind::Other)
-            ->orderBy('id')
-            ->get()
             ->filter(fn (Person $person): bool => $aboutIds->contains($person->id)
+                || in_array($person->id, $mentionedIds, true)
                 || NameMatcher::mentions($message->body, $person->names()))
             ->map(fn (Person $person): RelatedPerson => new RelatedPerson(
                 person: $person,

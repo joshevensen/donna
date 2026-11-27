@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-#[Fillable(['author', 'body', 'source', 'status', 'in_reply_to_id', 'error', 'meta', 'embedding'])]
+#[Fillable(['author', 'body', 'source', 'status', 'in_reply_to_id', 'error', 'meta', 'embedding', 'client_key'])]
 #[Hidden(['embedding', 'search'])]
 class Message extends Model
 {

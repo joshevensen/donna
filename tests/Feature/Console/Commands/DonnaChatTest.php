@@ -58,6 +58,18 @@ it('prints angle-bracket text in a reply as written, not as terminal styling', f
         ->assertSuccessful();
 });
 
+it('shows a reply Donna split into several texts as paragraphs, without her separators', function () {
+    Http::fake(['donna.test/api/v1/messages?limit=10' => Http::response(['data' => [
+        apiMessage(1, 'donna', "Shipped.\n---\nTracking is in your email.", ['bubbles' => ['Shipped.', 'Tracking is in your email.']]),
+    ]])]);
+
+    artisan('donna:chat')
+        ->expectsOutputToContain('Tracking is in your email.')
+        ->doesntExpectOutputToContain('---')
+        ->expectsQuestion('You', '/quit')
+        ->assertSuccessful();
+});
+
 it('waits on start for a reply Donna is still writing', function () {
     Http::fake([
         'donna.test/api/v1/messages?limit=10' => Http::response(['data' => [

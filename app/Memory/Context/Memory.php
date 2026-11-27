@@ -23,6 +23,7 @@ final class Memory
      * @param  Collection<int, InterviewArea>  $interviewAreas
      * @param  Collection<int, CharacterProfile>  $proposedProfiles
      * @param  Collection<int, Project>  $proposedProjects
+     * @param  Mentions  $mentions  Who Josh pointed at with `@`; anyone matched is also in `$people`.
      */
     public function __construct(
         public CarbonImmutable $now,
@@ -36,5 +37,6 @@ final class Memory
         public Collection $interviewAreas,
         public Collection $proposedProfiles,
         public Collection $proposedProjects,
+        public Mentions $mentions,
     ) {}
 }

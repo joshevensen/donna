@@ -175,6 +175,11 @@ return [
         'stale_topic_days' => 14,
         'mention_windows' => [7, 30, 90],
 
+        // "What I looked at": how many context items a reply lists, and how
+        // many of those places are kept for people and topics.
+        'sources' => 8,
+        'sources_named' => 2,
+
         'recall_limit' => 15,
         'what_i_know_limit' => 50,
     ],

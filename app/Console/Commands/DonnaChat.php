@@ -215,7 +215,8 @@ class DonnaChat extends Command
         }
 
         // Her words are printed as written: "<info>" in a reply is text, not styling.
-        $this->line(OutputFormatter::escape($message['body']));
+        // A reply she split into several texts shows as paragraphs, not with her separators.
+        $this->line(OutputFormatter::escape(implode("\n\n", $message['bubbles'] ?? [$message['body']])));
 
         foreach ($message['citations'] as $index => $citation) {
             $this->line('<fg=gray>  ['.($index + 1).'] '.OutputFormatter::escape(($citation['title'] ?? $citation['url']).' — '.$citation['url']).'</>');
