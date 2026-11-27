@@ -130,7 +130,7 @@ First drafts, tried out in the Phase 2 mockup; see vision UI section for behavio
 
 - **Chat history** — one continuous conversation on Canvas, texting-style. Josh's bubbles are Raised with Shirt text, on the right; Donna's are Accent purple with Shirt text, on the left. Consecutive bubbles from one sender sit 2px apart and only the last has the tail. Donna usually answers in one bubble and may split a reply into several when the content calls for it, each preceded by the typing dots.
 - **Time and sources** — nothing is printed under bubbles. Tapping any bubble shows its time; on Donna's bubbles the same line has "N sources", which opens a bottom sheet of what she used. A small centered time (for example "Today 9:41 AM") appears only after a gap of an hour or more and at day changes. There are no ratings.
-- **No header** — the Donna icon floats, centered, over the top of the messages, with a fade so text scrolls cleanly beneath it. There is no title bar and no menu button: sign-out, search, cost and notification settings all happen by talking to her.
+- **No header** — no title bar, no icon, no menu button: the messages run to the top of the screen. Sign-out, search, cost and notification settings all happen by talking to her.
 - **Chat input** — fixed to the bottom, a Raised field, three lines tall and growing to six, then scrolling. Send is the one Accent button. Enter makes a new line on the phone. The focus ring is Shirt.
 - **Typing indicator** — three dots in a Donna bubble that bounce in turn (a deliberate exception to the quiet principle; reduced-motion users get static dots). No progress messages and no "thinking" text: it should feel like texting, not like watching a tool work.
 - **Not delivered** — if a message fails to send or she can't answer, the bubble stays with "Not delivered. Tap to retry" under it in Error. The input stays usable.
@@ -142,7 +142,7 @@ First drafts, tried out in the Phase 2 mockup; see vision UI section for behavio
 
 ### Platform layout
 
-- **iPhone (web, installed to the Home Screen)** — the chat fills the screen under a floating icon. This is the screen the Phase 2 mockup designs.
+- **iPhone (web, installed to the Home Screen)** — the chat fills the screen, with the input pinned to the bottom. This is the screen the Phase 2 mockup designs.
 - **Mac (web)** — the same single chat in a centered column; not yet mocked up.
 - **Native apps (later)** — the same chat in SwiftUI. **Watch** is capture only: dictation, then a confirmation, on Canvas with Shirt text.
 
