@@ -63,8 +63,19 @@ Forge fills in `APP_KEY` and the database username and password. For [using Donn
 |---|---|---|---|
 | `DONNA_TIMEZONE` | Server | `America/Chicago` | The timezone for dates Donna sees, the 03:00 extraction, and "this month" in cost reports. Storage stays UTC. |
 | `DONNA_USER_NAME` | Server | `Josh` | The name on the one user and his Person, used when they are first created. |
-| `DONNA_USER_EMAIL` | Server | `josh@heydonna.app` | A label on the one user row; you never log in with it. Set it before the first deploy: the seeder reads it on every deploy, and changing it later creates a second, unused user. |
+| `DONNA_USER_EMAIL` | Server | `josh@heydonna.app` | The only address that can sign in to the web app: sign-in codes and the new-sign-in email go here, so it must be an inbox you read ([mail.md](mail.md)). Changing it and redeploying moves the one user to the new address. |
+| `DONNA_SESSION_MAX_DAYS` | Server | `90` | How long a web sign-in can last however much it is used. After this many days the device signs in again. |
 | `DONNA_REFUSAL_FALLBACK` | Server | `true` | Replies opt into Anthropic's server-side refusal fallback, which is a beta. Set `false` if replies start failing with a request error after Anthropic changes it. |
+
+## Web Push
+
+Notifications when Donna replies and the app isn't open ([web-push.md](web-push.md)). Leave all three unset and push is simply off.
+
+| Variable | Where | Default | Secret | Notes |
+|---|---|---|---|---|
+| `VAPID_PUBLIC_KEY` | Server | | No | The public half of the key pair. Browsers are given it when they subscribe. |
+| `VAPID_PRIVATE_KEY` | Server | | Yes | The private half. Changing either key cuts off every device that has notifications on; each has to turn them on again. |
+| `VAPID_SUBJECT` | Server | The site's address | No | A contact for the push services, as `mailto:you@example.com` or an `https://` address. |
 
 ## Models
 
