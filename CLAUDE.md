@@ -47,6 +47,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 ## Builds
 
+- **Small changes go straight to `main`.** Commit and push to `main`, with no branch and no PR. Josh's rule; "small" here means the size of a doc or instruction-file correction or a contained fix. A phase build, or anything large enough to want a checklist or a review, still gets a branch and a draft PR.
 - The draft PR's checklist is the resume point if a session stops, so it must always match the branch. Updating it is part of every push: commit, push, then tick the finished items in the PR description before starting the next area. Never push a finished area with its box unticked.
 
 ## Instructions
