@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Donna chat</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0F0B0B}
+@keyframes donnaDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.55 } 30% { transform: translateY(-6px); opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .donna-dot { animation: none !important } }
+</style>
+</helmet>
+<div style="{{ rootStyle }}">
+
+  <!-- messages -->
+  <div style="flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column-reverse">
+    <div style="display: flex; flex-direction: column; padding: 16px 12px 12px; box-sizing: border-box">
+
+      <sc-for list="{{ items }}" as="m" hint-placeholder-count="6">
+
+        <sc-if value="{{ m.isTime }}" hint-placeholder-val="{{ false }}">
+          <div style="align-self: center; font-size: 12px; color: rgba(244,235,225,0.65); padding: 16px 0 10px">{{ m.label }}</div>
+        </sc-if>
+
+        <sc-if value="{{ m.isError }}" hint-placeholder-val="{{ false }}">
+          <div role="alert" style="align-self: center; display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 2px 8px; margin: 10px 0 4px; font-size: 13px; color: #E05A55">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E05A55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>
+            <span>{{ m.text }}</span>
+            <button onClick="{{ m.retry }}" style="min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: #E05A55; font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">Try again</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ m.isJosh }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ m.rowStyle }}">
+            <div style="{{ m.bubbleStyle }}">
+              <button onClick="{{ m.toggleInfo }}" aria-label="Show time" style="position: absolute; inset: 0; width: 100%; border: 0; padding: 0; background: transparent; border-radius: inherit; cursor: pointer"></button>
+              <div style="position: relative; pointer-events: none; display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere">
+                <sc-for list="{{ m.files }}" as="fl" hint-placeholder-count="1">
+                  <div style="display: flex; align-items: center; gap: 10px; background: rgba(15,11,11,0.45); border-radius: 12px; padding: 8px 12px 8px 10px">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+                    <div style="display: flex; flex-direction: column; min-width: 0">
+                      <span style="font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ fl.name }}</span>
+                      <span style="font-size: 12px; color: rgba(244,235,225,0.65)">{{ fl.size }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ m.hasText }}" hint-placeholder-val="{{ true }}">
+                  <div style="white-space: pre-wrap">{{ m.text }}</div>
+                </sc-if>
+              </div>
+            </div>
+            <sc-if value="{{ m.failed }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ m.retry }}" style="min-height: 44px; margin-top: 2px; padding: 0 6px; border: 0; background: transparent; color: #E05A55; font: inherit; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E05A55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>
+                <span>Not delivered. Tap to retry</span>
+              </button>
+            </sc-if>
+            <sc-if value="{{ m.showInfo }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 12px; color: rgba(244,235,225,0.65); padding: 4px 6px 0">{{ m.time }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ m.isDonna }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ m.rowStyle }}">
+            <div style="{{ m.bubbleStyle }}">
+              <button onClick="{{ m.toggleInfo }}" aria-label="Show time and sources" style="position: absolute; inset: 0; width: 100%; border: 0; padding: 0; background: transparent; border-radius: inherit; cursor: pointer"></button>
+              <div style="{{ m.contentStyle }}">
+                <sc-for list="{{ m.blocks }}" as="b" hint-placeholder-count="1">
+
+                  <sc-if value="{{ b.isP }}" hint-placeholder-val="{{ true }}">
+                    <p style="margin: 0">
+                      <sc-for list="{{ b.segs }}" as="sg" hint-placeholder-count="1">
+                        <sc-if value="{{ sg.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 14px; background: rgba(15,11,11,0.45); padding: 1px 6px; border-radius: 4px">{{ sg.s }}</code></sc-if>
+                        <sc-if value="{{ sg.isText }}" hint-placeholder-val="{{ true }}"><span>{{ sg.s }}</span></sc-if>
+                      </sc-for>
+                    </p>
+                  </sc-if>
+
+                  <sc-if value="{{ b.isUl }}" hint-placeholder-val="{{ false }}">
+                    <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px">
+                      <sc-for list="{{ b.items }}" as="li" hint-placeholder-count="2">
+                        <li>
+                          <sc-for list="{{ li.segs }}" as="sg2" hint-placeholder-count="1">
+                            <sc-if value="{{ sg2.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 14px; background: rgba(15,11,11,0.45); padding: 1px 6px; border-radius: 4px">{{ sg2.s }}</code></sc-if>
+                            <sc-if value="{{ sg2.isText }}" hint-placeholder-val="{{ true }}"><span>{{ sg2.s }}</span></sc-if>
+                          </sc-for>
+                        </li>
+                      </sc-for>
+                    </ul>
+                  </sc-if>
+
+                  <sc-if value="{{ b.isCodeBlock }}" hint-placeholder-val="{{ false }}">
+                    <div style="min-width: 0; background: #0F0B0B; border-radius: 14px; overflow: hidden; pointer-events: auto">
+                      <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 2px 14px; border-bottom: 1px solid #1A1414">
+                        <span style="font-size: 12px; color: rgba(244,235,225,0.65); font-family: ui-monospace, 'SF Mono', Menlo, monospace">{{ b.lang }}</span>
+                        <button onClick="{{ b.copy }}" style="min-height: 44px; padding: 0 12px; border: 0; background: transparent; color: #F4EBE1; font: inherit; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+                          <span>{{ b.copyLabel }}</span>
+                        </button>
+                      </div>
+                      <pre style="margin: 0; padding: 12px 14px; overflow-x: auto; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.55; white-space: pre; tab-size: 4">{{ b.text }}</pre>
+                    </div>
+                  </sc-if>
+
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ m.showInfo }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 12px; color: rgba(244,235,225,0.65); padding: 4px 6px 0; display: flex; align-items: center; flex-wrap: wrap">
+                <span>{{ m.time }}</span>
+                <sc-if value="{{ m.hasSources }}" hint-placeholder-val="{{ true }}">
+                  <span style="padding: 0 4px">·</span>
+                  <button onClick="{{ m.openSources }}" style="min-height: 44px; padding: 0 2px; border: 0; background: transparent; color: #F4EBE1; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer">{{ m.sourcesLabel }}</button>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+      </sc-for>
+
+      <sc-if value="{{ typing }}" hint-placeholder-val="{{ false }}">
+        <div role="status" aria-label="Donna is typing" style="{{ typingRowStyle }}">
+          <div style="{{ typingBubbleStyle }}">
+            <span class="donna-dot" style="width: 7px; height: 7px; border-radius: 999px; background: #F4EBE1; animation: donnaDot 1.1s ease-in-out infinite"></span>
+            <span class="donna-dot" style="width: 7px; height: 7px; border-radius: 999px; background: #F4EBE1; animation: donnaDot 1.1s ease-in-out 0.16s infinite"></span>
+            <span class="donna-dot" style="width: 7px; height: 7px; border-radius: 999px; background: #F4EBE1; animation: donnaDot 1.1s ease-in-out 0.32s infinite"></span>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <!-- offline notice -->
+  <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #1A1414; font-size: 13px; line-height: 1.35">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E05A55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M2 8.8a15 15 0 0 1 4.2-2.6"/><path d="M22 8.8a15 15 0 0 0-9.4-4.7"/><path d="M5 12.9a10 10 0 0 1 3.5-2"/><path d="M19 12.9a10 10 0 0 0-3.3-1.9"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M12 20h.01"/><path d="M3 3l18 18"/></svg>
+      <span>You're offline. Messages will send when you're back.</span>
+    </div>
+  </sc-if>
+
+  <!-- input -->
+  <div style="flex-shrink: 0; box-sizing: border-box; padding: 8px 12px 28px; background: #0F0B0B">
+
+    <sc-if value="{{ collapsed }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; gap: 6px; box-sizing: border-box; height: 52px; background: #2D2223; border-radius: 26px; padding: 6px">
+        <button onClick="{{ openAttach }}" onMouseDown="{{ keepFocus }}" aria-label="Attach a file" style="flex-shrink: 0; width: 40px; height: 40px; border: 0; border-radius: 999px; background: #3A2D2E; display: flex; align-items: center; justify-content: center; cursor: pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        </button>
+        <button onClick="{{ expand }}" aria-label="Write a message" style="flex: 1 1 0; min-width: 0; height: 40px; border: 0; background: transparent; color: rgba(244,235,225,0.65); font: inherit; font-size: 16px; text-align: left; padding: 0 6px; cursor: text">Message Donna</button>
+        <button disabled="{{ true }}" aria-label="Send" style="flex-shrink: 0; width: 40px; height: 40px; border: 0; border-radius: 999px; background: #7C3AED; opacity: 0.35; display: flex; align-items: center; justify-content: center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+        </button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}">
+      <div style="{{ fieldStyle }}">
+        <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ false }}">
+          <ul aria-label="Attachments" style="margin: 0; padding: 0 0 2px; list-style: none; display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{ chips }}" as="c" hint-placeholder-count="1">
+              <li style="{{ c.style }}">
+                <sc-if value="{{ c.ok }}" hint-placeholder-val="{{ true }}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+                </sc-if>
+                <sc-if value="{{ c.bad }}" hint-placeholder-val="{{ false }}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E05A55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>
+                </sc-if>
+                <div style="display: flex; flex-direction: column; min-width: 0; max-width: 150px">
+                  <span style="font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ c.name }}</span>
+                  <span style="{{ c.metaStyle }}">{{ c.meta }}</span>
+                </div>
+                <button onClick="{{ c.remove }}" onMouseDown="{{ keepFocus }}" aria-label="{{ c.removeLabel }}" style="flex-shrink: 0; width: 40px; height: 40px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+                </button>
+              </li>
+            </sc-for>
+          </ul>
+        </sc-if>
+        <div style="display: flex; align-items: flex-end; gap: 6px">
+          <button onClick="{{ openAttach }}" onMouseDown="{{ keepFocus }}" aria-label="Attach a file" style="flex-shrink: 0; width: 40px; height: 40px; border: 0; border-radius: 999px; background: #3A2D2E; display: flex; align-items: center; justify-content: center; cursor: pointer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          </button>
+          <label for="msg" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Message Donna</label>
+          <textarea id="msg" rows="{{ rows }}" value="{{ draft }}" placeholder="Message Donna" autoFocus="{{ wantFocus }}" onChange="{{ onDraft }}" onInput="{{ onDraft }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" style="{{ textareaStyle }}"></textarea>
+          <button onClick="{{ send }}" onMouseDown="{{ keepFocus }}" disabled="{{ sendDisabled }}" aria-label="Send" style="{{ sendStyle }}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- sources sheet -->
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+      <button onClick="{{ closeSheet }}" aria-label="Close" style="position: absolute; inset: 0; width: 100%; border: 0; padding: 0; background: rgba(0,0,0,0.55); cursor: pointer"></button>
+      <section aria-label="What Donna looked at" style="position: relative; background: #1F1718; border-radius: 22px 22px 0 0; padding: 10px 16px 32px; display: flex; flex-direction: column; gap: 12px">
+        <div aria-hidden="true" style="align-self: center; width: 36px; height: 4px; border-radius: 999px; background: #3A2D2E"></div>
+        <h2 style="margin: 4px 0 0; font-size: 17px; font-weight: 600">What I looked at</h2>
+        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+          <sc-for list="{{ sheetSources }}" as="src" hint-placeholder-count="3">
+            <li style="background: #2D2223; border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.4; display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(244,235,225,0.65)">{{ src.kind }}</span>
+              <span>{{ src.text }}</span>
+            </li>
+          </sc-for>
+        </ul>
+        <button onClick="{{ closeSheet }}" style="min-height: 48px; border: 0; border-radius: 14px; background: #F4EBE1; color: #1E1718; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Done</button>
+      </section>
+    </div>
+  </sc-if>
+
+  <!-- attach sheet -->
+  <sc-if value="{{ attachOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end">
+      <button onClick="{{ closeAttach }}" aria-label="Close" style="position: absolute; inset: 0; width: 100%; border: 0; padding: 0; background: rgba(0,0,0,0.55); cursor: pointer"></button>
+      <section aria-label="Attach" style="position: relative; background: #1F1718; border-radius: 22px 22px 0 0; padding: 10px 12px 28px; display: flex; flex-direction: column; gap: 6px">
+        <div aria-hidden="true" style="align-self: center; width: 36px; height: 4px; border-radius: 999px; background: #3A2D2E; margin-bottom: 8px"></div>
+        <button onClick="{{ pickFile }}" style="min-height: 56px; border: 0; border-radius: 14px; background: #2D2223; color: #F4EBE1; font: inherit; font-size: 16px; display: flex; align-items: center; gap: 14px; padding: 0 16px; cursor: pointer; text-align: left">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+          <span style="display: flex; flex-direction: column"><span>Choose a file</span><span style="font-size: 12px; color: rgba(244,235,225,0.65)">Markdown or CSV</span></span>
+        </button>
+        <button onClick="{{ pickPhoto }}" style="min-height: 56px; border: 0; border-radius: 14px; background: #2D2223; color: #F4EBE1; font: inherit; font-size: 16px; display: flex; align-items: center; gap: 14px; padding: 0 16px; cursor: pointer; text-align: left">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg>
+          <span>Choose a photo</span>
+        </button>
+        <button onClick="{{ closeAttach }}" style="min-height: 52px; margin-top: 4px; border: 0; border-radius: 14px; background: transparent; color: #F4EBE1; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Cancel</button>
+      </section>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"failNext":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+const T = (s) => ({ t: 'text', s });
+const K = (s) => ({ t: 'code', s });
+
+const SRC = {
+  guest: { kind: 'Fact', text: 'Guest checkout kept over account-first · Nov 3' },
+  once: { kind: 'Fact', text: 'Kristen\'s customers mostly buy once · Oct 19' },
+  msg1: { kind: 'Message', text: 'You, Nov 3, 4:12 PM — "let\'s keep guest checkout"' },
+  tests: { kind: 'Fact', text: 'Tests go through the HTTP boundary, one behavior each · Oct 2' },
+  proj: { kind: 'Fact', text: 'Active projects: Fibermade, Donna, Pattern library' }
+};
+
+const P = (...segs) => ({ kind: 'p', segs });
+
+const SAMPLE_FILES = [
+  { name: 'yarn-orders.csv', size: '14 KB' },
+  { name: 'checkout-notes.md', size: '3 KB' },
+  { name: 'pattern-library.zip', size: '2.4 MB', error: 'Unsupported. CSV and Markdown only' }
+];
+const SAMPLE_PHOTO = { name: 'IMG_2041.jpg', size: '2.1 MB' };
+
+function seedThread() {
+  const r1 = [SRC.guest, SRC.once, SRC.msg1];
+  const r2 = [SRC.tests, SRC.msg1];
+  return [
+    { id: 't1', kind: 'time', label: 'Yesterday' },
+    { id: 'm1', who: 'josh', time: '4:12 PM', text: 'Where did we land on the Fibermade checkout flow?' },
+    { id: 'm2', who: 'donna', time: '4:12 PM', blocks: [P(T('You kept guest checkout and dropped the account-first flow.'))], sources: r1 },
+    { id: 'm3', who: 'donna', time: '4:12 PM', blocks: [P(T('Two reasons you gave:')), { kind: 'ul', items: [{ segs: [T('Fewer abandoned carts.')] }, { segs: [T('Kristen\'s customers mostly buy once.')] }] }], sources: r1 },
+    { id: 'm4', who: 'donna', time: '4:12 PM', blocks: [P(T('You never told me whether the discount-code bug got fixed. Did it?'))], sources: r1 },
+    { id: 't2', kind: 'time', label: 'Today' },
+    { id: 'm5', who: 'josh', time: '9:41 AM', text: 'Write a Pest test for the guest checkout redirect.' },
+    { id: 'm6', who: 'donna', time: '9:41 AM', blocks: [P(T('A feature test through the endpoint. It assumes the route is named '), K('checkout.guest'), T('.'))], sources: r2 },
+    { id: 'm7', who: 'donna', time: '9:41 AM', blocks: [{ kind: 'code', lang: 'php', text: "it('sends a guest to the shipping step', function () {\n    $this->post(route('checkout.guest'), [\n        'email' => 'buyer@example.com',\n    ])->assertRedirect(route('checkout.shipping'));\n});" }], sources: r2 },
+    { id: 'm8', who: 'donna', time: '9:41 AM', blocks: [P(T('Give me the real route names and I\'ll fix it.'))], sources: r2 }
+  ];
+}
+
+function seedErrors() {
+  return [
+    { id: 't1', kind: 'time', label: 'Today' },
+    { id: 'u1', who: 'josh', time: '9:52 AM', text: 'What\'s still open on the checkout discount bug?' },
+    { id: 'e1', kind: 'error', text: 'Donna couldn\'t reply.', retryText: 'What\'s still open on the checkout discount bug?' },
+    { id: 'u2', who: 'josh', time: '9:53 AM', text: 'Also, did Kristen send the pattern files?', failed: true }
+  ];
+}
+
+function seedAll() {
+  return [...seedThread(), ...seedErrors().slice(1)];
+}
+
+function canned(text, files) {
+  if (files && files.length) {
+    return { sources: [SRC.proj], parts: [[P(T('Got it, I\'ve read ' + files[0].name + '. Three of the orders are past their ship date. Want the list?'))]] };
+  }
+  if (/project/i.test(text)) {
+    return {
+      sources: [SRC.proj],
+      parts: [
+        [P(T('You have two main projects right now: Fibermade and Donna.'))],
+        [P(T('Fibermade last came up two days ago. Want a refresher on it?'))]
+      ]
+    };
+  }
+  return { sources: [SRC.proj, SRC.msg1], parts: [[P(T('Got it, noted. Want me to tie it to Fibermade, or keep it general?'))]] };
+}
+
+function nowLabel() {
+  return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+class Component extends DCLogic {
+  st() { return this.state || {}; }
+  scenario() { return 'chat'; }
+
+  componentDidMount() {
+    /* iOS Safari doesn't shrink the layout viewport for the keyboard, so follow the visual viewport and pin the app to it. */
+    const vv = window.visualViewport;
+    if (!vv) { return; }
+    this._vv = () => {
+      const open = vv.height < window.innerHeight - 80;
+      this.setState({ vvH: open ? vv.height : null, vvTop: open ? vv.offsetTop : 0 });
+    };
+    vv.addEventListener('resize', this._vv);
+    vv.addEventListener('scroll', this._vv);
+    this._vv();
+  }
+
+  componentWillUnmount() {
+    (this._t || []).forEach(clearTimeout);
+    const vv = window.visualViewport;
+    if (vv && this._vv) {
+      vv.removeEventListener('resize', this._vv);
+      vv.removeEventListener('scroll', this._vv);
+    }
+  }
+
+  later(ms, fn) {
+    this._t = this._t || [];
+    this._t.push(setTimeout(fn, ms));
+  }
+
+  msgs() { return this.st().messages ?? seedAll(); }
+
+  attachments() {
+    const s = this.st();
+    if (s.attachments !== undefined) { return s.attachments; }
+    if (this.scenario() === 'errors') {
+      return [
+        { id: 'c1', name: 'pattern-library.zip', size: '2.4 MB', error: 'Unsupported. CSV and Markdown only' },
+        { id: 'c2', name: 'orders-2026.csv', size: '48 MB', error: 'Too large. Max 10 MB' }
+      ];
+    }
+    if (this.scenario() === 'attachment') { return [{ id: 'c1', name: 'yarn-orders.csv', size: '14 KB' }]; }
+    return [];
+  }
+
+  draftNow() {
+    const s = this.st();
+    if (s.draft !== undefined) { return s.draft; }
+    return this.scenario() === 'attachment' ? 'Which of these are late?' : '';
+  }
+
+  keepFocus = (e) => { if (e && e.preventDefault) { e.preventDefault(); } };
+  onDraft = (e) => { this.setState({ draft: e.target.value }); };
+  onFocus = () => { this.setState({ focus: true }); };
+  onBlur = () => { this.setState({ focus: false, wantFocus: false }); };
+  expand = () => { this.setState({ focus: true, wantFocus: true }); };
+  closeSheet = () => { this.setState({ sheet: null }); };
+  openAttach = () => { this.setState({ attachOpen: true }); };
+  closeAttach = () => { this.setState({ attachOpen: false }); };
+
+  addAttachment(file) {
+    const list = this.attachments();
+    this.setState({ attachments: [...list, { id: 'c' + Date.now(), ...file }], attachOpen: false, draft: this.draftNow(), focus: true });
+  }
+
+  pickFile = () => {
+    const n = this.st().fileIndex ?? 0;
+    this.setState({ fileIndex: n + 1 });
+    this.addAttachment(SAMPLE_FILES[n % SAMPLE_FILES.length]);
+  };
+  pickPhoto = () => { this.addAttachment(SAMPLE_PHOTO); };
+
+  send = () => {
+    const s = this.st();
+    const text = this.draftNow().trim();
+    const atts = this.attachments();
+    if ((!text && atts.length === 0) || atts.some((a) => a.error)) { return; }
+    const offline = s.offline ?? true;
+    const fail = offline || (!!(this.props.failNext ?? false) && !s.failUsed);
+    const files = atts.map((a) => ({ name: a.name, size: a.size }));
+    const msg = { id: 'u' + Date.now(), who: 'josh', time: nowLabel(), text, files, failed: fail };
+    this.setState({ messages: [...this.msgs(), msg], draft: '', attachments: [], failUsed: s.failUsed || (fail && !offline), openInfo: null });
+    if (!fail) { this.deliver(text, files); }
+  };
+
+  retry(id) {
+    const list = this.msgs();
+    const target = list.find((m) => m.id === id);
+    this.setState({ offline: false, messages: list.map((m) => (m.id === id ? { ...m, failed: false } : m)) });
+    if (target) { this.deliver(target.text, target.files || []); }
+  }
+
+  retryError(id) {
+    const list = this.msgs();
+    const target = list.find((m) => m.id === id);
+    this.setState({ messages: list.filter((m) => m.id !== id) });
+    if (target) { this.deliver(target.retryText, []); }
+  }
+
+  deliver(text, files) {
+    this._pending = this._pending || [];
+    this._pending.push({ text, files });
+    if (!this._busy) { this.next(); }
+  }
+
+  next() {
+    const job = (this._pending || []).shift();
+    if (!job) { this._busy = false; return; }
+    this._busy = true;
+    const r = canned(job.text, job.files);
+    let i = 0;
+    const step = () => {
+      this.setState({ typing: true });
+      this.later(i === 0 ? 1300 : 1000, () => {
+        const msg = { id: 'a' + Date.now() + i, who: 'donna', time: nowLabel(), blocks: r.parts[i], sources: r.sources };
+        this.setState({ messages: [...this.msgs(), msg], typing: false });
+        i += 1;
+        if (i < r.parts.length) { this.later(450, step); } else { this.later(300, () => this.next()); }
+      });
+    };
+    this.later(500, step);
+  }
+
+  renderVals() {
+    const s = this.st();
+    const list = this.msgs();
+    const copied = s.copied;
+    const draft = this.draftNow();
+    const atts = this.attachments();
+    const openInfo = s.openInfo;
+    const typing = !!s.typing;
+    const base = 'display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; background: #0F0B0B; color: #F4EBE1; font-family: ui-sans-serif, -apple-system, system-ui, "SF Pro Text", "Segoe UI", Roboto, sans-serif; width: 100%; max-width: 430px; ';
+    const keyboardUp = typeof s.vvH === 'number';
+    const rootStyle = keyboardUp
+      ? base + 'position: fixed; left: 0; right: 0; margin: 0 auto; top: ' + (s.vvTop || 0) + 'px; height: ' + s.vvH + 'px'
+      : base + 'position: relative; margin: 0 auto; height: 100vh; height: 100dvh';
+
+    const items = list.map((m, i) => {
+      if (m.kind === 'time') { return { isTime: true, label: m.label }; }
+      if (m.kind === 'error') { return { isError: true, text: m.text, retry: () => this.retryError(m.id) }; }
+      const prev = list[i - 1];
+      const next = list[i + 1];
+      const first = !prev || prev.kind !== undefined || prev.who !== m.who;
+      const typingAfter = typing && i === list.length - 1 && m.who === 'donna';
+      const last = (!next || next.kind !== undefined || next.who !== m.who) && !typingAfter;
+      const josh = m.who === 'josh';
+      const gap = i === 0 ? 0 : (first ? 10 : 2);
+      const rowStyle = 'display: flex; flex-direction: column; min-width: 0; margin-top: ' + gap + 'px; align-items: ' + (josh ? 'flex-end' : 'flex-start');
+      /* Every corner is round except where bubbles of one sender join: those inner corners are straight, so a run reads as one big bubble cut by lines. Order: top-left, top-right, bottom-right, bottom-left. */
+      let radius = '20px';
+      if (josh) {
+        radius = first && last ? '20px' : (first ? '20px 20px 0 20px' : (last ? '20px 0 20px 20px' : '20px 0 0 20px'));
+      } else {
+        radius = first && last ? '20px' : (first ? '20px 20px 20px 0' : (last ? '0 20px 20px 20px' : '0 20px 20px 0'));
+      }
+      const codeOnly = !josh && m.blocks.every((b) => b.kind === 'code');
+      const bubbleStyle = 'position: relative; min-width: 0; max-width: 84%; box-sizing: border-box; border-radius: ' + radius + '; ' +
+        (josh ? 'background: #2D2223; color: #F4EBE1' : 'background: #7C3AED; color: #F4EBE1') + (codeOnly ? '; width: 84%' : '');
+      const showInfo = openInfo === m.id && !m.failed;
+      const toggleInfo = () => { this.setState({ openInfo: openInfo === m.id ? null : m.id }); };
+
+      if (josh) {
+        const files = m.files || [];
+        return {
+          isJosh: true, rowStyle, bubbleStyle, text: m.text, hasText: !!m.text, files, time: m.time, failed: !!m.failed, showInfo, toggleInfo,
+          retry: () => this.retry(m.id)
+        };
+      }
+
+      const blocks = m.blocks.map((b, bi) => {
+        if (b.kind === 'p') { return { isP: true, segs: b.segs.map((x) => ({ s: x.s, isCode: x.t === 'code', isText: x.t !== 'code' })) }; }
+        if (b.kind === 'ul') { return { isUl: true, items: b.items.map((it) => ({ segs: it.segs.map((x) => ({ s: x.s, isCode: x.t === 'code', isText: x.t !== 'code' })) })) }; }
+        const key = m.id + ':' + bi;
+        return { isCodeBlock: true, lang: b.lang, text: b.text, copyLabel: copied === key ? 'Copied' : 'Copy', copy: () => { this.setState({ copied: key }); this.later(1600, () => this.setState({ copied: null })); } };
+      });
+      const n = (m.sources || []).length;
+      return {
+        isDonna: true, rowStyle, bubbleStyle, blocks, time: m.time, showInfo, toggleInfo,
+        contentStyle: 'position: relative; pointer-events: none; display: flex; flex-direction: column; gap: 8px; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; padding: ' + (codeOnly ? '6px' : '10px 14px'),
+        hasSources: n > 0,
+        sourcesLabel: n + (n === 1 ? ' source' : ' sources'),
+        openSources: () => { this.setState({ sheet: m.sources }); }
+      };
+    });
+
+    const lastItem = list[list.length - 1];
+    const typingJoins = !!lastItem && lastItem.who === 'donna';
+    const typingRowStyle = 'display: flex; align-items: flex-start; margin-top: ' + (typingJoins ? 2 : 10) + 'px';
+    const typingBubbleStyle = 'background: #7C3AED; padding: 15px 16px; display: flex; align-items: center; gap: 5px; border-radius: ' + (typingJoins ? '0 20px 20px 20px' : '20px');
+
+    const chars = 22;
+    const rows = Math.min(6, Math.max(3, draft.split('\n').reduce((n, line) => n + Math.max(1, Math.ceil(line.length / chars)), 0)));
+    const focused = !!s.focus;
+    const hasChips = atts.length > 0;
+    const hasBadChip = atts.some((a) => a.error);
+    const expanded = focused || draft.length > 0 || hasChips;
+    const sendDisabled = (!draft.trim() && !hasChips) || hasBadChip;
+
+    const chips = atts.map((a) => ({
+      name: a.name,
+      meta: a.error ? a.error : a.size,
+      ok: !a.error,
+      bad: !!a.error,
+      style: 'display: flex; align-items: center; gap: 8px; box-sizing: border-box; border-radius: 14px; padding: 2px 0 2px 10px; background: #3A2D2E; border: 1px solid ' + (a.error ? '#E05A55' : 'transparent'),
+      metaStyle: 'font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ' + (a.error ? '#E05A55' : 'rgba(244,235,225,0.65)'),
+      removeLabel: 'Remove ' + a.name,
+      remove: () => { this.setState({ attachments: atts.filter((x) => x.id !== a.id), draft }); }
+    }));
+
+    return {
+      rootStyle,
+      items,
+      typing,
+      typingRowStyle,
+      typingBubbleStyle,
+      offline: s.offline ?? true,
+      collapsed: !expanded,
+      expanded,
+      hasChips,
+      chips,
+      rows,
+      draft,
+      wantFocus: !!s.wantFocus,
+      sendDisabled,
+      fieldStyle: 'position: relative; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; background: #2D2223; border-radius: 26px; padding: 6px; border: 1px solid ' + (focused ? '#F4EBE1' : 'transparent'),
+      textareaStyle: 'flex: 1 1 0; min-width: 0; box-sizing: border-box; height: ' + (rows * 22 + 12) + 'px; resize: none; border: 0; outline: none; background: transparent; color: #F4EBE1; font: inherit; font-size: 16px; line-height: 22px; padding: 6px 0; overflow-y: auto',
+      sendStyle: 'flex-shrink: 0; width: 40px; height: 40px; border: 0; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #7C3AED; cursor: ' + (sendDisabled ? 'default' : 'pointer') + '; opacity: ' + (sendDisabled ? '0.35' : '1'),
+      sheetOpen: !!s.sheet,
+      sheetSources: s.sheet ?? [],
+      attachOpen: !!s.attachOpen,
+      closeSheet: this.closeSheet,
+      openAttach: this.openAttach,
+      closeAttach: this.closeAttach,
+      pickFile: this.pickFile,
+      pickPhoto: this.pickPhoto,
+      keepFocus: this.keepFocus,
+      expand: this.expand,
+      onDraft: this.onDraft,
+      onFocus: this.onFocus,
+      onBlur: this.onBlur,
+      send: this.send
+    };
+  }
+}
+</script>
+</body>
+</html>

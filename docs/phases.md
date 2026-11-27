@@ -51,15 +51,17 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 
 ## Phase 2 — Web chat
 
-The first front end, so Josh can leave the terminal. A web app he opens in a browser tab on the Mac and installs to the iPhone's Home Screen. It costs nothing to distribute and needs no Apple developer account.
+The first front end, so Josh can leave the terminal. A web app he opens in a browser tab on the Mac and installs to the iPhone's Home Screen. It costs nothing to distribute and needs no Apple developer account. Detailed in [`tech/phase-2.md`](tech/phase-2.md).
 
-- Chat UI per the vision: single conversation, infinite scroll up, markdown and code blocks, chat input, thinking and error states, dark mode only
-- Sign-in with a Sanctum token, kept on the device
-- Streaming replies — Phase 1 returns a reply whole once it's finished; the web chat should show it as it's written
-- Tapping a bubble shows its time; tapping "sources" on one of Donna's shows the memory she used. No ratings in the UI (Phase 1's flagging endpoint stays, unused for now)
-- Texting-style delivery: typing dots, replies as one bubble or a few, "Not delivered. Tap to retry" on failure
-- The API gains a `web` message source
-- Installable to the iPhone Home Screen (a web app manifest); Web Push is optional here and can wait for Presence
+**Status:** doc drafted, awaiting approval.
+
+- Chat UI per the vision and the mockup: one conversation, texting-style bubbles (replies as one bubble or several), typing dots, no progress messages, a collapsing input pinned above the keyboard, markdown and code blocks, errors and offline states, dark mode only
+- Login with email and password (from the environment), password reset by email, stay signed in; Sanctum cookie sessions
+- Web Push for replies when the app isn't open
+- Chat commands: natural language with a tap button, or `/signout` and `/notifications`
+- Tapping a bubble shows its time; "sources" shows what she looked at. No ratings in the UI (Phase 1's flagging endpoint stays, unused for now)
+- The API gains a `web` message source, idempotent sends, retry, `after` polling, bubbles, sources and actions
+- No attachments (Phase 6), no projects page, no menu
 - `donna:chat` and Blink stay as the fallback
 
 **Done when:** Josh uses the web chat daily instead of the terminal, on his Mac and on his phone.
