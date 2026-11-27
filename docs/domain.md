@@ -17,6 +17,7 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 ### Memory
 
 - **Fact** — one thing Donna knows. Can be about anything — one or more People, Projects, Topics, or any other concept (polymorphic). Facts about Josh are Personal Memory; about other People, Social Memory; about Donna, her shared history and opinions. Has a **kind** (fact, preference, decision, opinion, moment), a **provenance** (remember, daily extraction, interview, correction — import and check-in arrive with their features), and a confidence. Can be superseded by a newer Fact.
+- **Mention** — `@Name` in a message: Josh telling Donna this is someone she should know. Matched to a Person by name or alias; if none matches, she starts tracking them (and asks who they are) unless it isn't a person. Skills and commands use `/` instead.
 - **Person** — anyone in Josh's orbit, including Josh himself and Donna. Josh's Person is linked to his user account; Donna's is who Facts about her hang on. Has names/aliases, a relationship to Josh, and Facts.
 - **File** — a document that belongs to Donna, not to a message. MD or CSV. Split into **Chunks** at logical boundaries, each embedded (Archive Memory).
 - **Skill** — a procedure Donna knows (Agent Skills format: `SKILL.md` + optional scripts/references). Origin: seed, learned, or imported. Status: proposed, active, retired. Integration skills use an Integration.

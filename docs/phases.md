@@ -70,7 +70,7 @@ The first front end, so Josh can leave the terminal. A web app he opens in a bro
 
 Donna learns what is going on in Josh's code projects, read-only first. Nothing is changed, so trust doesn't have to exist yet.
 
-- Agent Skills loader — `SKILL.md` stored in Spaces, indexed in Postgres, loaded on relevance
+- Agent Skills loader — `SKILL.md` stored in Spaces, indexed in Postgres, loaded on relevance; Josh can also invoke one with `/skill-name` (only when the message's first word is exactly `/` plus a registered name, so file paths still pass through; a leading space sends it literally). `@Name` is for people (Phase 2)
 - Integration credentials, encrypted
 - GitHub, read-only — issues, PRs, CI status, review comments, and Orc's decision records, reported in her voice
 - Projects tied to repos, so "what's the state of my projects?" and "what's blocking #42?" have real answers

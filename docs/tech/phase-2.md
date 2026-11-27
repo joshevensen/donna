@@ -20,6 +20,11 @@ Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Scre
 - Dates divide the days ("Today", "Yesterday", "Tuesday, Nov 24"). Tap any bubble to see its time. Tap "sources" on one of hers to see what she looked at.
 - The input is pinned to the bottom and moves up with the keyboard. When it's empty and I'm not typing, it shrinks to a slim bar so I can see more of the conversation. Typing opens it three lines tall; it grows to six.
 
+### People
+
+- When I write `@Dave`, she knows I mean a person. If she already knows a Dave, she uses what she knows about him; if she doesn't, she starts tracking him and asks who he is. If more than one person fits, she asks which.
+- `@` works the same from the terminal.
+
 ### When things go wrong
 
 - If a message doesn't send, it stays in the thread marked "Not delivered. Tap to retry." Retrying never sends it twice.
@@ -36,6 +41,7 @@ Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Scre
 ### Not in this phase
 
 - Attachments and the plus button (Files, Phase 6)
+- Autocomplete while typing `@` or `/` (a menu of people and commands). Both are plain text that works without it.
 - A projects page, ratings, search, a cost page, or any menu. I ask Donna instead. (Phase 1's rating endpoint stays in the API, unused.)
 - Streaming a reply word by word. Replies arrive as whole bubbles.
 - A Mac-specific layout beyond the centered column, the native app, and Presence nudges (Phase 7)
@@ -112,6 +118,8 @@ All still under `/api/v1`, JSON, `auth:sanctum` (cookie session for the web app,
 | Push subscriptions | `POST /push-subscriptions` stores `{endpoint, keys}` for the signed-in device; `DELETE /push-subscriptions` removes it. |
 | Sign-in | `POST /api/v1/auth/login-code` `{email}` — always answers 202 whether or not the email matches (it only ever matches Josh's), and sends the email if it does. `POST /auth/verify` `{email, code}` and `POST /auth/verify-link` `{token}` — start the session. `POST /auth/logout`, `POST /auth/logout-everywhere`. The SPA fetches `/sanctum/csrf-cookie` first. |
 
+**Mentions.** `@` in a message means "this is someone you should know". `MentionResolver` (plain code) finds tokens that start with `@` at the start of the message or after whitespace, followed by a name (letters, digits, `_`, `'` and `-` inside). It skips emails (`a@b.com`, where the `@` follows a word), scoped packages (`@vitejs/plugin-react`, followed by `/`) and anything inside code spans or fenced code. Each token is matched to People by name and alias, case-insensitively, with the same matcher the context already uses. Matched people always go in the memory block's People section. Unmatched tokens are listed there as "Josh mentioned @Dave with @, but you don't know who that is", and `operating-instructions.md` tells her: if it's someone in his life, call `save_person` now with what she can tell and ask who they are, in her own words; if it isn't a person (a GitHub handle, a package, a bot), leave it alone; if two people fit, ask which. So matching is code, and the judgment about what an unknown name is stays hers; no `People` row is made without her call, which keeps handles like `@dependabot` from becoming people. The text is stored as typed. Only people for now; projects and topics are matched by name already and may get `@` later. This is a Phase 1 context-builder change, small enough to ship here.
+
 **Sources.** `ContextBuilder` already scores everything it puts in the memory block. When it builds a reply's context it also records, in `messages.meta.sources`, the top items by score (facts, messages, people, topics) as `{type, label}` where the label is the text a person would recognise (the fact's statement, the message's first line with its date). Code, no model call. The sheet is titled "What I looked at", not "What I used": these are what she was shown, not proof she relied on them.
 
 **Reply formatting.** Update `resources/prompts/operating-instructions.md`: she is texting, so short and conversational by default; markdown is available for lists, inline code and fenced code; when a reply reads better as several short texts she separates them with a line containing only `---` (not inside code), and most replies stay one bubble. `body` is stored as written. The context builder keeps feeding `body` back to her as-is, so she sees her own pattern. Remove the "plain text" instruction from Phase 1.
@@ -182,6 +190,7 @@ Follow the Testing rules in the root `CLAUDE.md`. Fake every model, mail and pus
 - `after` returns only newer messages, oldest first.
 - Bubble splitting (a unit test: it has real branching around code fences).
 - Sources are recorded from the context a reply was built with.
+- Mentions (a unit test: it's pure logic with real branching): `@Dave` is found at the start or after a space and not in an email, a scoped package or code; a matched mention puts the person in the context, an unmatched one is listed as unknown, two matches are flagged as ambiguous.
 - `app_action` appends an action to the reply and does nothing else.
 - Push: sent when the reply completes and the app wasn't polling, not sent when it was; dead endpoints are pruned.
 - Seeder: email synced without creating a second user; `donna:login` prints a working code and link.
@@ -197,4 +206,4 @@ Follow the Testing rules in the root `CLAUDE.md`. Fake every model, mail and pus
 
 ### Not in this phase
 
-Attachments and the plus button, Projects, ratings, search and cost screens, a menu, streaming, a native app, Presence, websockets, offline support, and passwords, passkeys and biometrics.
+Autocomplete for `@` and `/`, attachments and the plus button, Projects, ratings, search and cost screens, a menu, streaming, a native app, Presence, websockets, offline support, and passwords, passkeys and biometrics.
