@@ -56,7 +56,8 @@ The first front end, so Josh can leave the terminal. A web app he opens in a bro
 - Chat UI per the vision: single conversation, infinite scroll up, markdown and code blocks, chat input, thinking and error states, dark mode only
 - Sign-in with a Sanctum token, kept on the device
 - Streaming replies — Phase 1 returns a reply whole once it's finished; the web chat should show it as it's written
-- Citations for the memory Donna used, and good/bad flags for the eval set
+- Tapping a bubble shows its time; tapping "sources" on one of Donna's shows the memory she used. No ratings in the UI (Phase 1's flagging endpoint stays, unused for now)
+- Texting-style delivery: typing dots, replies as one bubble or a few, "Not delivered. Tap to retry" on failure
 - The API gains a `web` message source
 - Installable to the iPhone Home Screen (a web app manifest); Web Push is optional here and can wait for Presence
 - `donna:chat` and Blink stay as the fallback

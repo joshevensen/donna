@@ -11,7 +11,7 @@ Status: foundation. Color, icon, and principles are settled (the palette was rew
 - **Dark only** — one theme, no toggle, no light variant. The web app, the native apps and the landing page all declare dark.
 - **Chat is the interface** — the design is a quiet frame around a conversation. Chrome is minimal; color is used for meaning, not decoration.
 - **Dark neutrals, one purple** — surfaces are a ramp of warm near-blacks. Purple is the brand and the single interactive color, so it appears in small doses: the send button, the selected marker. If a screen looks purple, something is overusing it.
-- **Doesn't beg for attention** — no badges that count up, no pulsing, no streaks. Donna is measured by how much she helps, not how much she's used (see vision, Presence).
+- **Doesn't beg for attention** — no badges that count up, no streaks, no decorative motion. Donna is measured by how much she helps, not how much she's used (see vision, Presence).
 - **Tailored, not flashy** — the icon is a suit and tie; the app should feel the same: deep, restrained, well-fitted.
 - **Web first, native later** — the web app is the first front end (see vision, UI). It uses plain HTML and CSS with system fonts and the tokens below. When the native apps arrive they use SwiftUI system components, Dynamic Type and platform conventions, with the same tokens.
 
@@ -128,23 +128,23 @@ The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored kn
 
 First drafts, tried out in the Phase 2 mockup; see vision UI section for behavior.
 
-- **Chat history** — one continuous conversation on Canvas. Donna's messages sit in Raised bubbles; Josh's in Shirt bubbles with Tie text. Timestamps and metadata in secondary text. Day dividers are small uppercase secondary text.
-- **Sources and flags** — under each Donna reply: the time, a "N sources" toggle that lists what she used (on Inset), and good/bad flags. A set flag is Hover with a Shirt border, not purple.
-- **Chat input** — fixed to the bottom, a Raised field on a Panel bar. Send is the one Accent button. Disabled while thinking; Error border plus an icon and message on error. The focus ring is Shirt.
-- **Buttons** — primary is Shirt with Tie text; secondary is transparent with Shirt text. Accent fills are reserved for send.
-- **Thinking indicator** — a quiet in-chat indicator in secondary text; no bouncing dots.
-- **Code blocks** — Inset with a monospace font and a copy button; a language label in secondary text.
-- **Navigation** — selected item is Raised with a short Accent marker on its left edge, so selection is shape plus a color accent, not a purple slab.
-- **Pills** — Active: Raised with a small Accent dot; Proposed: Shirt 65% outline; Parked: dashed outline. Never a filled purple pill.
+- **Chat history** — one continuous conversation on Canvas, texting-style. Josh's bubbles are Raised with Shirt text, on the right; Donna's are Accent purple with Shirt text, on the left. Consecutive bubbles from one sender sit 2px apart and only the last has the tail. Donna usually answers in one bubble and may split a reply into several when the content calls for it, each preceded by the typing dots.
+- **Time and sources** — nothing is printed under bubbles. Tapping any bubble shows its time; on Donna's bubbles the same line has "N sources", which opens a bottom sheet of what she used. A small centered time (for example "Today 9:41 AM") appears only after a gap of an hour or more and at day changes. There are no ratings.
+- **No header** — the Donna icon floats, centered, over the top of the messages, with a fade so text scrolls cleanly beneath it. There is no title bar and no menu button: sign-out, search, cost and notification settings all happen by talking to her.
+- **Chat input** — fixed to the bottom, a Raised field, three lines tall and growing to six, then scrolling. Send is the one Accent button. Enter makes a new line on the phone. The focus ring is Shirt.
+- **Typing indicator** — three dots in a Donna bubble that bounce in turn (a deliberate exception to the quiet principle; reduced-motion users get static dots). No progress messages and no "thinking" text: it should feel like texting, not like watching a tool work.
+- **Not delivered** — if a message fails to send or she can't answer, the bubble stays with "Not delivered. Tap to retry" under it in Error. The input stays usable.
+- **Buttons** — primary is Shirt with Tie text; secondary is transparent with Shirt text. Accent fills are reserved for Donna's bubbles and send.
+- **Code blocks** — Canvas-colored inside Donna's bubble, with a monospace font, a language label and a copy button.
 - **File viewer** — Panel. Visual mode renders on Panel; edit mode is visually distinct (Inset, monospace) so Josh always knows which he's in. Metadata is expandable at the bottom.
 - **Quick capture** — a single Raised field that gets out of the way; same tokens as chat input.
 - **Notifications** — system styling only; Donna's icon and plain text.
 
 ### Platform layout
 
-- **Mac (web)** — a sidebar (Panel) with Chat and Projects, and the chat in a centered column. Files, later, open in a 50/50 side panel.
-- **iPhone (web, installed to the Home Screen)** — chat fills the screen; a top bar leads to Projects; files open as a full-screen sheet.
-- **Native apps (later)** — the same layouts in SwiftUI. **Watch** is capture only: dictation, then a confirmation, on Canvas with Shirt text.
+- **iPhone (web, installed to the Home Screen)** — the chat fills the screen under a floating icon. This is the screen the Phase 2 mockup designs.
+- **Mac (web)** — the same single chat in a centered column; not yet mocked up.
+- **Native apps (later)** — the same chat in SwiftUI. **Watch** is capture only: dictation, then a confirmation, on Canvas with Shirt text.
 
 ---
 
