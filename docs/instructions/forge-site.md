@@ -1,6 +1,6 @@
 # Forge site
 
-The Laravel app on the droplet, served at `donna.joshevensen.com`.
+The Laravel app on the droplet, served at `donna.joshevensen.com`: the API, and the web chat you open in a browser or from your iPhone's Home Screen.
 
 ## Before you start
 
@@ -28,7 +28,7 @@ In Forge, create a site for `donna.joshevensen.com` from the `joshevensen/donna`
 | Web directory | `/public` | Forge's default. |
 | PHP version | 8.4 | |
 | Zero downtime deployments | On, Forge's default | It can only be set when the site is created. These instructions assume it is on. |
-| Frontend package manager, Build command | Leave as they are | Donna has no frontend. The deploy script in step 4 has no npm lines, so these do nothing. |
+| Frontend package manager, Build command | Leave as they are | The deploy script in step 4 installs and builds the web app itself, so these do nothing. |
 
 If the form offers to install Composer dependencies, leave it off. The deploy script does that.
 
@@ -45,7 +45,7 @@ echo "base64:$(openssl rand -base64 32)"
 - `DB_CONNECTION=pgsql`, `DB_DATABASE=donna`, `DB_USERNAME=forge`, and `DB_PASSWORD` set to the password of the `forge` database user, which Forge showed when you created the server. If you didn't keep it, reset it from the server's **Databases** tab. Forge's docs say to change it only there.
 - The rest of the values in [environment-variables.md](environment-variables.md#production-environment). `.env.example` starts with `APP_ENV=local` and `APP_DEBUG=true`, so these must be changed.
 
-Leave out the `ANTHROPIC_API_KEY` and `VOYAGEAI_API_KEY` lines for now.
+Leave out the `ANTHROPIC_API_KEY` and `VOYAGEAI_API_KEY` lines for now, and the mail and notification lines: [mail.md](mail.md) and [web-push.md](web-push.md) add those. The `SESSION_` and `SANCTUM_` lines in that list matter from the first deploy: without them you are signed out of the web app after two hours.
 
 Forge links this file into the app's folder on every deploy, so this tab is the only place to edit it. A deploy that gets through `migrate` is the proof it is being found: without it, Laravel would fall back to SQLite and the pgvector migration would fail.
 
@@ -57,6 +57,10 @@ In the site's deployment settings, replace the whole script with:
 $CREATE_RELEASE()
 
 $FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+npm ci
+npm run build
+rm -rf node_modules
 
 mkdir -p storage/framework/{sessions,views,cache/data}
 mkdir -p storage/logs
@@ -75,21 +79,24 @@ $RESTART_QUEUES()
 - The two `mkdir` lines make the folders Laravel writes to. A new site's shared `storage` folder starts empty, and Forge's docs don't say whether it fills these in.
 - `optimize` caches the configuration, so **a changed environment variable only takes effect after a redeploy**.
 - `db:seed` is safe on every deploy. It creates Josh, Donna, Kristen, the first character profile and the interview areas if they are missing, and never overwrites anything Donna has learned.
-- There are no `npm` lines. Forge's default script has `npm ci || npm install` and `npm run build`, which fail on Donna with "Could not read package.json" because she has no frontend. If your first deploy failed on that, this is the fix.
+- `npm ci` installs exactly what `package-lock.json` lists, and `npm run build` compiles the web app into `public/build`. Both run inside the new release folder, before it goes live, so a failed build never reaches the site. An earlier version of this script had no npm lines, because Donna had no web app then; they are needed now.
+- `rm -rf node_modules` throws away the build tools once the app is built. Nothing needs them at run time, and Forge keeps several releases, so leaving them would fill a small disk with copies.
+- The build needs **Node 22 or newer** on the server. Check over SSH with `node -v`. Forge installs Node when it provisions a server *(unverified: which version)*. If it prints something older than `v22`, upgrade it before deploying *(unverified: Forge may offer this in the server's settings; otherwise install Node 22 from NodeSource)*.
+- The build is the heaviest thing the droplet does: on the first deploys, watch how long the `npm` lines take and that the deploy doesn't die there. See "If the deploy fails".
 
 ## 5. First deploy
 
 Deploy. The log should show "Linking environment file" and "Linking storage directories" and end without an error. Turn on "push to deploy" if you want every push to `main` to ship itself.
 
-There is no certificate yet, so check it over plain HTTP: `http://donna.joshevensen.com/up` should answer 200. That also needs the DNS from step 1 to have spread.
+There is no certificate yet, so check it over plain HTTP: `http://donna.joshevensen.com/up` should answer 200. That also needs the DNS from step 1 to have spread. Don't try to sign in yet: the web app only works over HTTPS, which step 6 adds.
 
 ### If the deploy fails
 
-Two failures have come up on this site:
-
-| Error in the deploy log | Cause | Fix |
+| Error | Cause | Fix |
 |---|---|---|
-| `Could not read package.json` (npm) | Forge's default script has `npm ci` and `npm run build`; Donna has no frontend. | Use the script in step 4, which has no npm lines. |
+| `npm: command not found` in the deploy log, or npm complaining about the Node version | Node isn't installed, or is older than 22. | Install or upgrade Node on the server (step 4), then deploy again. |
+| The deploy dies during `npm ci` or `npm run build` with `Killed`, or just stops | The droplet ran out of memory. | Check the swap file from [forge-server.md](forge-server.md) exists (`swapon --show`). If it does and builds still die, the droplet needs more memory ([operating.md](operating.md)). |
+| Every page of the site answers 500 and the log says `Vite manifest not found` | The deploy script has no `npm run build`, so the web app was never built. | Use the script in step 4 and deploy again. |
 | `Composer could not find a composer.json`, or `cd: api: No such file or directory` | The site's **Root directory** is still `/api` from an earlier version of this repo, where the app lived in an `api/` folder. | Set **Root directory** to `/` in the site's Advanced settings, point the queue worker and scheduler at `/home/forge/donna.joshevensen.com/current` (see [queue-and-scheduler.md](queue-and-scheduler.md)), and deploy again. |
 
 A failed deploy never goes live. Forge only switches to a release in `$ACTIVATE_RELEASE()`, so fix the script and deploy again.
@@ -101,7 +108,7 @@ Do this after the first deploy, once `dig +short donna.joshevensen.com` prints t
 1. **Stop the `www` redirect.** Edit the site's domain, `donna.joshevensen.com`, and set the redirect to **No Redirect**. Donna lives on a subdomain, so there is no `www.` version of it to redirect from.
 2. Issue a **Let's Encrypt** certificate for the domain.
 
-Then `https://donna.joshevensen.com/up` should answer 200.
+Then `https://donna.joshevensen.com/up` should answer 200, and `https://donna.joshevensen.com` should show Donna's icon and a sign-in form. Signing in needs either mail ([mail.md](mail.md)) or `donna:login` on the server.
 
 ## 7. Check the app's folder
 

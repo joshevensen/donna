@@ -5,7 +5,9 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 ## Layout
 
 - The repo is one Laravel app: the JSON API at `/api/v1/*` (pure JSON, no other views) plus the React web app in `resources/js`, shown by a single Blade view (`resources/views/app.blade.php`) at every non-API URL. The API never depends on the web app; the native app (not started; it arrives with Presence) will use the API the same way, from its own repository or folder when it begins
-- `.github/` — CI (Pint + the full suite on Postgres) and Dependabot
+- `resources/js` — the web app: `pages/`, `components/`, `hooks/` (state: messages, polling, keyboard, session), `lib/` (pure logic, each with its `*.test.ts` beside it), `api/` (the fetch client). Styles are one file, `resources/css/app.css`, using the tokens in `docs/design.md`. `public/sw.js` is the hand-written service worker (push only, no caching)
+- `tests/e2e` — a few Playwright flows through the built web app with the API faked in the browser
+- `.github/` — CI (Pint, the full suite on Postgres, then the web app's type-check, Vitest and build) and Dependabot
 - `docs/` — `vision.md` (what and why), `design.md` (palette, icon, type, components), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `instructions/` (how to set up everything outside the repo); update the relevant doc when a decision changes it
 
 ## Stack
@@ -27,7 +29,8 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Hosting | One DigitalOcean droplet, provisioned and deployed with Laravel Forge |
 | Database | Postgres on the droplet itself (one server, managed by Forge); full-text + pgvector (hybrid retrieval) |
 | File storage | DigitalOcean Spaces |
-| Auth | Laravel Sanctum |
+| Auth | Laravel Sanctum — cookie sessions for the web app, signed in by an emailed code or link (no passwords); tokens for the terminal |
+| Mail | Resend, over its API (sign-in codes and the new-sign-in notice only) |
 | Backups | Droplet backups + database dumps to Spaces |
 | Voice | Apple SpeechAnalyzer (dictation) + App Intents (Siri), in the native app |
 | Context signals | Calendar, location, Core Motion (driving), device activity — reported from the apps |
@@ -69,6 +72,7 @@ Tests exist to protect what Donna does, not to maximize coverage. The `testing-b
 - **Every bug fix adds one regression test.**
 - **When to run** — after each change, only the tests for that change (file or `--filter`); the full suite after finishing each larger area of work; the full suite green before opening a PR. Never save all testing for the end.
 - **CI is the final check** — GitHub Actions runs the full suite on every PR; a PR isn't ready until CI is green.
+- **The web app follows the same rules** — pure logic and components in Vitest (`npm test`), a few whole flows in Playwright against the built app with the API faked (`npm run build && npm run test:e2e`), and `npm run typecheck` clean. Playwright is not in CI; run it before opening a PR that touches `resources/js`. What only a real iPhone can show (the keyboard, push, the installed app) is listed in the PR for Josh to check, never claimed as verified.
 
 ## Code or model
 

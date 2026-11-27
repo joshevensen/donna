@@ -5,10 +5,28 @@ After setup, and again after anything big changes on the server.
 ## Right away
 
 - `https://donna.joshevensen.com/up` answers 200. If not, the site or its certificate isn't set up ([forge-site.md](forge-site.md)).
-- Send her a message from [your Mac](terminal-on-mac.md). A reply arrives.
-  - If it sits on "thinking" forever, the queue worker isn't running ([queue-and-scheduler.md](queue-and-scheduler.md)).
-  - If it comes back as "could not reply", read the end of `storage/logs/laravel.log` on the server. A wrong API key is the usual cause.
+- `https://donna.joshevensen.com` shows Donna's icon and a sign-in form.
+  - A 500 instead means the web app wasn't built: check the deploy script has its `npm` lines ([forge-site.md](forge-site.md)).
+- **Sign in.** Enter your address, press **Email me a code**, and type the code from the email.
+  - No email: [mail.md](mail.md). To get in anyway, `php8.4 artisan donna:login` on the server prints a code.
+  - The code is accepted and you are straight back at the sign-in form: `SANCTUM_STATEFUL_DOMAINS` or `SESSION_SECURE_COOKIE` is wrong ([environment-variables.md](environment-variables.md)).
+  - A "New sign-in to Donna" email follows every sign-in. That is working as intended.
+- **Send her a message.** Your message appears at once, three dots bounce, and a reply arrives.
+  - If the dots go on forever, the queue worker isn't running ([queue-and-scheduler.md](queue-and-scheduler.md)).
+  - If the thread says "Donna couldn't reply", read the end of `storage/logs/laravel.log` on the server. A wrong API key is the usual cause. **Try again** asks her for the same reply; it does not send your message twice.
+- **Close the tab and open it again.** You are still signed in. If not, `SESSION_LIFETIME` is still `120` ([environment-variables.md](environment-variables.md)).
+- **Get a notification.** With the app installed and notifications on ([web-push.md](web-push.md)), send a message and lock the phone. Her reply arrives as a notification.
 - Ask her "what did you cost me today?" A non-zero answer means cost tracking is recording.
+- Write `@` in front of a name she doesn't know ("lunch with @Dave on Friday"). She should ask who that is.
+
+## On the iPhone
+
+These can only be checked on the phone itself:
+
+- **The keyboard, in the installed app and in a Safari tab.** Tap the input: it opens three lines tall and sits directly above the keyboard, with the newest message still visible above it. Type until it grows to six lines, then scrolls. Send: the keyboard stays up. Tap the thread or swipe the keyboard away: the input drops back to the bottom as a slim bar, with no gap under it and nothing cut off. The page behind never scrolls or bounces.
+- **The top of the screen** in the installed app: messages scroll up to the status bar and stop under it; the clock stays readable.
+- **Signing in with the code**, typed into the installed app after reading it in Mail. Coming back from Mail should land on the code field.
+- **The link in the email**, opened from Mail on the phone. It opens Safari and says that it signs in Safari, not the app. You should not end up signed in to the wrong place without being told.
 
 ## The morning after
 

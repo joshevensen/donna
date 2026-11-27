@@ -21,6 +21,20 @@ DB_DATABASE=donna
 QUEUE_CONNECTION=database
 CACHE_STORE=database
 
+SESSION_DRIVER=database
+SESSION_LIFETIME=43200
+SESSION_SECURE_COOKIE=true
+SANCTUM_STATEFUL_DOMAINS=donna.joshevensen.com
+
+MAIL_MAILER=resend
+RESEND_API_KEY=...
+MAIL_FROM_ADDRESS=donna@donna.joshevensen.com
+MAIL_FROM_NAME=Donna
+
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:you@example.com
+
 ANTHROPIC_API_KEY=...
 VOYAGEAI_API_KEY=...
 
@@ -29,7 +43,9 @@ DONNA_USER_NAME=Josh
 DONNA_USER_EMAIL=you@example.com
 ```
 
-Forge fills in `APP_KEY` and the database username and password. For [using Donna from your phone](blink-iphone.md), also add `DONNA_API_URL` and `DONNA_API_TOKEN`.
+Forge fills in `APP_KEY` and the database username and password. The mail lines come from [mail.md](mail.md) and the `VAPID_` lines from [web-push.md](web-push.md); the site runs without them, but you can then only sign in with `donna:login` and get no notifications. For the [terminal fallback on your phone](blink-iphone.md), also add `DONNA_API_URL` and `DONNA_API_TOKEN`.
+
+**A site created before the web chat existed has `SESSION_LIFETIME=120` in its environment**, copied from the old `.env.example`. Change it to `43200`, or the web app signs you out after two hours.
 
 ## Laravel
 
@@ -45,8 +61,22 @@ Forge fills in `APP_KEY` and the database username and password. For [using Donn
 | `DB_USERNAME`, `DB_PASSWORD` | Server | | Forge sets these. |
 | `QUEUE_CONNECTION` | Server | `database` | No Redis: one user doesn't need it. |
 | `CACHE_STORE` | Server, Mac | `database` | On the Mac use `file`, so the terminal client needs no database. |
-| `SESSION_DRIVER` | Server, Mac | `database` | On the Mac use `array`, for the same reason. |
+| `SESSION_DRIVER` | Server, Mac | `database` | Must be `database` on the server: "sign out everywhere" works by deleting the sessions stored there. On the Mac use `array`, so the terminal client needs no database. |
+| `SESSION_LIFETIME` | Server | `43200` | Minutes a web sign-in lasts **after it was last used**: 43200 is 30 days. Using the app keeps renewing it, up to `DONNA_SESSION_MAX_DAYS`. |
+| `SESSION_SECURE_COOKIE` | Server | | `true`. The sign-in cookie is then only ever sent over HTTPS. Leave it unset on a Mac running the app over plain `http://localhost`. |
+| `SANCTUM_STATEFUL_DOMAINS` | Server | `localhost` and the host in `APP_URL` | `donna.joshevensen.com`. The one address whose browser requests are trusted to carry the sign-in cookie. If it is wrong, the sign-in page accepts the code and then every request says you are signed out. Never set it to an empty value. |
 | `DB_QUEUE_RETRY_AFTER` | Server | `660` | Seconds before an unfinished job is handed to another worker. Must be longer than the worker's timeout ([queue-and-scheduler.md](queue-and-scheduler.md)). Leave it. |
+
+## Mail
+
+Sign-in codes and the new-sign-in notice ([mail.md](mail.md)).
+
+| Variable | Where | Default | Secret | Notes |
+|---|---|---|---|---|
+| `MAIL_MAILER` | Server | `log` | No | `resend`. The default writes mail into `storage/logs/laravel.log` instead of sending it, which is what you want on a Mac and not on the server. |
+| `RESEND_API_KEY` | Server | | Yes | The Resend key with sending access. |
+| `MAIL_FROM_ADDRESS` | Server | `hello@example.com` | No | `donna@donna.joshevensen.com`. The part after the `@` must be the domain verified in Resend. |
+| `MAIL_FROM_NAME` | Server | The app's name | No | `Donna`. |
 
 ## Providers
 

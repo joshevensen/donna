@@ -1,6 +1,6 @@
 # Setup instructions
 
-Everything Donna needs that isn't in the repo: accounts, API keys, the server, DNS, backups, and the devices Josh talks to her from. The code is in the repo; this is the rest.
+Everything Donna needs that isn't in the repo: accounts, API keys, the server, DNS, mail, backups, and the devices Josh talks to her from. The code is in the repo; this is the rest.
 
 Each file is one task. Do them in this order the first time. Afterwards they are reference: look up a variable, rotate a key, add a device.
 
@@ -11,25 +11,27 @@ Each file is one task. Do them in this order the first time. Afterwards they are
 | # | File | What it covers |
 |---|---|---|
 | 1 | [`forge-server.md`](forge-server.md) | The droplet, and one recipe that gives it swap and pgvector |
-| 2 | [`forge-site.md`](forge-site.md) | The site: DNS, environment, deploy script, first deploy, then the certificate once DNS has spread. The keys below go into its environment |
+| 2 | [`forge-site.md`](forge-site.md) | The site: DNS, environment, the deploy script (which also builds the web app), first deploy, then the certificate once DNS has spread. The keys below go into its environment |
 | 3 | [`anthropic-api-key.md`](anthropic-api-key.md) | The key Donna thinks with, and the spend limit on it |
 | 4 | [`voyage-api-key.md`](voyage-api-key.md) | The key her memory searches with |
 | 5 | [`queue-and-scheduler.md`](queue-and-scheduler.md) | The worker that writes her replies and the clock that runs the daily jobs |
 | 6 | [`backups.md`](backups.md) | Droplet backups and database dumps to Spaces |
-| 7 | [`terminal-on-mac.md`](terminal-on-mac.md) | Your token, and talking to her from your Mac |
-| 8 | [`verify-setup.md`](verify-setup.md) | How to tell it all works |
+| 7 | [`mail.md`](mail.md) | The email provider that delivers sign-in codes, its DNS records, and signing in without email |
+| 8 | [`web-push.md`](web-push.md) | Notification keys, installing Donna to the iPhone's Home Screen, and turning notifications on |
+| 9 | [`verify-setup.md`](verify-setup.md) | How to tell it all works |
 
 ## Optional and reference
 
 | File | What it covers |
 |---|---|
-| [`blink-iphone.md`](blink-iphone.md) | Talking to her from your iPhone with Blink Shell |
+| [`terminal-on-mac.md`](terminal-on-mac.md) | The fallback: your token, and talking to her from a terminal on your Mac |
+| [`blink-iphone.md`](blink-iphone.md) | The fallback on the iPhone: a terminal over SSH with Blink Shell |
 | [`environment-variables.md`](environment-variables.md) | Every setting: where it lives, its default, what it does |
 | [`operating.md`](operating.md) | Resizing, spend, updating, and what to look at when something is off |
 
 ## Conventions
 
-- Forge, DigitalOcean, Anthropic and Blink rename their screens now and then. Where a label doesn't match what you see, the goal of the step is what matters.
+- Forge, DigitalOcean, Anthropic, Resend and Blink rename their screens now and then. Where a label doesn't match what you see, the goal of the step is what matters.
 - A step marked *(unverified)* was written from documentation, not followed live. When you follow one and it differs, fix the file.
 - Commands assume the server's `forge` user and the site at `/home/forge/donna.joshevensen.com`. The app itself lives in `/home/forge/donna.joshevensen.com/current`, which is where the commands below run.
 - Never put a key in the repo, in a chat with Donna, or in a pull request.

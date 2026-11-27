@@ -20,4 +20,14 @@ The native apps (later) will get their own repository or folder when Presence be
 - [`docs/vision.md`](docs/vision.md) — what Donna is and why
 - [`docs/domain.md`](docs/domain.md) — concepts and the rules that always hold
 - [`docs/phases.md`](docs/phases.md) — build order and where things stand
-- [`docs/instructions/`](docs/instructions/README.md) — setting up everything outside the repo: keys, Forge, DNS, backups, and talking to Donna from your Mac or iPhone
+- [`docs/design.md`](docs/design.md) — palette, icon, type, and components
+- [`docs/instructions/`](docs/instructions/README.md) — setting up everything outside the repo: keys, Forge, DNS, mail, backups, notifications, and installing Donna on your iPhone
+
+## Working on it
+
+```
+composer dev                              The app, the queue worker, the log and Vite with hot reload
+php artisan test --parallel               The API's tests (needs Postgres with pgvector)
+npm test                                  The web app's unit tests
+npm run build && npm run test:e2e         A few flows through the built web app, with the API faked
+```
