@@ -60,6 +60,7 @@ The first front end, so Josh can leave the terminal. A web app he opens in a bro
 - Web Push for replies when the app isn't open
 - Chat commands: natural language with a tap button, or `/signout` and `/notifications`
 - Tapping a bubble shows its time; "sources" shows what she looked at. No ratings in the UI (Phase 1's flagging endpoint stays, unused for now)
+- The repo becomes one Laravel app at the root (no `api/` folder, `apple/` removed); this ships in the Phase 2 PR, and the Forge site's root directory changes with it
 - The API gains a `web` message source, idempotent sends, retry, `after` polling, bubbles, sources and actions
 - No attachments (Phase 6), no projects page, no menu
 - `donna:chat` and Blink stay as the fallback
