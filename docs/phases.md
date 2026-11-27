@@ -53,7 +53,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 
 The first front end, so Josh can leave the terminal. A web app he opens in a browser tab on the Mac and installs to the iPhone's Home Screen. It costs nothing to distribute and needs no Apple developer account. Detailed in [`tech/phase-2.md`](tech/phase-2.md).
 
-**Status:** doc drafted, awaiting approval.
+**Status:** doc approved; not yet built.
 
 - Chat UI per the vision and the mockup: one conversation, texting-style bubbles (replies as one bubble or several), typing dots, no progress messages, a collapsing input pinned above the keyboard, markdown and code blocks, errors and offline states, dark mode only
 - Sign-in by emailed code and link, no passwords; Sanctum cookie sessions that last 30 days from last use, capped at 90 days; an email on every new sign-in with a sign-out-everywhere button

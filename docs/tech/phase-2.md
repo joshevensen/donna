@@ -2,7 +2,7 @@
 
 Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Screen or a tab on his Mac, that feels like texting a person. Scope is in [`phases.md`](../phases.md); look and feel in [`design.md`](../design.md); concepts in [`domain.md`](../domain.md). Phase 1's API and memory are unchanged except where this doc says.
 
-**Status:** draft, waiting for Josh's approval.
+**Status:** approved by Josh; not yet built.
 
 **Mockup:** one interactive screen, [open the artifact](https://claude.ai/artifact/TUsiu8dbpssjDijzWax7q1) (private to Josh). Its source is kept in [`phase-2/mockup.dc.html`](phase-2/mockup.dc.html) so the design survives if the link doesn't. It is the iPhone layout; the Mac layout is the same chat in a centered column and wasn't mocked up.
 
