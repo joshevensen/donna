@@ -44,7 +44,7 @@ Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Scre
 
 ## Design
 
-Where this section is silent, follow Laravel and Vue best practice, the root and `api/` `CLAUDE.md` files and the Boost guidelines, and note notable choices in the PR. If something here turns out to be wrong once you're in the code, deviate, say why in the PR, and update this doc in the same PR.
+Where this section is silent, follow Laravel and React best practice, the root and `api/` `CLAUDE.md` files and the Boost guidelines, and note notable choices in the PR. If something here turns out to be wrong once you're in the code, deviate, say why in the PR, and update this doc in the same PR.
 
 ### Delivery
 
@@ -56,7 +56,7 @@ Where this section is silent, follow Laravel and Vue best practice, the root and
 
 | Decision | Choice | Reason |
 |---|---|---|
-| Web stack | Vue 3 (`<script setup>`, TypeScript), Vite, Vue Router, no UI kit | Three routes and one real screen; the chat needs fine control of scroll, textarea height and the keyboard, which a UI kit would fight. Vue is the Laravel-community default. |
+| Web stack | React 19 with TypeScript, Vite, React Router, no UI kit and no state library (hooks and context) | Three routes and one real screen; the chat needs fine control of scroll, textarea height and the keyboard, which a UI kit would fight. React is Josh's call. |
 | Where it lives | New `web/` folder, built by Vite into `api/public/app`, served from the same origin as the API | Same origin means no CORS and Sanctum's cookie login for the SPA. |
 | Login | Laravel Fortify (headless: login, logout, forgot and reset password only) + Sanctum cookie sessions | First-party, includes throttling and the reset-email flow; hand-rolling these is how auth bugs happen. The terminal keeps its tokens. |
 | Reply bubbles | Donna separates bubbles in her reply with a line containing only `---`; code splits it | Deciding when to split is judgment (hers); splitting is code. No schema change. |
@@ -65,11 +65,11 @@ Where this section is silent, follow Laravel and Vue best practice, the root and
 
 ### The web app (`web/`)
 
-- Vue 3 + Vite + TypeScript, Vue Router with three routes: `/` (chat), `/login`, `/reset-password/:token`, plus `/forgot-password`. Composables for state; no Pinia.
+- React 19 + Vite + TypeScript, React Router with the routes `/` (chat), `/login`, `/forgot-password` and `/reset-password/:token`. Custom hooks for state (messages, polling, keyboard, push); no Redux or other state library.
 - **Dev:** `npm run dev` with Vite proxying `/api` and `/sanctum` to the API. **Build:** `npm run build` writes `api/public/app`.
 - **Served by Laravel:** a `fallback` route returns `public/app/index.html` for any GET that isn't `/api/*` (and the static assets are served by Nginx). This is the one web route in the app; update the "pure JSON" note in `CLAUDE.md` and delete the old `public/index.html` landing page (the app replaces it, and signed-out visitors land on `/login`).
 - **Installable:** a web app manifest (name Donna, `display: standalone`, background Canvas `#0F0B0B`, the icon at 192/512 and the 180 touch icon) and `theme-color` Canvas. Icons are exported from `api/public/favicon.svg` per `design.md`.
-- **Markdown:** replies render with `markdown-it` with raw HTML disabled: paragraphs, lists, inline code, fenced code (monospace, no highlighting, copy button), links open in a new tab. Josh's own messages render as plain text.
+- **Markdown:** replies render with `react-markdown` (no `dangerouslySetInnerHTML`, raw HTML ignored): paragraphs, lists, inline code, fenced code (monospace, no highlighting, copy button), links open in a new tab. Josh's own messages render as plain text.
 - **Dark only:** `<meta name="color-scheme" content="dark">`, tokens as CSS custom properties from `design.md`.
 - **Text size:** 16px minimum in inputs so iOS doesn't zoom; `rem` sizes.
 
@@ -181,7 +181,7 @@ Follow the Testing rules in the root `CLAUDE.md`. Fake every model, mail and pus
 - Push: sent when the reply completes and the app wasn't polling, not sent when it was; dead endpoints are pruned.
 - Seeder: password set only at creation, email synced without creating a second user; `donna:password`.
 
-**Web (Vitest):** bubble grouping and corner radii, date labels in a timezone, the reveal queue for multi-bubble replies, markdown rendering (no raw HTML gets through), keyboard-viewport math, slash-command parsing. **Playwright with a mocked API:** send and receive, not delivered then retry, couldn't reply then try again, sign in. The keyboard behavior can't be tested without a device; it's a manual check listed in the PR.
+**Web (Vitest):** bubble grouping and corner radii, date labels in a timezone, the reveal queue for multi-bubble replies, markdown rendering (no raw HTML gets through), tested with React Testing Library where a component is the boundary, keyboard-viewport math, slash-command parsing. **Playwright with a mocked API:** send and receive, not delivered then retry, couldn't reply then try again, sign in. The keyboard behavior can't be tested without a device; it's a manual check listed in the PR.
 
 ### Risks to check early
 
