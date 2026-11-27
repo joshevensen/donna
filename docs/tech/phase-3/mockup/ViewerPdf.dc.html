@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Viewer, PDF file</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0F0B0B}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; background: #1F1718; color: #F4EBE1; font-family: ui-sans-serif, -apple-system, system-ui, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif">
+
+  <header style="flex-shrink: 0; padding: 20px 12px 10px 8px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #1A1414">
+    <div style="display: flex; align-items: center; gap: 4px">
+      <button aria-label="Close" style="flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+      </button>
+      <h1 style="flex: 1 1 0; min-width: 0; margin: 0; font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">houston-logistics.pdf</h1>
+      <a href="#" style="flex-shrink: 0; min-height: 44px; padding: 0 14px; border-radius: 14px; background: #F4EBE1; color: #1E1718; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; text-decoration: none">
+        Open original
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E1718" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+      </a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 0 4px 0 12px">
+      <span id="keep-label" style="flex: 1 1 0; font-size: 14px; color: rgba(244,235,225,0.65)">Kept. Donna finds it when it comes up</span>
+      <button role="switch" aria-checked="true" aria-labelledby="keep-label" style="flex-shrink: 0; position: relative; width: 52px; height: 32px; border: 0; border-radius: 999px; background: #7C3AED; padding: 0">
+        <span style="position: absolute; top: 3px; right: 3px; width: 26px; height: 26px; border-radius: 999px; background: #F4EBE1"></span>
+      </button>
+    </div>
+  </header>
+
+  <div style="flex-shrink: 0; margin: 12px 16px 0; padding: 10px 12px; border-radius: 12px; background: #1A1414; font-size: 13px; line-height: 1.4; color: rgba(244,235,225,0.65)">Shown as the text Donna reads, 4 pages. The layout isn't shown. Open the original to see it.</div>
+
+  <article style="flex: 1 1 0; min-height: 0; overflow: hidden; padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.55">
+    <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(244,235,225,0.65)">Page 1</div>
+    <p style="margin: 0">HOUSTON FIBER FESTIVAL. Vendor logistics. January 29 and 30.</p>
+    <p style="margin: 0">Load-in: Thursday 7:00 AM to 10:00 AM at the east dock. Booth numbers are on the vendor badge. Vehicles must be off the dock by 10:30 AM.</p>
+    <p style="margin: 0">Booth fee: $450 for a 10 x 10 space, due January 8. Electricity is $60 per outlet and must be ordered in advance.</p>
+    <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(244,235,225,0.65); margin-top: 4px">Page 2</div>
+    <p style="margin: 0">Sales tax. Vendors collect and report their own. A temporary permit is required for out-of-state sellers and can be filed online.</p>
+    <p style="margin: 0">Teardown begins Saturday at 5:00 PM. Booths must be clear by 9:00 PM.</p>
+  </article>
+
+  <footer style="flex-shrink: 0; padding: 0 0 28px; background: #1F1718; border-top: 1px solid #1A1414">
+    <button aria-expanded="false" style="width: 100%; min-height: 48px; padding: 0 20px; border: 0; background: transparent; color: rgba(244,235,225,0.65); font: inherit; font-size: 14px; display: flex; align-items: center; justify-content: space-between">
+      <span>Details</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+    </button>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

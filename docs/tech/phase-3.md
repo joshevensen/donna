@@ -4,7 +4,7 @@ Josh attaches files in the chat as context for Donna: text, CSV, PDF and images.
 
 **Status:** draft for discussion; not approved, not built. Open questions are at the end.
 
-**Mockup:** not yet. The phone attach sheet and chips are already in [`phase-2/mockup.dc.html`](phase-2/mockup.dc.html). Still to draw: the file card in a bubble, the viewer (phone sheet and Mac side panel, view and edit modes) and the `/files` list. They are drawn once the stories below are agreed.
+**Mockup:** eight screens on one canvas, [open the artifact](https://claude.ai/artifact/4R8ZFyMEguk2GUAeidqBj3) (private to Josh). The source is kept in [`phase-3/mockup/`](phase-3/mockup/) so the design survives if the link doesn't. They are static drawings of: the attach sheet, the upload chips (uploading, ready, refused), file cards in the thread with `/files`, the viewer for a kept markdown file, its edit mode with the save conflict, a CSV that isn't kept, a PDF, and the Mac layout with the chat and the file side by side. Where the mockup and this doc disagree, the doc wins.
 
 ---
 

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Viewer, markdown file</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0F0B0B}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; background: #1F1718; color: #F4EBE1; font-family: ui-sans-serif, -apple-system, system-ui, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif">
+
+  <header style="flex-shrink: 0; padding: 20px 12px 10px 8px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #1A1414">
+    <div style="display: flex; align-items: center; gap: 4px">
+      <button aria-label="Close" style="flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+      </button>
+      <h1 style="flex: 1 1 0; min-width: 0; margin: 0; font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">launch-plan.md</h1>
+      <button style="flex-shrink: 0; min-height: 44px; padding: 0 18px; border: 0; border-radius: 14px; background: #F4EBE1; color: #1E1718; font: inherit; font-size: 15px; font-weight: 600">Edit</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 0 4px 0 12px">
+      <span id="keep-label" style="flex: 1 1 0; font-size: 14px; color: rgba(244,235,225,0.65)">Kept. Donna finds it when it comes up</span>
+      <button role="switch" aria-checked="true" aria-labelledby="keep-label" style="flex-shrink: 0; position: relative; width: 52px; height: 32px; border: 0; border-radius: 999px; background: #7C3AED; padding: 0">
+        <span style="position: absolute; top: 3px; right: 3px; width: 26px; height: 26px; border-radius: 999px; background: #F4EBE1"></span>
+      </button>
+    </div>
+  </header>
+
+  <article style="flex: 1 1 0; min-height: 0; overflow: hidden; padding: 20px 20px 0; display: flex; flex-direction: column; gap: 12px; font-size: 16px; line-height: 1.5">
+    <h2 style="margin: 0; font-size: 22px; font-weight: 600">Fibermade launch plan</h2>
+    <p style="margin: 0">Fibermade launches to other dyers on January 25, before the Houston festival on the 29th and 30th. Goal: six dyers live by the end of the festival.</p>
+    <h3 style="margin: 8px 0 0; font-size: 17px; font-weight: 600">Dyers</h3>
+    <ul style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px">
+      <li>Studio one: committed</li>
+      <li>Studio two: migrating from Shopify</li>
+      <li>Studio three: excited, no date yet</li>
+      <li>Three more still to talk to</li>
+    </ul>
+    <h3 style="margin: 8px 0 0; font-size: 17px; font-weight: 600">Pricing</h3>
+    <p style="margin: 0">Flat monthly plan for launch. Wholesale tiers come after launch, tracked in <code style="font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 14px; background: #0F0B0B; padding: 1px 6px; border-radius: 4px">pricing.md</code>.</p>
+    <h3 style="margin: 8px 0 0; font-size: 17px; font-weight: 600">Open questions</h3>
+    <ul style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px">
+      <li>Who migrates the first store?</li>
+      <li>What do we promise by the 29th?</li>
+    </ul>
+  </article>
+
+  <footer style="flex-shrink: 0; padding: 0 0 28px; background: #1F1718; border-top: 1px solid #1A1414">
+    <button aria-expanded="false" style="width: 100%; min-height: 48px; padding: 0 20px; border: 0; background: transparent; color: rgba(244,235,225,0.65); font: inherit; font-size: 14px; display: flex; align-items: center; justify-content: space-between">
+      <span>Details</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+    </button>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
