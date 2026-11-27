@@ -58,7 +58,8 @@ describe('store', function () {
         $first = $send()->assertAccepted();
         $again = $send()->assertAccepted();
 
-        expect($again->json('data.message.id'))->toBe($first->json('data.message.id'))
+        expect($again->json('data.message.client_key'))->toBe('0b9b1d5e-6f0a-4c1e-9a53-2f4e8d7c6b5a')
+            ->and($again->json('data.message.id'))->toBe($first->json('data.message.id'))
             ->and($again->json('data.reply.id'))->toBe($first->json('data.reply.id'))
             ->and(Message::count())->toBe(2);
 
@@ -124,6 +125,7 @@ describe('show', function () {
                     ['type' => 'fact', 'label' => 'The keyboard was ordered Nov 3 · Nov 3'],
                 ],
                 'actions' => [['type' => 'enable_notifications', 'label' => 'Turn on notifications']],
+                'client_key' => null,
                 'created_at' => $reply->created_at->toJSON(),
             ]]);
     });

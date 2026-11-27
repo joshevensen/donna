@@ -1,0 +1,366 @@
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { api, NetworkError } from '../api/client';
+import type { Message } from '../api/types';
+import { uuid } from '../lib/platform';
+import { RevealQueue } from '../lib/reveal';
+import { type OutboxItem, storage } from '../lib/storage';
+import type { Note, TimelineItem } from '../lib/timeline';
+import { useOnline } from './useOnline';
+
+const PAGE = 30;
+const POLL_WHILE_WAITING_MS = 2_000;
+const POLL_WHILE_IDLE_MS = 10_000;
+
+/** A reply still pending after this long isn't being written any more; stop showing the dots for it. */
+const STALE_PENDING_MS = 15 * 60 * 1000;
+
+export interface Conversation {
+    items: TimelineItem[];
+    /** Donna is writing, or a multi-bubble reply is still arriving. */
+    typing: boolean;
+    /** No connection: the strip shows and sends wait. */
+    offline: boolean;
+    /** The first page has loaded. */
+    ready: boolean;
+    loadingOlder: boolean;
+    hasOlder: boolean;
+    send: (body: string) => void;
+    retrySend: (key: string) => void;
+    retryReply: (id: number) => void;
+    loadOlder: () => void;
+    addNote: (text: string) => void;
+}
+
+function localTime(item: TimelineItem): string {
+    return item.kind === 'outbox' ? item.item.createdAt : item.kind === 'note' ? item.note.createdAt : '';
+}
+
+/**
+ * The one conversation: what the server has, what this device hasn't
+ * managed to send yet, and the polling that keeps the two in step. There are
+ * no websockets; a single user doesn't need them.
+ */
+export function useMessages(): Conversation {
+    const online = useOnline();
+    const [, render] = useReducer((count: number) => count + 1, 0);
+
+    // Messages by id. Kept in a ref so polling always reads the latest, with a render forced on change.
+    const messages = useRef(new Map<number, Message>());
+    const reveal = useRef<RevealQueue | null>(null);
+    reveal.current ??= new RevealQueue(render);
+
+    const [outbox, setOutbox] = useState<OutboxItem[]>(() => storage.outbox());
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [ready, setReady] = useState(false);
+    const [nextBefore, setNextBefore] = useState<number | null>(null);
+    const [loadingOlder, setLoadingOlder] = useState(false);
+    const [unreachable, setUnreachable] = useState(false);
+    const unreachableRef = useRef(unreachable);
+    unreachableRef.current = unreachable;
+
+    const outboxRef = useRef(outbox);
+    outboxRef.current = outbox;
+
+    // When each retried reply was retried: it is old, but she is writing it now.
+    const retriedAt = useRef(new Map<number, number>());
+
+    /** Is Donna writing this one right now? */
+    const isWaiting = useCallback((message: Message): boolean => {
+        const since = retriedAt.current.get(message.id) ?? Date.parse(message.created_at);
+
+        return message.author === 'donna' && message.status === 'pending' && Date.now() - since < STALE_PENDING_MS;
+    }, []);
+
+    const updateOutbox = useCallback((change: (items: OutboxItem[]) => OutboxItem[]) => {
+        setOutbox((items) => {
+            const next = change(items);
+
+            storage.saveOutbox(next);
+
+            return next;
+        });
+    }, []);
+
+    /** Take in messages from the server, noticing replies that finished while the app was watching. */
+    const merge = useCallback(
+        (incoming: Message[]) => {
+            if (incoming.length === 0) {
+                return;
+            }
+
+            const delivered = new Set<string>();
+
+            for (const message of incoming) {
+                const known = messages.current.get(message.id);
+
+                if (known?.status === 'pending' && message.status === 'complete') {
+                    reveal.current?.enqueue(message.id, message.bubbles);
+                }
+
+                if (message.client_key !== null) {
+                    delivered.add(message.client_key);
+                }
+
+                messages.current.set(message.id, message);
+            }
+
+            // A send whose answer was lost shows up here as delivered: it is no longer unsent.
+            if (outboxRef.current.some((item) => delivered.has(item.key))) {
+                updateOutbox((items) => items.filter((item) => !delivered.has(item.key)));
+            }
+
+            render();
+        },
+        [updateOutbox],
+    );
+
+    /** Run a request, tracking whether the server can be reached at all. */
+    const reach = useCallback(async <T,>(call: () => Promise<T>): Promise<T> => {
+        try {
+            const result = await call();
+
+            setUnreachable(false);
+
+            return result;
+        } catch (error) {
+            if (error instanceof NetworkError) {
+                setUnreachable(true);
+            }
+
+            throw error;
+        }
+    }, []);
+
+    const deliver = useCallback(
+        async (item: OutboxItem) => {
+            updateOutbox((items) => items.map((other) => (other.key === item.key ? { ...other, state: 'sending' } : other)));
+
+            try {
+                const sent = await reach(() => api.send(item.body, item.key));
+
+                updateOutbox((items) => items.filter((other) => other.key !== item.key));
+                merge(sent.reply === null ? [sent.message] : [sent.message, sent.reply]);
+            } catch (error) {
+                const waitingForConnection = error instanceof NetworkError;
+
+                updateOutbox((items) =>
+                    items.map((other) => (other.key === item.key ? { ...other, state: 'failed', waitingForConnection } : other)),
+                );
+            }
+        },
+        [merge, reach, updateOutbox],
+    );
+
+    const send = useCallback(
+        (body: string) => {
+            const item: OutboxItem = { key: uuid(), body, createdAt: new Date().toISOString(), state: 'sending' };
+
+            updateOutbox((items) => [...items, item]);
+
+            if (!navigator.onLine) {
+                updateOutbox((items) =>
+                    items.map((other) => (other.key === item.key ? { ...other, state: 'failed', waitingForConnection: true } : other)),
+                );
+
+                return;
+            }
+
+            void deliver(item);
+        },
+        [deliver, updateOutbox],
+    );
+
+    const retrySend = useCallback(
+        (key: string) => {
+            const item = outboxRef.current.find((other) => other.key === key);
+
+            if (item !== undefined && item.state === 'failed') {
+                void deliver(item);
+            }
+        },
+        [deliver],
+    );
+
+    const retryReply = useCallback(
+        (id: number) => {
+            const failed = messages.current.get(id);
+
+            if (failed === undefined) {
+                return;
+            }
+
+            // Show the dots at once; put the failure back if the request doesn't land.
+            retriedAt.current.set(id, Date.now());
+            messages.current.set(id, { ...failed, status: 'pending', error: null });
+            render();
+
+            reach(() => api.retryReply(id))
+                .then((reply) => merge([reply]))
+                .catch(() => {
+                    retriedAt.current.delete(id);
+                    messages.current.set(id, failed);
+                    render();
+                });
+        },
+        [merge, reach],
+    );
+
+    const loadOlder = useCallback(() => {
+        if (nextBefore === null || loadingOlder) {
+            return;
+        }
+
+        setLoadingOlder(true);
+
+        reach(() => api.messages({ before: nextBefore, limit: PAGE }))
+            .then((page) => {
+                merge(page.data);
+                setNextBefore(page.meta.next_before ?? null);
+            })
+            .catch(() => undefined)
+            .finally(() => setLoadingOlder(false));
+    }, [loadingOlder, merge, nextBefore, reach]);
+
+    const addNote = useCallback((text: string) => {
+        setNotes((existing) => [...existing, { id: uuid(), text, createdAt: new Date().toISOString() }]);
+    }, []);
+
+    // The first page, then anything left unsent from last time.
+    useEffect(() => {
+        let cancelled = false;
+
+        const load = () =>
+            reach(() => api.messages({ limit: PAGE }))
+                .then((page) => {
+                    if (cancelled) {
+                        return;
+                    }
+
+                    merge(page.data);
+                    setNextBefore(page.meta.next_before ?? null);
+                    setReady(true);
+
+                    // A send that was in flight when the app closed never got its answer. Sending
+                    // it again is safe: the key returns the original if it did arrive.
+                    for (const item of outboxRef.current.filter((other) => other.state === 'sending')) {
+                        void deliver(item);
+                    }
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        retry = setTimeout(load, POLL_WHILE_WAITING_MS);
+                    }
+                });
+
+        let retry: ReturnType<typeof setTimeout> | undefined;
+
+        void load();
+
+        return () => {
+            cancelled = true;
+            clearTimeout(retry);
+            reveal.current?.dispose();
+        };
+        // Runs once: everything it uses is stable for the life of the page.
+    }, [deliver, merge, reach]);
+
+    const waiting = [...messages.current.values()].some(isWaiting);
+
+    // Polling: every 2s while a reply is being written (or the server can't be reached, so the
+    // strip clears promptly), every 10s otherwise, and never while the tab is hidden (push
+    // covers that). This is also how another device's messages arrive.
+    useEffect(() => {
+        if (!ready) {
+            return;
+        }
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let stopped = false;
+
+        const poll = async () => {
+            if (stopped || document.visibilityState !== 'visible') {
+                return;
+            }
+
+            const known = [...messages.current.values()];
+            const newest = known.reduce((max, message) => Math.max(max, message.id), 0);
+            const pending = known.filter(isWaiting);
+
+            try {
+                const [fresh, ...replies] = await reach(() =>
+                    Promise.all([api.messages({ after: newest, limit: 100 }), ...pending.map((message) => api.message(message.id))]),
+                );
+
+                if (!stopped) {
+                    merge([...replies, ...fresh.data]);
+                }
+            } catch {
+                // Offline or signed out; both are handled where they are detected.
+            }
+
+            if (!stopped) {
+                timer = setTimeout(poll, delay());
+            }
+        };
+
+        const delay = () =>
+            unreachableRef.current || [...messages.current.values()].some(isWaiting) ? POLL_WHILE_WAITING_MS : POLL_WHILE_IDLE_MS;
+
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') {
+                clearTimeout(timer);
+                void poll();
+            }
+        };
+
+        timer = setTimeout(poll, delay());
+        document.addEventListener('visibilitychange', onVisible);
+
+        return () => {
+            stopped = true;
+            clearTimeout(timer);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
+    }, [isWaiting, merge, reach, ready, waiting, unreachable]);
+
+    const offline = !online || unreachable;
+
+    // Back online: what was only waiting for a connection goes out by itself.
+    useEffect(() => {
+        if (offline || !ready) {
+            return;
+        }
+
+        for (const item of outboxRef.current.filter((other) => other.state === 'failed' && other.waitingForConnection)) {
+            void deliver(item);
+        }
+    }, [deliver, offline, ready]);
+
+    const fromServer: TimelineItem[] = [...messages.current.values()]
+        .sort((one, other) => one.id - other.id)
+        .map((message) => ({
+            kind: 'message',
+            message,
+            visibleBubbles: reveal.current?.visibleCount(message.id, message.bubbles.length),
+        }));
+
+    // Local things have no place in the server's order: they sit at the end, oldest first.
+    const local: TimelineItem[] = [
+        ...outbox.map((item): TimelineItem => ({ kind: 'outbox', item })),
+        ...notes.map((note): TimelineItem => ({ kind: 'note', note })),
+    ].sort((one, other) => localTime(one).localeCompare(localTime(other)));
+
+    return {
+        items: [...fromServer, ...local],
+        typing: waiting || (reveal.current?.typing ?? false) || outbox.some((item) => item.state === 'sending'),
+        offline,
+        ready,
+        loadingOlder,
+        hasOlder: nextBefore !== null,
+        send,
+        retrySend,
+        retryReply,
+        loadOlder,
+        addNote,
+    };
+}

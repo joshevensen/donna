@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 use function Pest\Laravel\travel;
+use function Pest\Laravel\withoutVite;
 
 /**
  * Sign in on "this device" with a fresh emailed code.
@@ -157,6 +158,16 @@ describe('the "sign out everywhere" link in the new-sign-in email', function () 
 
         expect(DB::table('sessions')->where('user_id', $user->id)->count())->toBe(0);
         getJson('/api/v1/messages')->assertUnauthorized();
+    });
+
+    it('does nothing when the link is only opened, as a mail scanner would', function () {
+        ['user' => $user] = donnaExists();
+        signIn($user);
+        $page = str(sentEmails()->last()->getTextBody())->match('#/security/revoke/[\w-]+#')->value();
+
+        withoutVite()->get($page)->assertOk();
+
+        getJson('/api/v1/messages')->assertOk();
     });
 
     it('does nothing without a valid, unexpired signature', function (Closure $spoil) {

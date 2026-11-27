@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -52,6 +53,9 @@ class AppServiceProvider extends ServiceProvider
         config(['webpush.vapid' => [...config('donna.push.vapid'), 'pem_file' => null]]);
 
         $this->configureRateLimits();
+
+        // `composer dev` has to work the queue replies are written on, not just the default one.
+        DevCommands::artisan('queue:listen --queue=replies,default --tries=1 --timeout=0', 'queue');
     }
 
     /**

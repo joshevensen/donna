@@ -30,6 +30,8 @@ class MessageResource extends JsonResource
             'citations' => $this->meta['citations'] ?? [],
             'sources' => $this->sources(),
             'actions' => $this->meta['actions'] ?? [],
+            // The sending device's own key, so it can tell a send it wasn't sure of did arrive.
+            'client_key' => $this->client_key,
             'created_at' => $this->created_at,
         ];
     }
