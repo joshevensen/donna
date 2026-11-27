@@ -69,7 +69,7 @@ class SubjectResolver
         $resolved = [];
         $missing = [];
 
-        foreach ($subjects as $subject) {
+        foreach ($this->splitPeople($subjects) as $subject) {
             $model = match ($subject['type']) {
                 'person' => $this->person($subject['name'], create: true),
                 'project' => $this->project($subject['name']),
@@ -85,6 +85,23 @@ class SubjectResolver
         }
 
         return [array_values($resolved), $missing];
+    }
+
+    /**
+     * Turn a "Josh and Kristen" person subject into one subject per person,
+     * so a joint mention never becomes a person of its own.
+     *
+     * @param  list<array{type: string, name: string}>  $subjects
+     * @return list<array{type: string, name: string}>
+     */
+    private function splitPeople(array $subjects): array
+    {
+        return collect($subjects)->flatMap(fn (array $subject): array => $subject['type'] === 'person'
+            ? collect(preg_split('/\s+(?:and|&)\s+|\s*[,+]\s*/iu', $subject['name']))
+                ->map(fn (string $name): array => ['type' => 'person', 'name' => $name])
+                ->filter(fn (array $part): bool => trim($part['name']) !== '')
+                ->all()
+            : [$subject])->values()->all();
     }
 
     /**
