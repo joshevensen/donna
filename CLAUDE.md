@@ -4,7 +4,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 ## Layout
 
-- `api/` — Laravel, pure JSON API (no views, no frontend). The one exception is `public/index.html`, a static page that shows the Donna icon at the site's root (with `favicon.svg`, `favicon.ico`, and `apple-touch-icon.png` beside it); it has no route or view, so the API stays pure
+- `api/` — Laravel: the JSON API at `/api/v1/*` (pure JSON, no other views) plus the React web app in `resources/js`, shown by a single Blade view (`resources/views/app.blade.php`) at every non-API URL. The API never depends on the web app; the native app will use it the same way (changes to this line take effect when Phase 2 is built)
 - `apple/` — one Xcode project (not started; native comes with Presence): iOS/iPadOS/macOS app, watchOS capture app, and the Home Node agent (headless macOS app)
 - `.github/` — CI (Pint + the full suite on Postgres) and Dependabot; GitHub only reads these from the repo root, never from `api/`
 - `docs/` — `vision.md` (what and why), `design.md` (palette, icon, type, components), `domain.md` (concepts and invariants), `phases.md` (build order), `tech/phase-N.md` (one per phase: user stories, design, mockups; written with Josh, approved, then implemented in one shot), `landscape.md` (dated facts), `instructions/` (how to set up everything outside the repo); update the relevant doc when a decision changes it
@@ -13,8 +13,8 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 
 | Layer | Choice |
 |---|---|
-| Backend | Laravel — pure API, JSON responses only |
-| Web client | Browser app, installable to the iPhone Home Screen; chat only; dark mode only. The first front end (Phase 2); its framework is chosen in the Phase 2 doc |
+| Backend | Laravel — the API returns JSON only; the one view is the web app's shell |
+| Web client | Browser app, installable to the iPhone Home Screen; chat only; dark mode only. The first front end (Phase 2): React + TypeScript + Vite inside the Laravel app (`api/resources/js`) |
 | Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only. Arrives with Presence (Phase 7) |
 | Home Node | Mac mini — headless Swift agent, outbound-only over Tailscale, EventKit, Messages database, Foundation Models framework |
 | Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive with Orchestration (Phase 5) |

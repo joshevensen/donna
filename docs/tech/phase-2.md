@@ -49,7 +49,7 @@ Where this section is silent, follow Laravel and React best practice, the root a
 ### Delivery
 
 - Build on a branch with a draft PR against `main` and a checklist from this doc, ticked per push, as `CLAUDE.md` says. Never merge.
-- API in Pest feature tests, web in Vitest and a few Playwright flows, Pint and the full suite green. CI gains a web job.
+- API in Pest feature tests, web in Vitest and a few Playwright flows (all run from `api/`), Pint, `tsc --noEmit` and the full suite green. CI gains Node steps: `npm ci`, type-check, Vitest, build.
 - Every change that needs something outside the repo adds or updates a file in [`docs/instructions/`](../instructions/README.md) in the same PR (listed under Deployment).
 
 ### What's decided and why
@@ -57,17 +57,17 @@ Where this section is silent, follow Laravel and React best practice, the root a
 | Decision | Choice | Reason |
 |---|---|---|
 | Web stack | React 19 with TypeScript, Vite, React Router, no UI kit and no state library (hooks and context) | Three routes and one real screen; the chat needs fine control of scroll, textarea height and the keyboard, which a UI kit would fight. React is Josh's call. |
-| Where it lives | New `web/` folder, built by Vite into `api/public/app`, served from the same origin as the API | Same origin means no CORS and Sanctum's cookie login for the SPA. |
+| Where it lives | Inside the Laravel app, the normal way: React in `api/resources/js`, built by Vite with the Laravel plugin, shown by one Blade view at every non-API URL | One app, one deploy, one `package.json`, hot reload in `composer dev`, and the same origin as the API, so no CORS and Sanctum's cookie login just works. The API stays JSON-only at `/api/v1/*`; the web app is its first client, and the native app will be the second. |
 | Login | Email sign-in by one-time code and link, no passwords; Sanctum cookie sessions, 30 days sliding | One flow instead of login, forgot and reset pages, and no password to store or lose. A code is needed because on iOS a link opened from Mail signs in Safari, not the installed Home Screen app (they don't share cookies). |
 | Reply bubbles | Donna separates bubbles in her reply with a line containing only `---`; code splits it | Deciding when to split is judgment (hers); splitting is code. No schema change. |
 | Live updates | Polling, no websockets | One user. Revisit if it feels laggy. |
 | Push | Web Push via `laravel-notification-channels/webpush` *(confirm the package is current before using it)* | Standard VAPID Web Push; works for iOS Home Screen web apps (iOS 16.4+). |
 
-### The web app (`web/`)
+### The web app (`api/resources/js`)
 
 - React 19 + Vite + TypeScript, React Router with the routes `/` (chat), `/login` (email, then the code), and `/login/link/:token` (a page with one "Sign in" button, so mail scanners that prefetch the link don't use it up). Custom hooks for state (messages, polling, keyboard, push); no Redux or other state library.
-- **Dev:** `npm run dev` with Vite proxying `/api` and `/sanctum` to the API. **Build:** `npm run build` writes `api/public/app`.
-- **Served by Laravel:** a `fallback` route returns `public/app/index.html` for any GET that isn't `/api/*` (and the static assets are served by Nginx). This is the one web route in the app; update the "pure JSON" note in `CLAUDE.md` and delete the old `public/index.html` landing page (the app replaces it, and signed-out visitors land on `/login`).
+- **Dev:** `composer dev` runs Vite alongside the app with hot reload; no proxy needed. **Build:** `npm run build` writes `public/build`, served by Nginx. Add `laravel-vite-plugin`, `@vitejs/plugin-react` and `tsc --noEmit` to the checks.
+- **Served by Laravel:** one Blade view, `resources/views/app.blade.php` (the `@vite` tags, the manifest and icon links), returned by a catch-all `GET` in `routes/web.php` for every path that isn't `/api/*`, `/sanctum/*` or `/up`. This replaces the old `public/index.html` landing page, which is deleted (otherwise Nginx would keep serving it at `/`). Update the "pure JSON" rule in `CLAUDE.md` (see Deployment). Tests call `withoutVite()` so they don't need a built manifest.
 - **Installable:** a web app manifest (name Donna, `display: standalone`, background Canvas `#0F0B0B`, the icon at 192/512 and the 180 touch icon) and `theme-color` Canvas. Icons are exported from `api/public/favicon.svg` per `design.md`.
 - **Markdown:** replies render with `react-markdown` (no `dangerouslySetInnerHTML`, raw HTML ignored): paragraphs, lists, inline code, fenced code (monospace, no highlighting, copy button), links open in a new tab. Josh's own messages render as plain text.
 - **Dark only:** `<meta name="color-scheme" content="dark">`, tokens as CSS custom properties from `design.md`.
@@ -132,7 +132,7 @@ All still under `/api/v1`, JSON, `auth:sanctum` (cookie session for the web app,
 ### Push
 
 - A `push_subscriptions` table: `user_id`, `endpoint` (unique), `public_key`, `auth_token`, `content_encoding`, `user_agent`, `last_used_at`. Dead endpoints (404/410 from the push service) are deleted on send.
-- A hand-written service worker (`web/public/sw.js`, no offline caching) handles `push` and `notificationclick` (focus the open window or open `/`). No app-shell caching: the app needs the network.
+- A hand-written service worker (`public/sw.js`, so it's served from the root scope; no offline caching) handles `push` and `notificationclick` (focus the open window or open `/`). No app-shell caching: the app needs the network.
 - **When to send:** when a reply completes and the app wasn't watching it. `GET /messages/{id}` and `GET /messages?after=` touch a short-lived cache key per user ("last polled"); if it was touched in the last 15 seconds the app is open and no push is sent. Code, not a model call.
 - **Content:** title "Donna", body the reply's first bubble cut to about 140 characters. One push per reply, tagged so a retry replaces it. It shows on the lock screen; this is Josh's own device.
 - **Turning it on:** conversational. "Turn on notifications" → she replies with an Enable button → the tap asks for browser permission and registers the subscription. It only works once the app is installed to the Home Screen on iOS 16.4+; if it isn't, the button says how to install it.
@@ -162,10 +162,10 @@ No new kind of model call, and no new `costs` rows.
 
 ### Deployment and instructions
 
-- **Deploy script:** after `composer install`, add `cd web && npm ci && npm run build` (output lands in `api/public/app`). Node 22 or newer on the server *(unverified; check Forge's Node version)*. This reverses the removal of the npm lines in Phase 1, so update [`forge-site.md`](../instructions/forge-site.md) with the new script and its failure modes.
+- **Deploy script:** after `composer install`, add `npm ci` and `npm run build` (in the same `api/` folder). Node 22 or newer on the server *(unverified; check Forge's Node version)*. This reverses the removal of the npm lines in Phase 1, so update [`forge-site.md`](../instructions/forge-site.md) with the new script and its failure modes.
 - **New instruction files:** `mail.md` (a transactional email provider for sign-in codes (the only way in besides `donna:login`, so deliverability matters): Postmark or Resend, both have first-party Laravel mail drivers, pick one when writing it; DNS records for sending; the `MAIL_*` variables) and `web-push.md` (generating VAPID keys, the variables, installing the app to the iPhone Home Screen, testing a notification). Add both to the README's first-time table.
 - **Updated:** `environment-variables.md` (`VAPID_*`, `MAIL_*`, `SESSION_*`, `SANCTUM_STATEFUL_DOMAINS`), `forge-site.md`, `verify-setup.md` (sign in, send a message, get a notification), `terminal-on-mac.md` and `blink-iphone.md` (now the fallback, not the main way), `operating.md`.
-- `CLAUDE.md`: Layout (`web/`, the one web route), Stack row for the web client (now decided), and Instructions.
+- `CLAUDE.md`: Layout (`api/` now holds the JSON API and the React web app, with the one Blade view), the Backend and Web client rows, and Instructions. `design.md`'s "Landing page" section becomes the sign-in screen.
 - The PR's "Before deploying" lists the instruction files touched, in order.
 
 ### Testing

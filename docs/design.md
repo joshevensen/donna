@@ -111,7 +111,7 @@ The Donna icon is a suit from the front: a Shirt-colored V with a Tie-colored kn
 
 ### Landing page
 
-`api/public/index.html` shows the icon centered on a Canvas background and nothing else. It has no route or view; the API stays pure JSON.
+Until Phase 2 is built, `api/public/index.html` shows the icon centered on a Canvas background and nothing else. In Phase 2 the web app's sign-in screen replaces it.
 
 ---
 
