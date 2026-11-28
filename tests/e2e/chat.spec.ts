@@ -120,16 +120,6 @@ test('renders her markdown: a list, inline code, and a code block with a copy bu
     await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
 });
 
-test('/help is answered on the device and never sent', async ({ page, donna }) => {
-    await page.goto('/');
-    await page.getByLabel('Message Donna').fill('/help');
-    await page.getByRole('button', { name: 'Send' }).click();
-
-    await expect(page.getByText('signs this device out')).toBeVisible();
-
-    expect(donna.sends).toHaveLength(0);
-});
-
 test('a button Donna offers does its work on the tap: signing out', async ({ page, donna }) => {
     donna.said('donna', 'This signs you out on this device.', daysAgo(0, '09:41'), { actions: [{ type: 'sign_out', label: 'Sign out' }] });
 

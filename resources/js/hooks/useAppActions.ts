@@ -13,13 +13,13 @@ interface AppActions {
 
 /**
  * Signing out and notifications: the things Donna can offer a button for,
- * and the slash commands do directly. All of it happens on this device.
+ * and the Settings drawer does directly. All of it happens on this device.
  */
 export function useAppActions(): AppActions {
     const { me, signedOut } = useSession();
     const [subscribed, setSubscribed] = useState<boolean | null>(null);
 
-    // Known ahead of time, so /notifications can ask for permission as the first thing its tap does.
+    // Known ahead of time, so the notifications switch can ask for permission as the first thing its tap does.
     useEffect(() => {
         currentSubscription()
             .then((subscription) => setSubscribed(subscription !== null))

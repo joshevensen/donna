@@ -26,6 +26,17 @@ type ReplyPlan = { fails: true } | { fails?: false; bubbles: string[]; sources?:
 
 const COSTS = { today: '0.42', cycle: '12.30' };
 
+/** One period of GET /costs, shaped like App\Costs\CostReport::for. */
+export interface FakeCostReport {
+    period: string;
+    from: string;
+    until: string;
+    total_usd: string;
+    calls: number;
+    web_searches: number;
+    by_purpose: Record<string, { usd: string; calls: number }>;
+}
+
 export class FakeDonna {
     signedIn = true;
     messages: FakeMessage[] = [];
@@ -47,6 +58,45 @@ export class FakeDonna {
 
     /** How many times a sign-in email was asked for. */
     codeRequests = 0;
+
+    /** What /projects answers from: the projects that aren't dropped, as the API sends them. */
+    projects: { id: number; name: string; tier: 'main' | 'secondary' | 'fun' | null; status: 'active' | 'parked' | 'proposed'; owner: string | null }[] = [
+        { id: 1, name: 'Donna', tier: 'main', status: 'active', owner: null },
+        { id: 2, name: 'Kitchen remodel', tier: 'secondary', status: 'active', owner: 'Kristen' },
+    ];
+
+    /** What /people answers from: everyone but Josh and Donna. */
+    people: { id: number; name: string; relationship: string | null }[] = [
+        { id: 3, name: 'Kristen', relationship: 'wife' },
+        { id: 4, name: 'Sam', relationship: null },
+    ];
+
+    /** What /cost answers from: the two reports GET /costs returns. */
+    commandCosts: { today: FakeCostReport; this_month: FakeCostReport } = {
+        today: {
+            period: 'today',
+            from: '2026-11-28T06:00:00+00:00',
+            until: '2026-11-29T06:00:00+00:00',
+            total_usd: '0.42',
+            calls: 18,
+            web_searches: 0,
+            by_purpose: { embedding: { usd: '0.01', calls: 3 }, reply: { usd: '0.39', calls: 12 }, tagging: { usd: '0.02', calls: 3 } },
+        },
+        this_month: {
+            period: 'this_month',
+            from: '2026-11-01T05:00:00+00:00',
+            until: '2026-12-01T06:00:00+00:00',
+            total_usd: '6.10',
+            calls: 241,
+            web_searches: 2,
+            by_purpose: {
+                embedding: { usd: '0.08', calls: 31 },
+                extraction: { usd: '1.12', calls: 27 },
+                reply: { usd: '4.71', calls: 158 },
+                tagging: { usd: '0.19', calls: 25 },
+            },
+        },
+    };
 
     private nextId = 1;
     private plans = new Map<number, { polls: number; plan: ReplyPlan }>();
@@ -135,6 +185,18 @@ export class FakeDonna {
 
         if (path === '/me') {
             return json(200, { data: this.me() });
+        }
+
+        if (path === '/projects' && method === 'GET') {
+            return json(200, { data: this.projects });
+        }
+
+        if (path === '/people' && method === 'GET') {
+            return json(200, { data: this.people });
+        }
+
+        if (path === '/costs' && method === 'GET') {
+            return json(200, { data: this.commandCosts });
         }
 
         if (path === '/messages' && method === 'GET') {

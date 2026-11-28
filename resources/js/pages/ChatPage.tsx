@@ -1,14 +1,24 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { api } from '../api/client';
 import type { Me, Source } from '../api/types';
 import { Composer } from '../components/Composer';
 import { AlertIcon, OfflineIcon } from '../components/icons';
+import { SettingsSheet } from '../components/SettingsSheet';
 import { SourcesSheet } from '../components/SourcesSheet';
 import { Thread, type ThreadHandle } from '../components/Thread';
 import { useAppActions } from '../hooks/useAppActions';
 import { useKeyboardViewport } from '../hooks/useKeyboardViewport';
 import { useMessages } from '../hooks/useMessages';
-import { HELP, parseCommand } from '../lib/commands';
+import { ANSWER_FAILED, formatCosts, formatPeople, formatProjects } from '../lib/answers';
+import { type CommandName, parseCommand } from '../lib/commands';
 import { buildRows } from '../lib/timeline';
+
+/** The commands that answer, each from one read-only endpoint, formatted here. */
+const ANSWERS: Record<Exclude<CommandName, 'settings'>, () => Promise<string>> = {
+    cost: () => api.costs().then(formatCosts),
+    people: () => api.people().then(formatPeople),
+    projects: () => api.projects().then(formatProjects),
+};
 
 /**
  * The whole app: one conversation and an input. No header, no menu.
@@ -19,6 +29,7 @@ export function ChatPage({ me }: { me: Me }) {
     const conversation = useMessages();
     const { run, subscribed } = useAppActions();
     const [sheet, setSheet] = useState<Source[] | null>(null);
+    const [settings, setSettings] = useState(false);
 
     useKeyboardViewport(chat);
 
@@ -28,9 +39,16 @@ export function ChatPage({ me }: { me: Me }) {
 
     const onSend = useCallback(
         (text: string) => {
-            thread.current?.scrollToBottom();
-
             const command = parseCommand(text);
+
+            // Slash commands are answered here. They never reach Donna and cost nothing.
+            if (command === 'settings') {
+                setSettings(true);
+
+                return;
+            }
+
+            thread.current?.scrollToBottom();
 
             if (command === null) {
                 send(text);
@@ -38,29 +56,16 @@ export function ChatPage({ me }: { me: Me }) {
                 return;
             }
 
-            // Slash commands are answered here. They never reach Donna and cost nothing.
-            switch (command.name) {
-                case 'help':
-                    addNote(HELP);
-                    break;
-
-                case 'notifications':
-                    run(subscribed ? 'disable_notifications' : 'enable_notifications')
-                        .then((result) => addNote(result.message))
-                        .catch(() => addNote("That didn't work. Check your connection and try again."));
-                    break;
-
-                case 'signout':
-                    run(command.everywhere ? 'sign_out_everywhere' : 'sign_out').catch(() =>
-                        addNote("I couldn't sign you out. Check your connection and try again."),
-                    );
-                    break;
-            }
+            // The answer is a note on this device only: gone on reload, never sent.
+            ANSWERS[command]()
+                .then(addNote)
+                .catch(() => addNote(ANSWER_FAILED));
         },
-        [addNote, run, send, subscribed],
+        [addNote, send],
     );
 
     const closeSheet = useCallback(() => setSheet(null), []);
+    const closeSettings = useCallback(() => setSettings(false), []);
 
     return (
         <div className="chat" ref={chat} data-keyboard="closed">
@@ -100,6 +105,8 @@ export function ChatPage({ me }: { me: Me }) {
             <Composer onSend={onSend} costs={conversation.costs} />
 
             {sheet !== null && <SourcesSheet sources={sheet} onClose={closeSheet} />}
+
+            {settings && <SettingsSheet run={run} subscribed={subscribed} onClose={closeSettings} />}
         </div>
     );
 }
