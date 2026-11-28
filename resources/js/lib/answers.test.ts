@@ -36,6 +36,13 @@ describe('formatProjects', () => {
 });
 
 describe('formatPeople', () => {
+    // Names can come from extraction; one holding markdown stays text in her bubble.
+    it('shows names exactly as they are, never as links or formatting', () => {
+        expect(formatPeople([{ id: 1, name: '[Sam](https://example.com)', relationship: '*friend*' }])).toBe(
+            '- \\[Sam\\]\\(https://example.com\\) — \\*friend\\*',
+        );
+    });
+
     it('says so when Donna knows no one', () => {
         expect(formatPeople([])).toBe("I don't know anyone yet.");
     });

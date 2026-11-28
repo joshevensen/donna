@@ -86,7 +86,7 @@ export function CommandPicker({
     const keepFocus = (event: SyntheticEvent) => event.preventDefault();
 
     return (
-        <ul ref={list} className="picker" role="listbox" aria-label="Commands">
+        <ul ref={list} className="picker" aria-label="Commands">
             {COMMANDS.map((command) => (
                 <li key={command.name}>
                     <button type="button" className="picker__item" onPointerDown={keepFocus} onMouseDown={keepFocus} onClick={() => onPick(command)}>

@@ -7,6 +7,14 @@ import type { CostPeriodReport, CostSummary, PersonSummary, ProjectStatus, Proje
 
 export const ANSWER_FAILED = "I couldn't get that. Check your connection and try again.";
 
+/**
+ * A name as plain text. Names and relationships can come from extraction, so
+ * one holding markdown must not turn into a link or formatting in her bubble.
+ */
+function plain(text: string): string {
+    return text.replace(/[\\`*_[\]()<>#!|~]/g, '\\$&');
+}
+
 const STATUS_GROUPS: { status: ProjectStatus; title: string }[] = [
     { status: 'active', title: 'Active' },
     { status: 'parked', title: 'Parked' },
@@ -27,14 +35,14 @@ export function formatProjects(projects: ProjectSummary[]): string {
 }
 
 function projectLine(project: ProjectSummary): string {
-    let line = `- ${project.name}`;
+    let line = `- ${plain(project.name)}`;
 
     if (project.tier !== null) {
         line += ` — ${project.tier}`;
     }
 
     if (project.owner !== null) {
-        line += ` · ${project.owner}'s`;
+        line += ` · ${plain(project.owner)}'s`;
     }
 
     return line;
@@ -45,7 +53,7 @@ export function formatPeople(people: PersonSummary[]): string {
         return "I don't know anyone yet.";
     }
 
-    return people.map((person) => (person.relationship !== null ? `- ${person.name} — ${person.relationship}` : `- ${person.name}`)).join('\n');
+    return people.map((person) => (person.relationship !== null ? `- ${plain(person.name)} — ${plain(person.relationship)}` : `- ${plain(person.name)}`)).join('\n');
 }
 
 export function formatCosts(costs: CostSummary): string {

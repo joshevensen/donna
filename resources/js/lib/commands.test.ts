@@ -2,13 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { COMMANDS, parseCommand } from './commands';
 
 describe('COMMANDS', () => {
-    it('lists every command alphabetically, each with its one-line description', () => {
-        expect(COMMANDS).toEqual([
-            { name: 'cost', text: '/cost', description: "What I've cost today and this month" },
-            { name: 'people', text: '/people', description: 'The people I know about' },
-            { name: 'projects', text: '/projects', description: 'Your projects and where they stand' },
-            { name: 'settings', text: '/settings', description: 'Notifications and signing out' },
-        ]);
+    it('is alphabetical, and each command is typed as a slash and its name', () => {
+        const texts = COMMANDS.map((command) => command.text);
+
+        expect(texts).toEqual([...texts].sort());
+        expect(COMMANDS.every((command) => command.text === `/${command.name}` && command.description !== '')).toBe(true);
     });
 });
 

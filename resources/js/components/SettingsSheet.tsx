@@ -13,8 +13,7 @@ interface Note {
 interface SectionProps {
     run: (type: AppActionType) => Promise<PushResult>;
     subscribed: boolean | null;
-    /** The drawer's one result line, shown under the notifications switch. */
-    note: Note | null;
+    /** Show a result on the drawer's one result line, under the sections. */
     say: (text: string, error: boolean) => void;
 }
 
@@ -22,7 +21,7 @@ interface SectionProps {
  * Notifications for this device. The switch's tap runs the action straight
  * away: iOS only asks for permission from inside a tap.
  */
-function NotificationsSection({ run, subscribed, note, say }: SectionProps) {
+function NotificationsSection({ run, subscribed, say }: SectionProps) {
     const toggle = () => {
         run(subscribed ? 'disable_notifications' : 'enable_notifications')
             .then((result) => say(result.message, !result.ok))
@@ -30,20 +29,13 @@ function NotificationsSection({ run, subscribed, note, say }: SectionProps) {
     };
 
     return (
-        <>
-            <div className="setting">
-                <span className="setting__label">
-                    <span>Notifications</span>
-                    <span className="setting__hint">On this device</span>
-                </span>
-                <button type="button" className="switch" role="switch" aria-checked={subscribed === true} aria-label="Notifications" onClick={toggle} />
-            </div>
-            {note !== null && (
-                <p className="settings__note" data-error={note.error}>
-                    {note.text}
-                </p>
-            )}
-        </>
+        <div className="setting">
+            <span className="setting__label">
+                <span>Notifications</span>
+                <span className="setting__hint">On this device</span>
+            </span>
+            <button type="button" className="switch" role="switch" aria-checked={subscribed === true} aria-label="Notifications" onClick={toggle} />
+        </div>
     );
 }
 
@@ -111,8 +103,13 @@ export function SettingsSheet({
                 <h2 className="sheet__title">Settings</h2>
                 <div className="settings">
                     {SECTIONS.map(({ key, Section }) => (
-                        <Section key={key} run={run} subscribed={subscribed} note={note} say={say} />
+                        <Section key={key} run={run} subscribed={subscribed} say={say} />
                     ))}
+                    {note !== null && (
+                        <p className="settings__note" role="status" data-error={note.error}>
+                            {note.text}
+                        </p>
+                    )}
                 </div>
                 <button type="button" ref={done} className="button button--wide" onClick={onClose}>
                     Done

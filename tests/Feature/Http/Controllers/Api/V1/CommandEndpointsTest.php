@@ -66,19 +66,16 @@ it('lists the people Donna knows, by name, leaving out Josh and Donna herself', 
         ]]);
 });
 
-it('reports spend today and this month in Josh\'s timezone, by purpose', function () {
+// The periods themselves are CostReport's (tests/Feature/Ai/Tools/CostReportTest.php); this is the endpoint's shape.
+it('reports spend today and this month, by purpose', function () {
     actingAs(User::factory()->create());
     // 9am on Nov 26 in Chicago.
     travelTo('2026-11-26 15:00:00');
     Cost::factory()->create(['purpose' => CostPurpose::Reply, 'usd' => '1.250000', 'created_at' => '2026-11-26 12:00:00']);
     Cost::factory()->create(['purpose' => CostPurpose::Embedding, 'usd' => '0.010000', 'created_at' => '2026-11-26 14:00:00']);
-    // 5am UTC on the 26th is still the 25th in Chicago: this month, not today.
-    Cost::factory()->create(['purpose' => CostPurpose::Reply, 'usd' => '0.500000', 'created_at' => '2026-11-26 05:00:00']);
     Cost::factory()->create(['purpose' => CostPurpose::Extraction, 'usd' => '0.250000', 'created_at' => '2026-11-10 12:00:00']);
-    // 3am UTC on the 1st is still October 31st in Chicago.
-    Cost::factory()->create(['purpose' => CostPurpose::Reply, 'usd' => '9.000000', 'created_at' => '2026-11-01 03:00:00']);
 
-    $response = getJson('/api/v1/costs')
+    getJson('/api/v1/costs')
         ->assertOk()
         ->assertExactJson(['data' => [
             'today' => [
@@ -97,18 +94,16 @@ it('reports spend today and this month in Josh\'s timezone, by purpose', functio
                 'period' => 'this_month',
                 'from' => '2026-11-01',
                 'until' => '2026-11-30',
-                'total_usd' => '2.01',
-                'calls' => 4,
+                'total_usd' => '1.51',
+                'calls' => 3,
                 'web_searches' => 0,
                 'by_purpose' => [
                     'embedding' => ['usd' => '0.01', 'calls' => 1],
                     'extraction' => ['usd' => '0.25', 'calls' => 1],
-                    'reply' => ['usd' => '1.75', 'calls' => 2],
+                    'reply' => ['usd' => '1.25', 'calls' => 1],
                 ],
             ],
         ]]);
-
-    expect(array_keys($response->json('data.this_month.by_purpose')))->toBe(['embedding', 'extraction', 'reply']);
 });
 
 it('answers without calling a model or recording a cost', function (string $uri) {

@@ -50,7 +50,7 @@ On an iPhone, notifications only work from the installed app, not from a Safari 
 
 In the installed app, tell her "turn on notifications". She replies with a **Turn on notifications** button. Tap it, then **Allow** when iOS asks. The button changes to **Done**.
 
-Typing `/notifications` does the same without involving her, and typing it again turns them off.
+Typing `/settings` and turning on the **Notifications** switch does the same without involving her; turning the switch off turns them off.
 
 Do this once on each device you want notified.
 
@@ -78,7 +78,7 @@ Nothing arrives while the app is open and on screen: you are already looking at 
 
 ## Turning them off, and a lost phone
 
-- One device: tell her "turn off notifications", or type `/notifications`.
+- One device: tell her "turn off notifications", or type `/settings` and turn off the **Notifications** switch.
 - Signing a device out turns its notifications off.
 - A lost phone: sign out everywhere ([operating.md](operating.md#a-lost-or-stolen-device)). That removes every device's notifications along with every sign-in.
 

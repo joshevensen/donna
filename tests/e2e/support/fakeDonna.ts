@@ -71,12 +71,15 @@ export class FakeDonna {
         { id: 4, name: 'Sam', relationship: null },
     ];
 
+    /** While true, GET /costs fails like a server error. */
+    failCommands = false;
+
     /** What /cost answers from: the two reports GET /costs returns. */
     commandCosts: { today: FakeCostReport; this_month: FakeCostReport } = {
         today: {
             period: 'today',
-            from: '2026-11-28T06:00:00+00:00',
-            until: '2026-11-29T06:00:00+00:00',
+            from: '2026-11-28',
+            until: '2026-11-28',
             total_usd: '0.42',
             calls: 18,
             web_searches: 0,
@@ -84,8 +87,8 @@ export class FakeDonna {
         },
         this_month: {
             period: 'this_month',
-            from: '2026-11-01T05:00:00+00:00',
-            until: '2026-12-01T06:00:00+00:00',
+            from: '2026-11-01',
+            until: '2026-11-30',
             total_usd: '6.10',
             calls: 241,
             web_searches: 2,
@@ -196,6 +199,10 @@ export class FakeDonna {
         }
 
         if (path === '/costs' && method === 'GET') {
+            if (this.failCommands) {
+                return json(500, { message: 'Server Error' });
+            }
+
             return json(200, { data: this.commandCosts });
         }
 

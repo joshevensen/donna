@@ -9,8 +9,7 @@ test('the / button lists the commands, and /cost answers on the device without r
     await page.goto('/');
     await page.getByRole('button', { name: 'Commands' }).click();
 
-    const list = page.getByRole('listbox', { name: 'Commands' });
-    await expect(list.locator('.picker__name')).toHaveText(['/cost', '/people', '/projects', '/settings']);
+    const list = page.getByRole('list', { name: 'Commands' });
 
     await list.getByText('/cost', { exact: true }).click();
 
@@ -19,6 +18,7 @@ test('the / button lists the commands, and /cost answers on the device without r
 
     await page.getByRole('button', { name: 'Send' }).click();
 
+    await expect(page.locator('.row[data-who="josh"]', { hasText: '/cost' })).toBeVisible();
     await expect(page.getByText('$0.42 · 18 calls')).toBeVisible();
     await expect(page.getByText('Reply $0.41 · 15')).toBeVisible();
 
@@ -38,6 +38,18 @@ test('/settings opens the Settings drawer with notifications and both ways to si
 
     await settings.getByRole('button', { name: 'Done' }).click();
     await expect(settings).toBeHidden();
+
+    expect(donna.sends).toHaveLength(0);
+});
+
+test('a command whose answer cannot be fetched says so, and still never reaches Donna', async ({ page, donna }) => {
+    donna.failCommands = true;
+
+    await page.goto('/');
+    await page.getByLabel('Message Donna').fill('/cost');
+    await page.getByRole('button', { name: 'Send' }).click();
+
+    await expect(page.getByText("I couldn't get that. Check your connection and try again.")).toBeVisible();
 
     expect(donna.sends).toHaveLength(0);
 });

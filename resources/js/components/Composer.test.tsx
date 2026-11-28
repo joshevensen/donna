@@ -89,7 +89,7 @@ describe('Composer', () => {
 });
 
 describe('the command picker', () => {
-    const commands = () => screen.queryByRole('listbox', { name: 'Commands' });
+    const commands = () => screen.queryByRole('list', { name: 'Commands' });
 
     it('opens from / with every command in alphabetical order, whatever is typed', async () => {
         const user = userEvent.setup();
@@ -98,7 +98,7 @@ describe('the command picker', () => {
         await user.type(screen.getByLabelText('Message Donna'), '/pe');
         await user.click(screen.getByRole('button', { name: 'Commands' }));
 
-        const list = screen.getByRole('listbox', { name: 'Commands' });
+        const list = screen.getByRole('list', { name: 'Commands' });
         expect(within(list).getAllByText(/^\/\w+$/).map((name) => name.textContent)).toEqual(['/cost', '/people', '/projects', '/settings']);
         expect(within(list).getByText('Your projects and where they stand')).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Commands' }).getAttribute('aria-expanded')).toBe('true');
@@ -124,7 +124,7 @@ describe('the command picker', () => {
 
         await user.type(field, 'half a thought');
         await user.click(screen.getByRole('button', { name: 'Commands' }));
-        await user.click(within(screen.getByRole('listbox', { name: 'Commands' })).getByText('/projects'));
+        await user.click(within(screen.getByRole('list', { name: 'Commands' })).getByText('/projects'));
 
         expect(screen.getByLabelText('Message Donna')).toHaveProperty('value', '/projects');
         expect(commands()).toBeNull();
