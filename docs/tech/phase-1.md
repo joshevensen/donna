@@ -94,7 +94,7 @@ The build follows this section. Where it's silent, follow Laravel and Swift best
 |---|---|
 | Conversation, tagging, tools, web search, prompt caching, embeddings, pgvector helpers, fakes | `laravel/ai` (1.x) |
 | Message Batches (daily extraction) | Anthropic's official PHP SDK — `laravel/ai` doesn't support the Batch API. Wrap it behind an app interface so tests use a fake. |
-| Embeddings | Voyage AI through `laravel/ai`. Use `voyage-4` (general purpose; $0.06/M tokens, first 200M free); set dimensions from its docs and keep model + dimensions in config. Voyage is now owned by MongoDB: keys come from a MongoDB Atlas account and call `https://ai.mongodb.com/v1` (set the provider `url` if the driver defaults to `api.voyageai.com`). No MongoDB database is involved. |
+| Embeddings | Voyage AI through `laravel/ai`. Use `voyage-4` (general purpose; $0.06/M tokens, first 200M free); set dimensions from its docs and keep model + dimensions in config. Keys come from voyageai.com and call `https://api.voyageai.com/v1`, the driver default (a MongoDB Atlas key would need `https://ai.mongodb.com/v1`). |
 | Queue | Laravel's database queue driver — one user, no Redis needed |
 | Scheduling | Laravel scheduler. Durable workflows aren't needed until Orchestration (Phase 6). |
 
@@ -168,7 +168,7 @@ An artisan command in the same app, run from Josh's Mac against the deployed API
 
 - On start: fetch the last ~10 messages and print them, including any reply that finished while he was away; if one is still pending, wait for it.
 - Input via Laravel Prompts (multi-line textarea, sent with Ctrl+D). *(as built)* A function key sends too (F5 by default, `DONNA_SUBMIT_KEY` to change it, blank to turn it off), for terminals where the Ctrl+D chord is awkward, such as a phone. Send → show a thinking indicator → poll every second until complete or failed. *(as built)* After ten minutes it stops waiting and says the reply will be there next time; the server keeps working on it.
-- Slash commands, handled in code, never sent to Donna: `/good [note]` and `/bad [note]` flag her last reply; `/history [n]`; `/quit`.
+- Slash commands, handled in code, never sent to Donna: `/good [note]` and `/bad [note]` flag her last reply; `/history [n]`; `/quit`. In any chat, asking her to flag the reply before ("flag that as bad, she took my side") uses her `flag_reply` tool, which writes the same eval example.
 - Plain-text output with light formatting; no markdown renderer needed in Phase 1.
 
 A server-side `php artisan donna:token` command creates Josh's Sanctum token.

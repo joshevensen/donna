@@ -46,6 +46,24 @@ class Embedder
     }
 
     /**
+     * Embed several texts in a single call, or return a null for each if
+     * embeddings are unavailable. The batch counterpart of attempt().
+     *
+     * @param  list<string>  $texts
+     * @return list<list<float>|null>
+     */
+    public function attemptMany(array $texts, ?Model $trigger = null): array
+    {
+        try {
+            return $this->embedMany($texts, $trigger);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return array_fill(0, count($texts), null);
+        }
+    }
+
+    /**
      * Embed several texts in a single call, in order.
      *
      * @param  list<string>  $texts

@@ -8,7 +8,9 @@ use App\Models\Message;
 use App\Models\Project;
 use App\Models\Topic;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
+use Laravel\Ai\Embeddings;
 use Laravel\Ai\Prompts\AgentPrompt;
 
 use function Pest\Laravel\travelTo;
@@ -133,4 +135,19 @@ it('asks Anthropic for structured output at low effort and applies the JSON it r
 
     expect($message->topics->modelKeys())->toBe([$topic->id])
         ->and(Cost::sole()->usd)->toBe('0.000050');
+});
+
+it('still saves and links new topics when embeddings are down, leaving them for EmbedMissing', function () {
+    Exceptions::fake();
+    Embeddings::fake(fn () => throw new RuntimeException('Voyage is down.'));
+    [$message, $reply] = exchange('I found another keyboard.', 'Of course you did.');
+    TopicTagger::fake([['existing_topic_ids' => [], 'new_topics' => ['Mechanical keyboards']]]);
+
+    TagTopics::dispatchSync($message, $reply);
+
+    $topic = Topic::sole();
+
+    expect($topic->name)->toBe('Mechanical keyboards')
+        ->and($topic->embedding)->toBeNull()
+        ->and($message->topics->modelKeys())->toBe([$topic->id]);
 });

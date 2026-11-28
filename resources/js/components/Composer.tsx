@@ -1,4 +1,5 @@
 import { type KeyboardEvent, type SyntheticEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { Costs } from '../api/types';
 import { isTouchFirst } from '../lib/platform';
 import { storage } from '../lib/storage';
 import { composerHeight } from '../lib/viewport';
@@ -9,13 +10,14 @@ const COLLAPSE_DELAY_MS = 80;
 
 /**
  * The input, pinned to the bottom. Empty and unfocused it is a slim bar;
- * tapped, it opens three lines tall and grows to six, then scrolls.
+ * tapped, it opens three lines tall and grows to six, then scrolls. Under the
+ * text runs a bar: what Donna has cost in the middle, the send button at the end.
  *
  * There is only ever this one textarea. iOS opens the keyboard only when
  * focus lands inside the tap itself, so the bar you tap has to be the real
  * field, restyled, not a stand-in that swaps one in.
  */
-export function Composer({ onSend }: { onSend: (text: string) => void }) {
+export function Composer({ onSend, costs }: { onSend: (text: string) => void; costs: Costs | null }) {
     const [text, setText] = useState(() => storage.draft());
     const [focused, setFocused] = useState(false);
     const [width, setWidth] = useState(0);
@@ -151,9 +153,16 @@ export function Composer({ onSend }: { onSend: (text: string) => void }) {
                     onBlur={onBlur}
                     onKeyDown={onKeyDown}
                 />
-                <button type="button" className="composer__send" aria-label="Send" disabled={empty} onPointerDown={keepFocus} onMouseDown={keepFocus} onClick={submit}>
-                    <SendIcon size={18} />
-                </button>
+                <div className="composer__bar">
+                    {costs && (
+                        <p className="composer__costs">
+                            Today ${costs.today} · Cycle ${costs.cycle}
+                        </p>
+                    )}
+                    <button type="button" className="composer__send" aria-label="Send" disabled={empty} onPointerDown={keepFocus} onMouseDown={keepFocus} onClick={submit}>
+                        <SendIcon size={16} />
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -66,7 +66,7 @@ it('records exactly one cost per model call, charged to the message that caused 
         ->cache_read_tokens->toBe(6_000)
         ->cache_write_tokens->toBe(1_000)
         ->output_tokens->toBe(2_000)
-        ->usd->toBe('0.029100')
+        ->usd->toBe('0.030600')
         ->and(Fact::sole()->statement)->toBe('Josh\'s anniversary is June 3.');
 });
 
@@ -143,7 +143,7 @@ it('sends Anthropic the cached system blocks, the recent turns, and its tools, a
             && $request['fallbacks'] === 'default'
             && $request['output_config'] === ['effort' => 'medium']
             && count($request['system']) === 2
-            && collect($request['system'])->every(fn (array $block): bool => $block['cache_control'] === ['type' => 'ephemeral'])
+            && collect($request['system'])->every(fn (array $block): bool => $block['cache_control'] === ['type' => 'ephemeral', 'ttl' => '1h'])
             && collect($request['messages'])->pluck('role')->all() === ['user', 'assistant', 'user']
             && str_ends_with($request['messages'][2]['content'][0]['text'], 'What did the Fed do today?')
             && $tools->firstWhere('name', 'web_search')['max_uses'] === 5

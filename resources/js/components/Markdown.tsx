@@ -7,7 +7,7 @@ import { CopyIcon } from './icons';
  | an HTML string, and any raw HTML in a reply is dropped rather than shown.
  */
 
-function CodeBlock({ language, text }: { language: string; text: string }) {
+export function CodeBlock({ language, text }: { language: string; text: string }) {
     const [copied, setCopied] = useState(false);
     const reset = useRef<ReturnType<typeof setTimeout>>(undefined);
 

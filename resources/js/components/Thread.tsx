@@ -1,11 +1,12 @@
 import { type MouseEvent, type Ref, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import type { AppAction, Source } from '../api/types';
 import { timeLabel } from '../lib/dates';
+import { splitFences } from '../lib/fences';
 import type { PushResult } from '../lib/push';
 import { type BubbleRow, bubbleRadius, isCodeOnly, type Row } from '../lib/timeline';
 import { ActionButton } from './ActionButton';
 import { AlertIcon, RetryIcon } from './icons';
-import { Markdown } from './Markdown';
+import { CodeBlock, Markdown } from './Markdown';
 
 /** Closer to the newest message than this, and a new one scrolls into view. */
 const NEAR_BOTTOM_PX = 120;
@@ -181,11 +182,11 @@ function Bubble({ row, open, time, onToggle, onRetrySend, onShowSources, runActi
             <div
                 className="bubble"
                 style={{ borderRadius: bubbleRadius(row.who, row.position) }}
-                data-code-only={row.markdown && isCodeOnly(row.text)}
+                data-code-only={isCodeOnly(row.text)}
                 data-sending={row.outbox?.state === 'sending'}
                 onClick={onClick}
             >
-                {row.markdown ? <Markdown text={row.text} /> : row.text}
+                {row.markdown ? <Markdown text={row.text} /> : <Typed text={row.text} />}
             </div>
 
             {!failed && (
@@ -220,6 +221,26 @@ function Bubble({ row, open, time, onToggle, onRetrySend, onShowSources, runActi
             {row.actions.map((action) => (
                 <ActionButton key={action.type} id={`${row.messageId}:${action.type}`} action={action} run={runAction} />
             ))}
+        </div>
+    );
+}
+
+/**
+ * Josh's words as he typed them, except that a fenced block is drawn as code.
+ * Nothing else is read as markdown.
+ */
+function Typed({ text }: { text: string }) {
+    const segments = splitFences(text);
+
+    if (!segments.some((segment) => segment.kind === 'code')) {
+        return text;
+    }
+
+    return (
+        <div className="markdown">
+            {segments.map((segment, at) =>
+                segment.kind === 'code' ? <CodeBlock key={at} language={segment.language} text={segment.text} /> : <p key={at}>{segment.text}</p>,
+            )}
         </div>
     );
 }

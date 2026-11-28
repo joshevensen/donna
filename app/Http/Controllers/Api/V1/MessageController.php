@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Costs\CostReport;
+use App\Enums\CostPeriod;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
 use App\Http\Controllers\Controller;
@@ -23,9 +25,11 @@ class MessageController extends Controller
      * The conversation. Newest first by default: pass the returned
      * `next_before` as `before` to page further back. With `after`, only
      * what is newer than that message, oldest first: how a client that is
-     * already showing the conversation picks up what it hasn't seen.
+     * already showing the conversation picks up what it hasn't seen. Either way
+     * `meta.failed_jobs` says how many background jobs have failed, and
+     * `meta.costs` what Donna has cost today and this month.
      */
-    public function index(IndexMessagesRequest $request, Presence $presence): AnonymousResourceCollection
+    public function index(IndexMessagesRequest $request, Presence $presence, CostReport $costs): AnonymousResourceCollection
     {
         $limit = $request->integer('limit', 20);
         $newer = $request->has('after');
@@ -47,7 +51,16 @@ class MessageController extends Controller
         $next = $messages->count() > $limit ? $page->last()->id : null;
 
         return MessageResource::collection($page)->additional([
-            'meta' => $newer ? ['next_after' => $next] : ['next_before' => $next],
+            'meta' => [
+                ...($newer ? ['next_after' => $next] : ['next_before' => $next]),
+                // Jobs that gave up after their retries: the app shows a strip until they are cleared.
+                'failed_jobs' => DB::table('failed_jobs')->count(),
+                // Spend so far today and this month (the cycle), by Josh's clock, for the line under the input.
+                'costs' => [
+                    'today' => $costs->totalUsd(CostPeriod::Today),
+                    'cycle' => $costs->totalUsd(CostPeriod::ThisMonth),
+                ],
+            ],
         ]);
     }
 

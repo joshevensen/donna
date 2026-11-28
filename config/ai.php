@@ -41,8 +41,9 @@ return [
     | The Anthropic beta header keeps the SDK's default (web fetch) and adds
     | server-side refusal fallbacks, which Donna's replies opt into.
     |
-    | Voyage AI is owned by MongoDB: keys come from a MongoDB Atlas account
-    | and are only valid against ai.mongodb.com, not api.voyageai.com.
+    | Voyage AI keys made on voyageai.com are valid against api.voyageai.com.
+    | A key made in a MongoDB Atlas account is only valid against
+    | ai.mongodb.com: set VOYAGEAI_URL to match whichever key is in use.
     |
     */
 
@@ -57,7 +58,7 @@ return [
         'voyageai' => [
             'driver' => 'voyageai',
             'key' => env('VOYAGEAI_API_KEY'),
-            'url' => env('VOYAGEAI_URL', 'https://ai.mongodb.com/v1'),
+            'url' => env('VOYAGEAI_URL', 'https://api.voyageai.com/v1'),
             'models' => [
                 'embeddings' => [
                     'default' => env('DONNA_EMBEDDING_MODEL', 'voyage-4'),

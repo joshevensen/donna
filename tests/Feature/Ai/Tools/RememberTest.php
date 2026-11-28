@@ -56,6 +56,20 @@ it('links the fact to who and what it is about, meeting new people and topics as
         ->and($result)->toContain('Untracked Thing');
 });
 
+it('meets each person of a joint mention instead of inventing a person named after the pair', function () {
+    donnaExists();
+    fakeEmbeddings();
+    $kristen = Person::factory()->create(['name' => 'Kristen']);
+
+    donnaCalls([['remember', [
+        'statement' => 'Josh and Kristen will sell yarn at the Houston Fiber Festival.',
+        'subjects' => [['type' => 'person', 'name' => 'Josh and Kristen']],
+    ]]]);
+
+    expect(Fact::sole()->people->modelKeys())->toEqualCanonicalizing([Person::josh()->id, $kristen->id])
+        ->and(Person::where('name', 'Josh and Kristen')->exists())->toBeFalse();
+});
+
 it('still remembers when embeddings are down', function () {
     donnaExists();
     Exceptions::fake();

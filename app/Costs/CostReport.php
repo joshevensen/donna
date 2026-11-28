@@ -53,4 +53,19 @@ class CostReport
             ])->all(),
         ];
     }
+
+    /**
+     * Just the total for a period, as dollars: one query, cheap enough for the app's poll.
+     */
+    public function totalUsd(CostPeriod $period): string
+    {
+        [$from, $until] = $period->bounds(CarbonImmutable::now(config('donna.timezone')));
+
+        $total = Cost::query()
+            ->when($from, fn ($query) => $query->where('created_at', '>=', $from->utc()))
+            ->where('created_at', '<', $until->utc())
+            ->sum('usd');
+
+        return number_format((float) $total, 2, '.', '');
+    }
 }

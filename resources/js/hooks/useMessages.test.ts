@@ -64,4 +64,18 @@ describe('useMessages', () => {
         expect(reply).toMatchObject({ message: { status: 'complete' }, visibleBubbles: 2 });
         expect(result.current.typing).toBe(false);
     });
+
+    it('reports failed background jobs from the first page and from every poll after it', async () => {
+        vi.mocked(api.messages).mockImplementation(async (query = {}) =>
+            'after' in query ? { data: [], meta: { next_after: null, failed_jobs: 0 } } : { data: [], meta: { next_before: null, failed_jobs: 3 } },
+        );
+
+        const { result } = renderHook(() => useMessages());
+
+        await waitFor(() => expect(result.current.failedJobs).toBe(3));
+
+        // Josh clears them; the next poll takes the strip away.
+        await act(() => vi.advanceTimersByTimeAsync(60_000));
+        await waitFor(() => expect(result.current.failedJobs).toBe(0));
+    });
 });

@@ -47,7 +47,7 @@ Then ask her something you told her yesterday and see whether she knows.
 cd /home/forge/donna.joshevensen.com/current && php8.4 artisan queue:failed
 ```
 
-Lists anything that gave up after its retries.
+Lists anything that gave up after its retries. The web app also shows a strip above the input ("Something failed behind the scenes…") while any failed job exists; it goes away once they are cleared with `php8.4 artisan queue:flush`.
 
 ---
 

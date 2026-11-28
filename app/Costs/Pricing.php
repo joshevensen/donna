@@ -11,7 +11,9 @@ class Pricing
      * Price one model call in USD.
      *
      * `$inputTokens` is the whole prompt; the cache counts are subsets of it,
-     * each billed at its own rate. The batch discount applies to tokens only.
+     * each billed at its own rate. `$cacheWriteOneHourTokens` is the part of
+     * the cache writes that used the one-hour cache, which costs more. The
+     * batch discount applies to tokens only.
      *
      * @return numeric-string|null Null when the model has no pricing entry.
      */
@@ -23,6 +25,7 @@ class Pricing
         int $cacheWriteTokens = 0,
         int $webSearchRequests = 0,
         bool $batched = false,
+        int $cacheWriteOneHourTokens = 0,
     ): ?string {
         $rates = $this->ratesFor($model, $inputTokens);
 
@@ -31,10 +34,12 @@ class Pricing
         }
 
         $uncachedTokens = max(0, $inputTokens - $cacheReadTokens - $cacheWriteTokens);
+        $oneHour = min($cacheWriteOneHourTokens, $cacheWriteTokens);
 
         $tokens = (
             $uncachedTokens * $rates['input']
-            + $cacheWriteTokens * $rates['cache_write']
+            + ($cacheWriteTokens - $oneHour) * $rates['cache_write']
+            + $oneHour * ($rates['cache_write_1h'] ?? $rates['cache_write'])
             + $cacheReadTokens * $rates['cache_read']
             + $outputTokens * $rates['output']
         ) / 1_000_000;
@@ -51,7 +56,7 @@ class Pricing
     /**
      * The per-million rates that apply to a request of the given prompt size.
      *
-     * @return array{input: float, cache_write: float, cache_read: float, output: float}|null
+     * @return array{input: float, cache_write: float, cache_write_1h?: float, cache_read: float, output: float}|null
      */
     private function ratesFor(string $model, int $inputTokens): ?array
     {
