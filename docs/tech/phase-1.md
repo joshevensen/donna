@@ -4,6 +4,8 @@ Donna runs on the real server, every call is accounted for, and she remembers. S
 
 **Status:** built. The Design section below describes what was implemented; where the build departed from the approved draft, the text has been updated and the change is marked *(as built)*.
 
+**Later:** the terminal client (`donna:chat`, the Mac and Blink setups) and the evaluation endpoint (`POST /messages/{message}/evaluation`, the terminal's `/good` and `/bad`) were removed; the web app is the only client. Flagging a reply happens by telling Donna in chat (`FlagReply`). What follows still describes them as built.
+
 ---
 
 ## User Stories

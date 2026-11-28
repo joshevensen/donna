@@ -29,7 +29,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Hosting | One DigitalOcean droplet, provisioned and deployed with Laravel Forge |
 | Database | Postgres on the droplet itself (one server, managed by Forge); full-text + pgvector (hybrid retrieval) |
 | File storage | DigitalOcean Spaces |
-| Auth | Laravel Sanctum — cookie sessions for the web app, signed in by an emailed code or link (no passwords); tokens for the terminal |
+| Auth | Laravel Sanctum — cookie sessions for the web app, signed in by an emailed code or link (no passwords); tokens for API clients (the native app, later) |
 | Mail | Resend, over its API (sign-in codes and the new-sign-in notice only) |
 | Backups | Droplet backups + database dumps to Spaces |
 | Voice | Apple SpeechAnalyzer (dictation) + App Intents (Siri), in the native app |

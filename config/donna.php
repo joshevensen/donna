@@ -20,7 +20,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Seeded on first deploy. There is no password: the web app signs in with
-    | a code emailed to this address, and the terminal with the Sanctum token
+    | a code emailed to this address. API clients use the Sanctum tokens
     | `donna:token` prints. No other address can sign in.
     |
     */
@@ -81,28 +81,6 @@ return [
             'push.services.mozilla.com',
             'notify.windows.com',
         ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Terminal Client
-    |--------------------------------------------------------------------------
-    |
-    | `donna:chat` runs on Josh's Mac and talks to the deployed API with these.
-    | The server itself never reads them.
-    |
-    */
-
-    'client' => [
-        'url' => env('DONNA_API_URL'),
-        'token' => env('DONNA_API_TOKEN'),
-        'history' => 10,
-        'poll_seconds' => 1,
-        'wait_seconds' => 600,
-
-        // The function key that sends a message, besides Ctrl+D: f1 to f12, or
-        // blank for none. Meant for phone terminals, where Ctrl+D is awkward.
-        'submit_key' => env('DONNA_SUBMIT_KEY', 'f5'),
     ],
 
     /*

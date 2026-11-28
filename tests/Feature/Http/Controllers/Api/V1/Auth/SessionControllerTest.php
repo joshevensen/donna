@@ -140,10 +140,10 @@ describe('sessions ending', function () {
         getJson('/api/v1/messages')->assertUnauthorized();
     });
 
-    it('signs every device out and stops their notifications, leaving the terminal\'s token alone', function () {
+    it('signs every device out and stops their notifications, leaving API tokens alone', function () {
         config(['session.driver' => 'database']);
         ['user' => $user] = donnaExists();
-        $token = $user->createToken('terminal')->plainTextToken;
+        $token = $user->createToken('api')->plainTextToken;
         PushSubscription::factory()->for($user)->create();
         DB::table('sessions')->insert(['id' => 'another-device', 'user_id' => $user->id, 'payload' => '', 'last_activity' => now()->getTimestamp()]);
         signIn($user);

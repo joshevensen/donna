@@ -22,7 +22,6 @@ it('returns 401 without a token or a session', function (string $method, string 
     'sending a message' => ['POST', '/api/v1/messages'],
     'reading a message' => ['GET', '/api/v1/messages/1'],
     'retrying a reply' => ['POST', '/api/v1/messages/1/retry'],
-    'flagging a reply' => ['POST', '/api/v1/messages/1/evaluation'],
     'reading the account' => ['GET', '/api/v1/me'],
     'signing out' => ['POST', '/api/v1/auth/logout'],
     'signing out everywhere' => ['POST', '/api/v1/auth/logout-everywhere'],
