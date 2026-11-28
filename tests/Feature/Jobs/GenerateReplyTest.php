@@ -148,6 +148,7 @@ it('sends Anthropic the cached system blocks, the recent turns, and its tools, a
             && collect($request['messages'])->pluck('role')->all() === ['user', 'assistant', 'user']
             && str_ends_with($request['messages'][2]['content'][0]['text'], 'What did the Fed do today?')
             && $tools->firstWhere('name', 'web_search')['max_uses'] === 5
+            && $tools->firstWhere('name', 'web_fetch')['max_content_tokens'] === 20_000
             && $tools->pluck('name')->contains('remember');
     });
 

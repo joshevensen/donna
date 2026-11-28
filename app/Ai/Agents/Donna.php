@@ -41,6 +41,7 @@ use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
+use Laravel\Ai\Providers\Tools\WebFetch;
 use Laravel\Ai\Providers\Tools\WebSearch;
 
 /**
@@ -111,6 +112,8 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
             resolve(ListFiles::class, $writing),
             resolve(ViewFile::class, ['looks' => $this->looks]),
             (new WebSearch)->max(config('donna.web_search.max_uses')),
+            (new WebFetch)->max(config('donna.web_fetch.max_uses'))
+                ->withProviderOptions(['max_content_tokens' => config('donna.web_fetch.max_content_tokens')]),
         ];
     }
 

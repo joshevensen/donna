@@ -144,6 +144,15 @@ return [
     ],
 
     /*
+    | Web fetch reads a page Josh links (or one a search turned up). It costs
+    | only tokens, so the cap on page size is what keeps a reply cheap.
+    */
+    'web_fetch' => [
+        'max_uses' => 3,
+        'max_content_tokens' => 20_000,
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Context Assembly
     |--------------------------------------------------------------------------
