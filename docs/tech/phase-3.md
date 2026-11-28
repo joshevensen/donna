@@ -4,7 +4,7 @@ Josh attaches files in the chat as context for Donna: text, CSV, PDF and images.
 
 **Status:** approved by Josh; not yet built. The open question at the end (skills' store) is deferred to Phase 4.
 
-**Mockup:** eight screens on one canvas, [open the artifact](https://claude.ai/artifact/4R8ZFyMEguk2GUAeidqBj3) (private to Josh). The source is kept in [`phase-3/mockup/`](phase-3/mockup/) so the design survives if the link doesn't. They are static drawings of: the attach sheet, the upload chips (uploading, ready, refused), file cards in the thread with `/files`, the viewer for a kept markdown file, its edit mode with the save conflict, a CSV that isn't kept, a PDF, and the Mac layout with the chat and the file side by side. Where the mockup and this doc disagree, the doc wins.
+**Mockup:** eight screens on one canvas, [open the artifact](https://claude.ai/artifact/4R8ZFyMEguk2GUAeidqBj3) (private to Josh). The source is kept in [`phase-3/mockup/`](phase-3/mockup/) so the design survives if the link doesn't. They are static drawings of: the attach sheet, the upload chips (uploading, ready, refused), file cards in the thread with `/files`, the viewer for a kept markdown file, its edit mode with the save conflict, a CSV that isn't kept, a PDF, and the Mac layout with the chat and the file side by side. Where the mockup and this doc disagree, the doc wins. Boards 1, 2, 3 and 8 draw the input as it was before the full-width input with its bottom bar (spend line, small send button); the plus belongs in that bar's left column.
 
 ---
 
@@ -76,7 +76,7 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 | Decision | Choice | Reason |
 |---|---|---|
 | Temporary or kept | Every file starts **working**. Donna decides which become **kept**, and says so; only kept files are chunked and embedded. | A reformatted pattern shouldn't be remembered, a context document should. Keeping is reversible and internal, so she needs no confirmation, and a wrong keep costs less than a wrong skip. |
-| Where the bytes live | Text files in Postgres, as versions. Original PDFs and images in DigitalOcean Spaces, in a private bucket of their own. | Edits are small, frequent, versioned and must change a file and its chunks together, which one database transaction does. Binaries never change, and Spaces keeps them off the droplet's disk, which can't be shrunk. Text living in the database departs from the stack table's "file storage: Spaces" for that part; the table is updated in the build PR. |
+| Where the bytes live | Text files in Postgres, as versions. Original PDFs and images in the app's DigitalOcean Space (`donna-joshevensen`, already set up in [`storage.md`](../instructions/storage.md)). | Edits are small, frequent, versioned and must change a file and its chunks together, which one database transaction does. Binaries never change, and Spaces keeps them off the droplet's disk, which can't be shrunk. Text living in the database departs from the stack table's "file storage: Spaces" for that part; the table is updated in the build PR. |
 | Versions | Every change creates a version: Josh's saves, each of Donna's edits, a revert. | "Undo that" and "I edited it, continue" both need it. Cheap for text of this size. |
 | Simple edits | Donna's tools do find-and-replace, append, delete lines and rename in code. Rewriting a section is her judgment, but applying it is code, by heading. | The vision's rule: no tokens spent on deterministic work, and no rewriting a whole file for a small edit. |
 | CSV maths | A `query_csv` tool: filter, sort, group, count, sum, average, evaluated in PHP. | `CLAUDE.md`: totals and filtering are always code. A Shopify export with thousands of rows can't go into a prompt anyway. |
@@ -103,7 +103,7 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 
 | Table | Columns and notes |
 |---|---|
-| `files` | `id`, `name`, `kind`, `mime`, `size_bytes`, `storage_path` (null for text), `current_version_id`, `kept_at` (null while working), `deleted_at`, `extraction` (`ready`, `failed`), `extraction_error`, timestamps |
+| `files` | `id`, `name`, `kind`, `mime`, `size_bytes`, `storage_path` (null for text), `current_version_id`, `kept_at` (null while working), `deleted_at`, `extraction` (`ready`, `failed`), `extraction_error`, `meta` (jsonb: page count, row count, whether a PDF has a text layer, so the "what she was given" line can be stated), timestamps |
 | `file_versions` | `id`, `file_id`, `number`, `body` (text), `content_hash`, `author` (`josh`, `donna`), `message_id` (null), `summary` (what changed, written by code, e.g. "Replaced 14 matches of 'Fibermade Co'"), `created_at`. A PDF has one; an image has none |
 | `file_chunks` | `id`, `file_id`, `position`, `heading_path` (e.g. "Pricing › Wholesale"), `body`, `content_hash`, `embedding` (vector 1024), `search` (tsvector, generated), timestamps. Current version only; rebuilt on change |
 | `file_subjects` | `file_id`, `subject_type`, `subject_id`: a file linked to people, projects or topics, the same polymorphic shape as `fact_subjects`. Written by `link_file`; read by retrieval and the viewer |
@@ -125,7 +125,7 @@ All under `/api/v1`, JSON, `auth:sanctum`.
 | `GET /files/{id}/content` | The bytes, for image display and "Open original". Served by the app after the session check, never as a public Spaces URL, with `X-Content-Type-Options: nosniff` and, for anything but images and PDFs, `Content-Disposition: attachment`. Read from the Spaces bucket |
 | `PUT /files/{id}` | Manual save: `{body, base_version}`. 409 with the current version if `base_version` is stale. Markdown only |
 | `PATCH /files/{id}` | `{kept?, name?}`: the keep switch and rename |
-| `POST /messages` | Gains optional `file_ids` (up to five of the user's uploaded, unattached files). `body` may be empty when there are files |
+| `POST /messages` | Gains optional `file_ids` (up to five of the user's uploaded, unattached files). `body` may be empty when there are files. A message with no text is not embedded or tagged (nothing to embed); its prompt is the memory block and the attached files |
 | `MessageResource` | Gains `files: [{id, name, kind, role}]` for what was attached and what Donna created, edited or opened |
 
 There is no `DELETE`. Deleting is a tool of Donna's.
@@ -145,19 +145,18 @@ There is no `DELETE`. Deleting is a tool of Donna's.
 - **Josh's edits** happen in the viewer's edit mode: a monospace textarea on Inset, so it is obvious which mode he is in. Saving posts `base_version`. If Donna changed the file in the meantime the save is refused with a 409 and the viewer offers "Keep mine" (saved as a new version on top, hers still in history) or "Take Donna's".
 - **Donna learns what Josh changed.** For files in play, the context holds, in code-written text, a diff of Josh's changes since Donna last saw the file (capped), so she knows without being told. If it is too large to include, she gets the headings that changed.
 - The viewer refreshes by itself while Donna is writing a reply that touches the open file (the same polling as the thread).
+- **A retried reply never applies an edit twice.** A reply job that fails partway and runs again would append the same text again. Each edit records the operation it applied against the reply's message (its content hash on the version's `message_id`), and a repeat of the same operation in the same reply is skipped and reported as already done, as `remember` does for facts.
 - **Undo:** `revert_file` restores a version by writing it as a new one. "Undo that" reverts to the version before her last edit.
 
 ### Donna's tools
 
-Each does its work in code; none calls a model. The edit tools (`edit_section` to `delete_lines`) work on markdown files only, and refuse anything else.
+Each does its work in code; none calls a model. `edit_file` works on markdown files only, and refuses anything else. The four edit operations are one tool with an `operation`, not four, because tool definitions are most of her input tokens and one tool is harder to pick wrongly.
 
 | Tool | What it does |
 |---|---|
 | `create_file` | `{name, content}`. Creates a markdown file. The reply gets a file card |
 | `read_file` | `{file, heading?, from_line?, lines?}`. Returns a part of any text file, so a long file isn't read whole |
-| `edit_section` | `{file, heading, new_text}`. Replaces one markdown section by its heading. For "rewrite this section" |
-| `replace_in_file` | `{file, find, replace, all?}`. Exact text. Fails with the match count if the text isn't there or isn't unique and `all` isn't set |
-| `append_to_file`, `delete_lines` | Append text; delete lines by number range or by exact content |
+| `edit_file` | `{file, operation, ...}` with an `operation` of `replace_section` (`heading`, `new_text`: for "rewrite this section"), `replace` (`find`, `replace`, `all?`: exact text; fails with the match count if the text isn't there or isn't unique and `all` isn't set), `append` (`text`) or `delete_lines` (a number range, or exact content) |
 | `query_csv` | `{file, where?, group_by?, aggregate?, order_by?, limit?}`, run in PHP. Also returns the header and row count, so she can plan a query |
 | `rename_file` | Rename |
 | `keep_file` | `{file, keep}`. Keep or un-keep. She calls it herself for context files, and on Josh's say-so either way |
@@ -165,7 +164,7 @@ Each does its work in code; none calls a model. The edit tools (`edit_section` t
 | `delete_file`, `restore_file` | Soft delete (`deleted_at`) and bring back. Deleting removes the chunks; restoring re-indexes if it was kept. Only on Josh's say-so, and an explicit permanent delete arrives with Autonomy (Phase 5) |
 | `revert_file` | Restore a previous version as a new one |
 | `list_files` | `{q?}`. What is there, for "show my files". Puts file cards on the reply |
-| `view_file` | `{file, page?}`. Looks at an image, or a page of a PDF with no text layer, again. The SDK can't return an image from a tool (checked against `laravel/ai` 1.4.2: a tool returns a string, and images only go in as attachments on a prompt), so the tool records the request and answers "I'll look at it now". When the first call finishes, the reply job makes one more call in the same reply, with the file attached as the SDK expects, and that call's answer is the reply. At most two looks per reply. Nothing is stored; the original is read from Spaces |
+| `view_file` | `{file, page?}`. Looks at an image, or a page of a PDF with no text layer, again. The SDK can't return an image from a tool (checked against `laravel/ai` 1.4.2: a tool returns a string, and images only go in as attachments on a prompt), so the tool records the request and answers "I'll look at it now". When the first call finishes, the reply job makes one more call in the same reply, with the file attached as the SDK expects, and that call's answer is the reply. At most two looks per reply. Nothing is stored; the original is read from Spaces. The second call mostly reads her cached system prompt, so it is cheap |
 
 These are all reversible and internal, so they need no confirmation (Graduated Autonomy, `vision.md`). They are only tools on files in Donna's own store; she has no access to anything outside it.
 
@@ -186,15 +185,16 @@ These are all reversible and internal, so they need no confirmation (Graduated A
   - CSV: groups of rows up to about 800 tokens, each with the header row. A file over 2,000 rows gets chunks for its first 2,000 and a summary chunk (columns, row count, a few rows); more than that isn't useful as memory, and `query_csv` answers questions about it anyway.
   - PDF: by page, split by paragraph if long.
   - Images: none.
-- **Indexing** runs as a queued job when a file is kept or a kept file changes. Chunks are compared by `content_hash`, so an edit re-embeds only what changed. Embeddings go through the existing `Embedder`, so every one records a `costs` row. If embeddings are down the chunks are still saved and full-text search works, and `EmbedMissing` fills the vectors later, as for messages.
+- **Indexing** runs as a queued job when a file is kept or a kept file changes. Chunks are compared by `content_hash`, so an edit re-embeds only what changed. Embeddings go through the existing `Embedder`, in batches with `attemptMany`, so every one records a `costs` row and shows up in the spend line under the input. If embeddings are down the chunks are still saved and full-text search works, and `EmbedMissing` fills the vectors later, as for messages. `EmbedMissing` covers messages, facts and topics today, so it gains chunks. A failed indexing job lands in `failed_jobs`, which the chat's failed-jobs strip already reports ("she may not be remembering everything"), which is accurate here.
 - **Retrieval** adds `file_chunks` to `HybridSearch`: full-text and vector, fused by rank like messages and facts, scored with the same embedding of Josh's message (no extra call), and boosted for chunks of files linked to a project, person or topic the message relates to (the same fixed boost projects give facts). They compete for the memory block's token budget with facts and exchanges.
 - **Sources**: a chunk Donna was given appears in "What I looked at" as a `file` source labelled "File name › Heading". Tapping it opens the file.
 - A deleted or un-kept file contributes nothing; its chunks are gone.
 
 ### The web app
 
-- **The plus returns** in the input, bottom left, as in the mockup: the collapsed bar, the open field and the sheet ("Choose a file", "Choose a photo"). The two choices open the file picker and the photo picker. This reverses Phase 2's "no plus".
+- **The plus returns** in the input's bottom bar, in its empty left column: the bar is a three-column grid with the spend line centered and the send button at the right, so the plus sits opposite send. Chips go above the text inside the field. The sheet ("Choose a file", "Choose a photo") is as drawn. The mockups predate the full-width input and still draw the plus beside the text; the layout on `main` wins. The two choices open the file picker and the photo picker. This reverses Phase 2's "no plus".
 - **Chips** above the text, one per file, with a remove button. Upload starts on picking; a chip shows progress, then ready, or an Error border with the reason. Send is disabled while any chip is uploading or has an error. A message may be only chips.
+- **A message of only files** has no text, and the API returns `bubbles: []` for blank text, which the thread draws as nothing. The thread draws a bubble for any message that has files, with just its cards. (Found on review of `main`; a test covers it.)
 - **Sent files** show as a card at the top of the bubble: icon, name, size. Files Donna created, edited or opened show the same card under her bubble. Tapping a card opens the viewer. An edit's card says what changed ("Edited · 14 replacements"). A kept file's card carries a small **Kept** badge, in the thread and in `/files`, following the keep switch, so a keep Donna made on her own is visible without reading her reply.
 - **The viewer.** On a phone, a full-screen sheet over the chat. At 768px and wider, a side panel: the chat keeps its width on the left and the file takes the right half, so the 600px centred column becomes two columns while a file is open. Header: the file's name, a **Keep** switch, Edit and Close. Body by kind: rendered markdown (the same safe renderer as replies; images and raw HTML are not shown), a table for CSV, extracted text with "Open original" for a PDF, the image. Edit mode (markdown only): Inset background, monospace, Save and Cancel, and a conflict banner when a save is refused. Metadata (created, modified, size, who edited last, version) expands at the bottom.
 - **`/files`** is a slash command handled in the client, no model call: it lists files as cards in a local message. Anything else about files goes through Donna.
@@ -227,12 +227,12 @@ No new kind of model call. Embedding chunks is the existing embedding call and r
 
 ### Deployment and instructions
 
-- **New `docs/instructions/spaces.md`**: a DigitalOcean Space for the app's files, separate from the backup Space, with its own access key limited to that bucket (so the app's key can't touch the backups); private, because files are served through the app; the environment variables (`DONNA_SPACES_KEY`, `DONNA_SPACES_SECRET`, `DONNA_SPACES_REGION`, `DONNA_SPACES_BUCKET`, `DONNA_SPACES_ENDPOINT`); and a check. Adds `league/flysystem-aws-s3-v3` and a `files` disk in `config/filesystems.php`. In tests and local development the disk is the local one.
-- **Backups.** Spaces is durable on its own, and the database dumps hold all text files and versions. `backups.md` notes the app's Space isn't part of the dumps.
+- **Storage setup is already written**: [`storage.md`](../instructions/storage.md) covers the private bucket, a separate `donna-app` access key, and the `AWS_*` variables with `FILESYSTEM_DISK=s3`, which are Laravel's standard names. The build uses that default disk, so there are no new variables and no new instruction file. It adds `league/flysystem-aws-s3-v3`, and updates `storage.md` to drop "unused until Phase 3" and the "don't set `FILESYSTEM_DISK=s3` yet" caveat, so it can be followed as a live setup. Tests use `Storage::fake`; local development stays on the local disk.
+- **Backups.** Spaces is durable on its own, and the database dumps hold all text files and versions. `backups.md` already says the backup key is separate from the app's, and should note the app's Space isn't part of the dumps.
 - **Upload limits on the server**: PHP's `upload_max_filesize` and `post_max_size` and Nginx's `client_max_body_size` must allow 10 MB per file and five files *(unverified: Forge's defaults are higher than this; check)*. Written into `forge-site.md`.
 - **PDF text extraction**: a pure-PHP package, chosen when building after trying it on real Stripe and Shopify PDFs *(unverified: quality on those)*; if it isn't good enough, `pdftotext` (poppler) is installed on the droplet and `forge-server.md` says how.
-- **Updated**: `environment-variables.md` (the `DONNA_SPACES_*` variables), `forge-site.md`, `backups.md`, `verify-setup.md` (attach a file, edit a markdown file, see it kept, get it back), `operating.md` (what working files accumulate and the storage bill), and a `README.md` row for `spaces.md`.
-- `CLAUDE.md`'s stack row for file storage, `domain.md`'s File concept and invariants (working and kept, versions), `design.md`'s viewer and attachment components and `vision.md`'s Files section where the build departs from it are updated in the build PR.
+- **Updated**: `storage.md` (above), `environment-variables.md` (its file-storage section: `FILESYSTEM_DISK` is `s3` once this deploys), `forge-site.md` (upload limits), `backups.md`, `verify-setup.md` (attach a file, edit a markdown file, see it kept, get it back), and `operating.md` (what working files accumulate and the storage bill).
+- `CLAUDE.md`'s stack row for file storage, `domain.md`'s File concept and invariants (working and kept, versions), `design.md`'s viewer and attachment components (and its old "Chat input" bullet, which the input change on `main` superseded) and `vision.md`'s Files section where the build departs from it are updated in the build PR.
 - The build PR's "Before deploying" lists these in order.
 
 ### Testing
@@ -243,7 +243,7 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 - Upload: each kind accepted and extracted (including an unusual text file by content, not extension); a Word or zip file, a wrong type, a file over 10 MB, and a file whose content disagrees with its extension refused; throttling.
 - Attaching: files go with the message; another message can't reuse them; a message with only files works.
 - Working vs kept: a working file is never chunked or embedded; keeping it queues indexing; a file kept by Donna's tool is reported in her reply; un-keeping and deleting drop its chunks; restoring a kept file re-indexes.
-- Tools, through the reply job: each operation writes a version with its summary; `replace_in_file` fails on zero and on ambiguous matches; `edit_section` replaces only its section; `revert_file` restores; delete and restore.
+- Tools, through the reply job: each operation writes a version with its summary; `edit_file` `replace` fails on zero and on ambiguous matches; `replace_section` replaces only its section; `revert_file` restores; delete and restore.
 - Manual save: writes a version; a stale `base_version` returns 409 and changes nothing; a CSV or PDF is refused. A Donna edit after Josh's save keeps his change.
 - Context: Josh's changes since Donna last saw the file appear as a diff; an attached file is inlined under the limit and outlined over it.
 - `query_csv` (a unit test: real branching): filter, group, aggregate and order against a fixture.
@@ -254,6 +254,9 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 - `view_file`, through the reply job: the follow-up call is made with the image or PDF page attached and its answer becomes the reply; a text file or a missing file is refused; the first call's tool effects happen once; at most two looks; the second call records its own cost.
 - The message resource marks each file card kept or not, and a keep or un-keep changes it.
 - The memory block carries the kept and working counts; they change when a file is kept.
+- A message of only files: the API returns it with its files, it isn't embedded or tagged, and the reply job runs.
+- A reply job retried after `append` applied once doesn't append again.
+- Chunk vectors missing when embeddings were down are filled by `EmbedMissing`.
 - Content endpoint: session required; correct headers.
 
 **Web (Vitest):** chip states and errors, the card, viewer modes and the conflict banner, `/files`. **Playwright with a mocked API:** attach a file and send, a bad file's chip, open a file and edit it, a save conflict. The photo picker and the keyboard in edit mode are device checks listed in the PR.
@@ -265,7 +268,7 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 - **The photo picker on iOS**, in Safari and the installed app: which formats arrive, and whether the file input works from the Home Screen app. Device check.
 - **The viewer beside the chat on a Mac** changes the Phase 2 layout; the keyboard and scroll behavior shouldn't regress. Re-run the Phase 2 device checks.
 - **Token cost of files in context.** The inline limit and outlines exist for this; watch real `costs` rows in the first week and move the limit.
-- **Spaces from the server.** The bucket, key and region have to be right before the first upload can work; `spaces.md` ends with a check that stores and reads back a file.
+- **Spaces from the server.** The bucket, key and region have to be right before the first upload can work; `storage.md` ends with a check that stores and reads back a file; run it before the first upload.
 - **Embedding cost of large kept files.** The CSV caps exist for this; the first big kept export will show whether they're right.
 
 ### Open questions
