@@ -1,20 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { parseCommand } from './commands';
+import { COMMANDS, parseCommand } from './commands';
+
+describe('COMMANDS', () => {
+    it('is alphabetical, and each command is typed as a slash and its name', () => {
+        const texts = COMMANDS.map((command) => command.text);
+
+        expect(texts).toEqual([...texts].sort());
+        expect(COMMANDS.every((command) => command.text === `/${command.name}` && command.description !== '')).toBe(true);
+    });
+});
 
 describe('parseCommand', () => {
     it.each([
-        ['/signout', { name: 'signout', everywhere: false }],
-        ['/signout all', { name: 'signout', everywhere: true }],
-        ['  /SignOut   ALL  ', { name: 'signout', everywhere: true }],
-        ['/notifications', { name: 'notifications' }],
-        ['/files', { name: 'files' }],
-        ['/help', { name: 'help' }],
-    ])('handles %s on the device', (text, command) => {
-        expect(parseCommand(text)).toEqual(command);
+        ['/cost', 'cost'],
+        ['/files', 'files'],
+        ['/people', 'people'],
+        ['/projects', 'projects'],
+        ['/settings', 'settings'],
+        ['  /COST  ', 'cost'],
+        ['/Projects\n', 'projects'],
+        ['\t/SeTTings ', 'settings'],
+    ])('handles %j on the device', (text, command) => {
+        expect(parseCommand(text)).toBe(command);
     });
 
-    // Anything else is a message for Donna, including paths and commands she doesn't have.
-    it.each(['/etc/hosts is wrong', '/signout now please', '/good', 'type /help for help', '/files/launch-plan.md', '/'])('sends %s as an ordinary message', (text) => {
+    // Anything else is a message for Donna, including the commands that were removed and paths.
+    it.each([
+        '/help',
+        '/signout',
+        '/signout all',
+        '/notifications',
+        '/',
+        '/cost please',
+        '/files/launch-plan.md',
+        '/etc/hosts is wrong',
+        'what is /cost',
+        'cost',
+    ])('sends %j as an ordinary message', (text) => {
         expect(parseCommand(text)).toBeNull();
     });
 });

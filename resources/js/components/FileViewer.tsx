@@ -341,8 +341,8 @@ export function FileViewer({ id, busy, timeZone, onClose, onFile }: Props) {
                                 <span className="viewer__keep-label" id={keepLabel}>
                                     {file.kept ? 'Kept. Donna finds it when it comes up' : 'Not kept. Only for this conversation'}
                                 </span>
-                                <button type="button" role="switch" className="switch" aria-checked={file.kept} aria-labelledby={keepLabel} onClick={toggleKeep}>
-                                    <span className="switch__knob" />
+                                <button type="button" role="switch" className="keep-switch" aria-checked={file.kept} aria-labelledby={keepLabel} onClick={toggleKeep}>
+                                    <span className="keep-switch__knob" />
                                 </button>
                             </>
                         )}

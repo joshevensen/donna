@@ -118,6 +118,7 @@ describe('file cards in the thread', () => {
         const user = userEvent.setup();
         const note = {
             id: 'n1',
+            who: 'donna' as const,
             text: '',
             createdAt: '2026-11-27T20:10:00Z',
             files: [

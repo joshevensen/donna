@@ -126,3 +126,35 @@ export interface MessagePage {
     data: Message[];
     meta: { next_before?: number | null; next_after?: number | null; failed_jobs?: number; costs?: Costs };
 }
+
+export type ProjectTier = 'main' | 'secondary' | 'fun';
+
+export type ProjectStatus = 'active' | 'parked' | 'proposed';
+
+/** A project as /projects lists it. The owner is someone else's name, or null when it's Josh's. */
+export interface ProjectSummary {
+    id: number;
+    name: string;
+    tier: ProjectTier | null;
+    status: ProjectStatus;
+    owner: string | null;
+}
+
+/** Someone Donna knows about, as /people lists them. */
+export interface PersonSummary {
+    id: number;
+    name: string;
+    relationship: string | null;
+}
+
+/** What one period cost, in dollars as text ("0.42"), and what for. */
+export interface CostPeriodReport {
+    total_usd: string;
+    calls: number;
+    by_purpose: Record<string, { usd: string; calls: number }>;
+}
+
+export interface CostSummary {
+    today: CostPeriodReport;
+    this_month: CostPeriodReport;
+}

@@ -1,6 +1,7 @@
 import { type ChangeEvent, type KeyboardEvent, type SyntheticEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { api, type Upload, UploadCancelled } from '../api/client';
 import type { Costs } from '../api/types';
+import type { CommandInfo } from '../lib/commands';
 import {
     addPicked,
     type AttachedFile,
@@ -20,6 +21,7 @@ import { isTouchFirst, uuid } from '../lib/platform';
 import { storage } from '../lib/storage';
 import { composerHeight } from '../lib/viewport';
 import { AttachSheet } from './AttachSheet';
+import { CommandPicker } from './CommandPicker';
 import { AlertIcon, CloseIcon, FileIcon, PlusIcon, SendIcon } from './icons';
 
 /** What iOS will hand over as a photo. Asking for these is what makes it convert HEIC to JPEG. */
@@ -31,9 +33,13 @@ const COLLAPSE_DELAY_MS = 80;
 /**
  * The input, pinned to the bottom. Empty and unfocused it is a slim bar;
  * tapped, it opens three lines tall and grows to six, then scrolls. Under the
- * text runs a bar: the plus that attaches a file at the start, what Donna has
- * cost in the middle, the send button at the end. Attached files sit above
- * the text as chips, uploading from the moment they are picked.
+ * text runs a bar: the plus that attaches a file and the `/` button that
+ * lists the commands at the start, what Donna has cost in the middle, the send
+ * button at the end. Attached files sit above the text as chips, uploading
+ * from the moment they are picked.
+ *
+ * Picking a command puts it in the field in place of whatever was there and
+ * stops: it isn't sent, so Josh decides what happens next.
  *
  * There is only ever this one textarea. iOS opens the keyboard only when
  * focus lands inside the tap itself, so the bar you tap has to be the real
@@ -45,7 +51,10 @@ export function Composer({ onSend, costs }: { onSend: (text: string, files: Atta
     const [width, setWidth] = useState(0);
     const [choosing, setChoosing] = useState(false);
     const [overflow, setOverflow] = useState(false);
+    const [picking, setPicking] = useState(false);
     const input = useRef<HTMLTextAreaElement>(null);
+    const box = useRef<HTMLDivElement>(null);
+    const commands = useRef<HTMLButtonElement>(null);
     const filePicker = useRef<HTMLInputElement>(null);
     const photoPicker = useRef<HTMLInputElement>(null);
 
@@ -248,11 +257,22 @@ export function Composer({ onSend, costs }: { onSend: (text: string, files: Atta
         }
     };
 
-    // Pressing send must not take focus from the field, or the keyboard would drop.
+    // Pressing send, the plus or `/` must not take focus from the field, or the keyboard would drop.
     const keepFocus = (event: SyntheticEvent) => event.preventDefault();
 
+    const closePicker = useCallback(() => setPicking(false), []);
+
+    const pickCommand = (command: CommandInfo) => {
+        setText(command.text);
+        setPicking(false);
+
+        // Inside the tap, so iOS opens the keyboard if it wasn't already up.
+        input.current?.focus();
+    };
+
     return (
-        <div className="composer">
+        <div className="composer" ref={box}>
+            {picking && <CommandPicker composer={box} toggle={commands} onPick={pickCommand} onClose={closePicker} />}
             <div className="composer__field" data-open={open}>
                 {chips.length > 0 && (
                     <ul className="chips" aria-label="Attachments">
@@ -295,18 +315,33 @@ export function Composer({ onSend, costs }: { onSend: (text: string, files: Atta
                     onKeyDown={onKeyDown}
                 />
                 <div className="composer__bar">
-                    <button
-                        ref={attach}
-                        type="button"
-                        className="composer__attach"
-                        aria-label="Attach a file"
-                        aria-haspopup="dialog"
-                        onPointerDown={keepFocus}
-                        onMouseDown={keepFocus}
-                        onClick={() => setChoosing(true)}
-                    >
-                        <PlusIcon size={16} />
-                    </button>
+                    {/* The start of the bar: attach a file, and the list of commands. Send sits opposite. */}
+                    <div className="composer__tools">
+                        <button
+                            ref={attach}
+                            type="button"
+                            className="composer__attach"
+                            aria-label="Attach a file"
+                            aria-haspopup="dialog"
+                            onPointerDown={keepFocus}
+                            onMouseDown={keepFocus}
+                            onClick={() => setChoosing(true)}
+                        >
+                            <PlusIcon size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            ref={commands}
+                            className="composer__commands"
+                            aria-label="Commands"
+                            aria-expanded={picking}
+                            onPointerDown={keepFocus}
+                            onMouseDown={keepFocus}
+                            onClick={() => setPicking((current) => !current)}
+                        >
+                            /
+                        </button>
+                    </div>
                     {costs && (
                         <p className="composer__costs">
                             Today ${costs.today} · Cycle ${costs.cycle}

@@ -255,3 +255,69 @@ describe('Composer', () => {
         expect(screen.getByRole('button', { name: 'Send' })).toHaveProperty('disabled', false);
     });
 });
+
+describe('the command picker', () => {
+    const commands = () => screen.queryByRole('list', { name: 'Commands' });
+
+    it('opens from / with every command in alphabetical order, whatever is typed', async () => {
+        const user = userEvent.setup();
+        render(<Composer onSend={vi.fn()} costs={null} />);
+
+        await user.type(screen.getByLabelText('Message Donna'), '/pe');
+        await user.click(screen.getByRole('button', { name: 'Commands' }));
+
+        const list = screen.getByRole('list', { name: 'Commands' });
+        expect(within(list).getAllByText(/^\/\w+$/).map((name) => name.textContent)).toEqual(['/cost', '/files', '/people', '/projects', '/settings']);
+        expect(within(list).getByText('Your projects and where they stand')).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Commands' }).getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('keeps the focus in the field when / is tapped, so the keyboard stays up', async () => {
+        const user = userEvent.setup();
+        render(<Composer onSend={vi.fn()} costs={null} />);
+        const field = screen.getByLabelText('Message Donna');
+
+        await user.click(field);
+        await user.click(screen.getByRole('button', { name: 'Commands' }));
+
+        expect(commands()).not.toBeNull();
+        expect(document.activeElement).toBe(field);
+    });
+
+    it('puts the tapped command in the field in place of what was there, closes, and does not send', async () => {
+        const user = userEvent.setup();
+        const onSend = vi.fn();
+        render(<Composer onSend={onSend} costs={null} />);
+        const field = screen.getByLabelText('Message Donna');
+
+        await user.type(field, 'half a thought');
+        await user.click(screen.getByRole('button', { name: 'Commands' }));
+        await user.click(within(screen.getByRole('list', { name: 'Commands' })).getByText('/projects'));
+
+        expect(screen.getByLabelText('Message Donna')).toHaveProperty('value', '/projects');
+        expect(commands()).toBeNull();
+        expect(document.activeElement).toBe(screen.getByLabelText('Message Donna'));
+        expect(onSend).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['Escape', async (user: ReturnType<typeof userEvent.setup>) => user.keyboard('{Escape}')],
+        ['tapping / again', async (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('button', { name: 'Commands' }))],
+        ['tapping outside', async (user: ReturnType<typeof userEvent.setup>) => user.click(document.body)],
+    ])('closes on %s without changing the draft', async (_case, close) => {
+        const user = userEvent.setup();
+        const onSend = vi.fn();
+        render(<Composer onSend={onSend} costs={null} />);
+
+        await user.type(screen.getByLabelText('Message Donna'), 'keep me');
+        await user.click(screen.getByRole('button', { name: 'Commands' }));
+        expect(commands()).not.toBeNull();
+
+        await close(user);
+
+        expect(commands()).toBeNull();
+        expect(screen.getByRole('button', { name: 'Commands' }).getAttribute('aria-expanded')).toBe('false');
+        expect(screen.getByLabelText('Message Donna')).toHaveProperty('value', 'keep me');
+        expect(onSend).not.toHaveBeenCalled();
+    });
+});

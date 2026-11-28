@@ -38,8 +38,8 @@ export interface Conversation {
     discardSend: (key: string) => void;
     retryReply: (id: number) => void;
     loadOlder: () => void;
-    /** Say something locally, as Donna would: the answer to a slash command. With files, the answer to /files. */
-    addNote: (text: string, files?: FileItem[]) => void;
+    /** Show something on this device only, as Donna's (the default) or as what Josh typed. With files, the answer to /files. */
+    addNote: (text: string, who?: Note['who'], files?: FileItem[]) => void;
     /** Take in a file as the server just described it (the viewer saw it, or changed it). */
     noteFile: (file: FileState & { id: number }) => void;
 }
@@ -279,8 +279,8 @@ export function useMessages(): Conversation {
     }, [loadingOlder, merge, nextBefore, reach]);
 
     const addNote = useCallback(
-        (text: string, files?: FileItem[]) => {
-            setNotes((existing) => [...existing, { id: uuid(), text, ...(files ? { files } : {}), createdAt: new Date().toISOString() }]);
+        (text: string, who: Note['who'] = 'donna', files?: FileItem[]) => {
+            setNotes((existing) => [...existing, { id: uuid(), who, text, ...(files ? { files } : {}), createdAt: new Date().toISOString() }]);
             noteFiles(files ?? []);
         },
         [noteFiles],

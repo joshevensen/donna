@@ -168,7 +168,7 @@ describe('files in the thread', () => {
     it('answers /files with the list as it was, in one of her bubbles', () => {
         const listed = { ...attached(), mime: 'text/csv', extraction: 'ready', extraction_error: null, version: 1, last_author: 'josh', editable: false, created_at: '2026-11-27T20:03:00Z', updated_at: '2026-11-27T20:03:00Z' } as FileItem;
 
-        const [row] = bubbles(buildRows([{ kind: 'note', note: { id: 'n1', text: '', files: [listed], createdAt: '2026-11-27T20:05:00Z' } }], options));
+        const [row] = bubbles(buildRows([{ kind: 'note', note: { id: 'n1', who: 'donna', text: '', files: [listed], createdAt: '2026-11-27T20:05:00Z' } }], options));
 
         expect(row).toMatchObject({ who: 'donna', listing: [{ id: 7, created_at: '2026-11-27T20:03:00Z' }] });
     });

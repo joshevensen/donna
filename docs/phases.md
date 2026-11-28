@@ -58,7 +58,7 @@ The first front end, so Josh can leave the terminal. A web app he opens in a bro
 - Chat UI per the vision and the mockup: one conversation, texting-style bubbles (replies as one bubble or several), typing dots, no progress messages, a collapsing input pinned above the keyboard, markdown and code blocks, errors and offline states, dark mode only
 - Sign-in by emailed code and link, no passwords; Sanctum cookie sessions that last 30 days from last use, capped at 90 days; an email on every new sign-in with a sign-out-everywhere button
 - Web Push for replies when the app isn't open
-- Chat commands: natural language with a tap button, or `/signout` and `/notifications`
+- Chat commands: natural language with a tap button, or the `/` command picker: `/settings` (notifications and signing out), `/projects`, `/people`, `/cost`
 - Tapping a bubble shows its time; "sources" shows what she looked at. No ratings in the UI (Phase 1's flagging endpoint was later removed with the terminal; flagging happens by telling Donna in chat)
 - The repo becomes one Laravel app at the root (no `api/` folder, `apple/` removed); this ships in the Phase 2 PR, and the Forge site's root directory changes with it
 - The API gains a `web` message source, idempotent sends, retry, `after` polling, bubbles, sources and actions

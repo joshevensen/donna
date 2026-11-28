@@ -21,7 +21,7 @@ An open web app picks up a new version the next time it is reloaded or reopened.
 
 Any one of these signs every browser and phone out and turns off all their notifications:
 
-- Tell her "sign me out everywhere" and tap the button she gives you, or type `/signout all`.
+- Tell her "sign me out everywhere" and tap the button she gives you, or type `/settings` and press **Sign out everywhere**.
 - Press **Sign out everywhere** in any "New sign-in to Donna" email from the last 7 days. It works from any device, signed in or not.
 
 Then sign in again on the devices you still have, and turn notifications back on ([web-push.md](web-push.md)).

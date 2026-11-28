@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\Api\V1\Auth\LoginCodeController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\CostController;
 use App\Http\Controllers\Api\V1\FileBodyController;
 use App\Http\Controllers\Api\V1\FileContentController;
 use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\MessageRetryController;
+use App\Http\Controllers\Api\V1\PersonController;
 use App\Http\Controllers\Api\V1\PresenceController;
+use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -65,5 +68,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
         Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
         Route::delete('presence', [PresenceController::class, 'destroy'])->name('presence.destroy');
+
+        // What the slash commands show: read-only, answered by queries, no model call.
+        Route::get('projects', [ProjectController::class, 'index'])->name('projects.index');
+        Route::get('people', [PersonController::class, 'index'])->name('people.index');
+        Route::get('costs', [CostController::class, 'index'])->name('costs.index');
     });
 });

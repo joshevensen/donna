@@ -47,3 +47,11 @@ export function composerHeight(contentHeight: number, metrics: ComposerMetrics):
 
     return { height: Math.min(max, Math.max(min, Math.ceil(contentHeight))), scrolls: contentHeight > max + 1 };
 }
+
+/**
+ * How tall the command list may be: the space between the top of what's
+ * visible and the input, less a margin. Never negative.
+ */
+export function pickerMaxHeight(composerTop: number, visibleTop: number, margin = 12): number {
+    return Math.max(0, Math.round(composerTop - visibleTop - margin));
+}

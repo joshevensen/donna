@@ -4,17 +4,26 @@ import type { Me, Source } from '../api/types';
 import { Composer } from '../components/Composer';
 import { FileViewer } from '../components/FileViewer';
 import { AlertIcon, OfflineIcon } from '../components/icons';
+import { SettingsSheet } from '../components/SettingsSheet';
 import { SourcesSheet } from '../components/SourcesSheet';
 import { Thread, type ThreadHandle } from '../components/Thread';
 import { useAppActions } from '../hooks/useAppActions';
 import { useKeyboardViewport } from '../hooks/useKeyboardViewport';
 import { useMessages } from '../hooks/useMessages';
 import type { AttachedFile } from '../lib/attachments';
-import { HELP, parseCommand } from '../lib/commands';
+import { ANSWER_FAILED, formatCosts, formatPeople, formatProjects } from '../lib/answers';
+import { type CommandName, parseCommand } from '../lib/commands';
 import { buildRows } from '../lib/timeline';
 
 /** Wide enough for the file to sit beside the chat instead of over it. The same line the stylesheet draws. */
 const WIDE = '(min-width: 768px)';
+
+/** The commands that answer in words, each from one read-only endpoint, formatted here. */
+const ANSWERS: Record<Exclude<CommandName, 'settings' | 'files'>, () => Promise<string>> = {
+    cost: () => api.costs().then(formatCosts),
+    people: () => api.people().then(formatPeople),
+    projects: () => api.projects().then(formatProjects),
+};
 
 function useWide(): boolean {
     const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -41,6 +50,7 @@ export function ChatPage({ me }: { me: Me }) {
     const conversation = useMessages();
     const { run, subscribed } = useAppActions();
     const [sheet, setSheet] = useState<Source[] | null>(null);
+    const [settings, setSettings] = useState(false);
     const [openFile, setOpenFile] = useState<number | null>(null);
     const wide = useWide();
 
@@ -59,10 +69,17 @@ export function ChatPage({ me }: { me: Me }) {
 
     const onSend = useCallback(
         (text: string, files: AttachedFile[] = []) => {
-            thread.current?.scrollToBottom();
-
             // A message with files is always for Donna, whatever its text starts with.
             const command = files.length > 0 ? null : parseCommand(text);
+
+            // Slash commands are answered here. They never reach Donna and cost nothing.
+            if (command === 'settings') {
+                setSettings(true);
+
+                return;
+            }
+
+            thread.current?.scrollToBottom();
 
             if (command === null) {
                 send(text, files);
@@ -70,35 +87,26 @@ export function ChatPage({ me }: { me: Me }) {
                 return;
             }
 
-            // Slash commands are answered here. They never reach Donna and cost nothing.
-            switch (command.name) {
-                case 'help':
-                    addNote(HELP);
-                    break;
+            // The command and its answer are notes on this device only: gone on reload, never sent.
+            addNote(text, 'josh');
 
-                case 'files':
-                    api.files()
-                        .then((list) => (list.length > 0 ? addNote('', list) : addNote('No files yet.')))
-                        .catch(() => addNote("I couldn't get your files. Check your connection and try again."));
-                    break;
+            if (command === 'files') {
+                api.files()
+                    .then((list) => (list.length > 0 ? addNote('', 'donna', list) : addNote('No files yet.')))
+                    .catch(() => addNote(ANSWER_FAILED));
 
-                case 'notifications':
-                    run(subscribed ? 'disable_notifications' : 'enable_notifications')
-                        .then((result) => addNote(result.message))
-                        .catch(() => addNote("That didn't work. Check your connection and try again."));
-                    break;
-
-                case 'signout':
-                    run(command.everywhere ? 'sign_out_everywhere' : 'sign_out').catch(() =>
-                        addNote("I couldn't sign you out. Check your connection and try again."),
-                    );
-                    break;
+                return;
             }
+
+            ANSWERS[command]()
+                .then((answer) => addNote(answer))
+                .catch(() => addNote(ANSWER_FAILED));
         },
-        [addNote, run, send, subscribed],
+        [addNote, send],
     );
 
     const closeSheet = useCallback(() => setSheet(null), []);
+    const closeSettings = useCallback(() => setSettings(false), []);
 
     const openViewer = useCallback((id: number) => {
         const pressed = document.activeElement;
@@ -163,6 +171,8 @@ export function ChatPage({ me }: { me: Me }) {
                     <Composer onSend={onSend} costs={conversation.costs} />
 
                     {sheet !== null && <SourcesSheet sources={sheet} onClose={closeSheet} onOpenFile={openViewer} />}
+
+                    {settings && <SettingsSheet run={run} subscribed={subscribed} onClose={closeSettings} />}
                 </div>
             </div>
 
