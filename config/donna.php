@@ -204,6 +204,10 @@ return [
         // kept files a message is given.
         'files_in_play_messages' => 20,
         'related_chunks' => 4,
+
+        // A chunk further than this from the message (cosine distance) isn't
+        // a match by meaning. Loosen it if she misses files she should find.
+        'chunk_max_distance' => 0.6,
     ],
 
     /*

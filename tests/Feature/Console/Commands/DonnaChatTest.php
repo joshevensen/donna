@@ -47,6 +47,19 @@ it('opens on the last few exchanges, oldest first, including a reply that finish
     Http::assertSent(fn (Request $request): bool => $request->hasHeader('Authorization', 'Bearer secret-token'));
 });
 
+it('names the files on a message, since a message sent from the web app may be nothing else', function () {
+    Http::fake(['donna.test/api/v1/messages?limit=10' => Http::response(['data' => [
+        apiMessage(2, 'donna', 'Done, 14 of them.', ['files' => [['name' => 'launch-plan.md', 'role' => 'edited', 'note' => 'Replaced 14 matches of "Fibermade Co"']]]),
+        apiMessage(1, 'josh', '', ['bubbles' => [], 'files' => [['name' => 'launch-plan.md', 'role' => 'attached', 'note' => null]]]),
+    ]])]);
+
+    artisan('donna:chat')
+        ->expectsOutputToContain('[attached] launch-plan.md')
+        ->expectsOutputToContain('[edited] launch-plan.md — Replaced 14 matches of "Fibermade Co"')
+        ->expectsQuestion('You', '/quit')
+        ->assertSuccessful();
+});
+
 it('prints angle-bracket text in a reply as written, not as terminal styling', function () {
     Http::fake(['donna.test/api/v1/messages?limit=10' => Http::response(['data' => [
         apiMessage(1, 'donna', 'Wrap it in <info>done</info> tags.'),

@@ -48,6 +48,11 @@ class HybridSearch
      * Score the chunks of kept files against the text. A file that is
      * deleted or no longer kept contributes nothing.
      *
+     * Unlike messages and facts, a chunk has to be near the message in
+     * meaning (or share its words) to count at all: a chunk is hundreds of
+     * tokens, so the nearest few of an unrelated library are not worth
+     * putting in every prompt.
+     *
      * @param  list<float>|null  $embedding
      * @param  list<int>  $exceptFileIds
      * @return array<int, float> Scores keyed by chunk ID, best first.
@@ -60,20 +65,23 @@ class HybridSearch
                 ->whereNotIn('file_id', $exceptFileIds),
             $text,
             $embedding,
+            config('donna.context.chunk_max_distance'),
         );
     }
 
     /**
      * @param  Builder<Message>|Builder<Fact>|Builder<FileChunk>  $query
      * @param  list<float>|null  $embedding
+     * @param  float|null  $maxDistance  Leave out rows further than this by meaning; they can still match by their words.
      * @return array<int, float>
      */
-    private function search(Builder $query, string $text, ?array $embedding): array
+    private function search(Builder $query, string $text, ?array $embedding, ?float $maxDistance = null): array
     {
         $candidates = config('donna.context.search_candidates');
 
         $byMeaning = $embedding === null ? [] : (clone $query)
             ->whereNotNull('embedding')
+            ->when($maxDistance !== null, fn (Builder $query) => $query->whereVectorDistanceLessThan('embedding', $embedding, $maxDistance))
             ->orderByVectorDistance('embedding', $embedding)
             ->limit($candidates)
             ->pluck('id')

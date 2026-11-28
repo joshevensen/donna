@@ -218,6 +218,12 @@ class DonnaChat extends Command
         // A reply she split into several texts shows as paragraphs, not with her separators.
         $this->line(OutputFormatter::escape(implode("\n\n", $message['bubbles'] ?? [$message['body']])));
 
+        // The terminal can't open a file, but it can say one was there: a message sent
+        // from the web app may be nothing but files.
+        foreach ($message['files'] ?? [] as $file) {
+            $this->line('<fg=gray>  ['.$file['role'].'] '.OutputFormatter::escape($file['name'].(filled($file['note'] ?? null) ? " — {$file['note']}" : '')).'</>');
+        }
+
         foreach ($message['citations'] as $index => $citation) {
             $this->line('<fg=gray>  ['.($index + 1).'] '.OutputFormatter::escape(($citation['title'] ?? $citation['url']).' — '.$citation['url']).'</>');
         }
