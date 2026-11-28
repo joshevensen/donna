@@ -45,5 +45,5 @@ export interface Me {
 
 export interface MessagePage {
     data: Message[];
-    meta: { next_before?: number | null; next_after?: number | null };
+    meta: { next_before?: number | null; next_after?: number | null; failed_jobs?: number };
 }

@@ -23,7 +23,8 @@ class MessageController extends Controller
      * The conversation. Newest first by default: pass the returned
      * `next_before` as `before` to page further back. With `after`, only
      * what is newer than that message, oldest first: how a client that is
-     * already showing the conversation picks up what it hasn't seen.
+     * already showing the conversation picks up what it hasn't seen. Either way
+     * `meta.failed_jobs` says how many background jobs have failed.
      */
     public function index(IndexMessagesRequest $request, Presence $presence): AnonymousResourceCollection
     {
@@ -47,7 +48,11 @@ class MessageController extends Controller
         $next = $messages->count() > $limit ? $page->last()->id : null;
 
         return MessageResource::collection($page)->additional([
-            'meta' => $newer ? ['next_after' => $next] : ['next_before' => $next],
+            'meta' => [
+                ...($newer ? ['next_after' => $next] : ['next_before' => $next]),
+                // Jobs that gave up after their retries: the app shows a strip until they are cleared.
+                'failed_jobs' => DB::table('failed_jobs')->count(),
+            ],
         ]);
     }
 

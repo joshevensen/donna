@@ -19,6 +19,20 @@ it('prices uncached input, cache writes, cache reads and output at their own rat
     expect($usd)->toBe('0.029100');
 });
 
+it('prices the one-hour part of cache writes at the higher rate', function () {
+    // 1,000 written: 400 on the five-minute cache, 600 on the one-hour cache.
+    $usd = (new Pricing)->price(
+        'claude-sonnet-5-5',
+        inputTokens: 1_000,
+        outputTokens: 0,
+        cacheWriteTokens: 1_000,
+        cacheWriteOneHourTokens: 600,
+    );
+
+    // 400 × $2.50 + 600 × $4, per million.
+    expect($usd)->toBe('0.003400');
+});
+
 it('halves token cost for batched calls', function () {
     $usd = (new Pricing)->price('claude-sonnet-5-5', inputTokens: 100_000, outputTokens: 10_000, batched: true);
 
