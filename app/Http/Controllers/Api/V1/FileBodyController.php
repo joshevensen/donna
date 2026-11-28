@@ -20,7 +20,10 @@ class FileBodyController extends Controller
      */
     public function update(SaveFileRequest $request, File $file, FileWriter $writer): JsonResponse
     {
-        abort_unless($file->kind->isEditable(), 422, 'Only markdown and plain text files can be edited here.');
+        abort_unless($file->kind->isEditable(), 422, 'Only markdown files (.md, .txt) can be edited here.');
+
+        // The viewer is only ever sent the start of a very long file; saving that would cut the rest off.
+        abort_unless($file->isEditable(), 422, 'This file is too long to edit here. Ask Donna to change it.');
 
         $body = $request->validated('body');
 
@@ -32,7 +35,7 @@ class FileBodyController extends Controller
                 return false;
             }
 
-            if ($current->body !== $body) {
+            if ($current->content_hash !== hash('sha256', $body)) {
                 $writer->write($file, $body, MessageAuthor::Josh, 'Edited by Josh');
             }
 

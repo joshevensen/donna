@@ -58,9 +58,9 @@ class LinkFile implements Tool
                     default => $this->subjects->topic($subject['name']),
                 })
                 ->filter()
-                ->each(fn (Model $subject) => DB::table('file_subjects')
+                ->filter(fn (Model $subject): bool => DB::table('file_subjects')
                     ->where(['file_id' => $file->id, 'subject_type' => $subject->getMorphClass(), 'subject_id' => $subject->getKey()])
-                    ->delete());
+                    ->delete() > 0);
 
             return $removed->isEmpty()
                 ? "{$file->name} wasn't linked to any of those."

@@ -5,7 +5,7 @@ namespace App\Ai\Tools;
 use App\Enums\FileRole;
 use App\Files\FileIntake;
 use App\Files\FileLibrary;
-use App\Models\File;
+use App\Files\ReplyAttempt;
 use App\Models\Message;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
@@ -20,6 +20,7 @@ class CreateFile implements Tool
         private Message $reply,
         private FileIntake $intake,
         private FileLibrary $library,
+        private ReplyAttempt $attempt,
     ) {}
 
     public function name(): string
@@ -37,15 +38,13 @@ class CreateFile implements Tool
     {
         $input = $request->validate([
             'name' => ['required', 'string', 'max:200'],
-            'content' => ['required', 'string', 'max:2000000'],
+            'content' => ['required', 'string', 'max:2000000', 'not_regex:/\x00/'],
         ]);
 
         $hash = hash('sha256', json_encode(['create', $input['name'], $input['content']]));
 
         // A retried reply repeats its tool calls; the file is only written once.
-        $existing = File::query()
-            ->whereHas('versions', fn ($query) => $query->where('message_id', $this->reply->id)->where('operation_hash', $hash))
-            ->first();
+        $existing = $this->attempt->alreadyDid($hash)?->file;
 
         if ($existing !== null) {
             return "Already created as file #{$existing->id} \"{$existing->name}\" earlier in this reply; not created again.";

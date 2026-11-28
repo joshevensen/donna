@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
+use Throwable;
 
 /**
  * Totals, counts and filtered rows from a CSV, worked out in PHP. Donna
@@ -44,6 +45,7 @@ class QueryCsv implements Tool
             'where.*.column' => ['required', 'string'],
             'where.*.op' => ['required', 'string'],
             'where.*.value' => ['nullable'],
+            'where.*.values' => ['nullable', 'array'],
             'group_by' => ['nullable', 'array'],
             'group_by.*' => ['string'],
             'aggregate' => ['nullable', 'array'],
@@ -74,6 +76,11 @@ class QueryCsv implements Tool
             $result = $this->query->run($csv, $asked, $asked === [] && ! isset($input['limit']) ? config('donna.files.outline_rows') : $limit);
         } catch (InvalidArgumentException $exception) {
             return $exception->getMessage();
+        } catch (Throwable $exception) {
+            // A query she can reword is not worth losing the whole reply over.
+            report($exception);
+
+            return 'That query could not be run as written. Check the columns and values and try a simpler one.';
         }
 
         $shown = count($result['rows']);
@@ -95,7 +102,8 @@ class QueryCsv implements Tool
             'where' => $schema->array()->items($schema->object([
                 'column' => $schema->string()->required(),
                 'op' => $schema->string()->enum(CsvQuery::OPERATORS)->required(),
-                'value' => $schema->string()->description('What to compare with. Numbers, money and dates are compared as such. For "in", a list.'),
+                'value' => $schema->string()->description('What to compare with. Numbers, money and dates are compared as such.'),
+                'values' => $schema->array()->items($schema->string())->description('For "in" only: the list of values to match any of.'),
             ]))->description('Conditions a row must meet; all of them.'),
             'group_by' => $schema->array()->items($schema->string())->description('Columns to group by.'),
             'aggregate' => $schema->array()->items($schema->object([

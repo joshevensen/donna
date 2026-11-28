@@ -24,8 +24,14 @@ class ModelFile
     public function cannotShow(File $file): ?string
     {
         if ($file->kind === FileKind::Image) {
-            return $file->size_bytes > config('donna.files.model_image_bytes') && $file->previewPath() === null
-                ? "{$file->name} is too large to look at (".Number::fileSize($file->size_bytes, maxPrecision: 1).').'
+            // The smaller copy made on upload always fits. Without one, the original has to.
+            $tooLarge = $file->previewPath() === null && (
+                $file->size_bytes > config('donna.files.model_image_bytes')
+                || max($file->meta['width'] ?? 0, $file->meta['height'] ?? 0) > config('donna.files.model_image_pixels')
+            );
+
+            return $tooLarge
+                ? "{$file->name} is too large to look at (".Number::fileSize($file->size_bytes, maxPrecision: 1).', '.($file->meta['width'] ?? '?').'×'.($file->meta['height'] ?? '?').').'
                 : null;
         }
 
@@ -40,6 +46,40 @@ class ModelFile
             $pages !== null && $pages > config('donna.files.model_pdf_pages') => "{$file->name} has {$pages} pages, too many to look at.",
             default => null,
         };
+    }
+
+    /**
+     * As many of the attachments as one request can carry, dropping the
+     * earliest when they are too much together: the last ones are what she
+     * just asked to see.
+     *
+     * @param  list<Attachment>  $attachments
+     * @return list<Attachment>
+     */
+    public function fitting(array $attachments): array
+    {
+        $room = config('donna.files.model_request_bytes');
+        $kept = [];
+
+        foreach (array_reverse($attachments) as $attachment) {
+            $room -= $this->weight($attachment);
+
+            if ($room < 0) {
+                break;
+            }
+
+            array_unshift($kept, $attachment);
+        }
+
+        return $kept;
+    }
+
+    /**
+     * How much of a request an attachment takes: it travels as base64.
+     */
+    public function weight(Attachment $attachment): int
+    {
+        return strlen($attachment->base64 ?? '');
     }
 
     /**

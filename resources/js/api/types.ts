@@ -19,7 +19,6 @@ export type FileKind = 'markdown' | 'csv' | 'text' | 'pdf' | 'image';
 export interface FileMeta {
     lines?: number;
     rows?: number;
-    columns?: number;
     pages?: number;
     has_text?: boolean;
     width?: number;
@@ -63,6 +62,8 @@ export interface FileDetail extends FileItem {
     /** The body was cut for viewing: the file is very large. */
     truncated: boolean;
     table: FileTable | null;
+    /** The people, projects and topics the file is linked to. */
+    subjects?: { type: 'person' | 'project' | 'topic'; name: string }[];
 }
 
 export type FileRole = 'attached' | 'created' | 'edited' | 'opened';

@@ -57,6 +57,17 @@ it('refuses to edit anything but markdown', function (Closure $file) {
     'a PDF' => [fn () => File::factory()->pdf()->create()],
 ]);
 
+it('refuses a save that could not be stored or would cut the file short', function (Closure $file, string $body) {
+    $file = $file();
+
+    putJson("/api/v1/files/{$file->id}", ['body' => $body, 'base_version' => 1])->assertUnprocessable();
+
+    expect($file->versions()->count())->toBe(1);
+})->with([
+    'text with a NUL byte in it' => [fn () => File::factory()->markdown("# Plan\n")->create(), "# Plan\n\0"],
+    'a file longer than the viewer is ever sent' => [fn () => tap(File::factory()->markdown("# Plan\n")->create())->update(['size_bytes' => 600_000]), '# The first part only'],
+]);
+
 it('keeps Josh\'s change when Donna edits the file after he saved', function () {
     donnaExists();
     fakeEmbeddings();

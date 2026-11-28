@@ -107,11 +107,15 @@ class Markdown
     }
 
     /**
+     * The text split at its line endings and nothing else. A form feed or a
+     * Unicode line separator inside a line stays where it is, so putting the
+     * lines back together gives back the same file.
+     *
      * @return list<string>
      */
     public static function lines(string $text): array
     {
-        return preg_split('/\R/u', $text);
+        return preg_split('/\r\n|\n|\r/', $text);
     }
 
     /**

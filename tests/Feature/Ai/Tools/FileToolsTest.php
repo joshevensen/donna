@@ -139,6 +139,14 @@ describe('keep_file', function () {
             ->and($file->body())->toBe("# Vendor notes\n\nLoad-in is at 7.\n");
     });
 
+    it('warns her that a kept scan has no words to be found by', function () {
+        File::factory()->pdf([], scannedPages: 2)->create(['name' => 'receipt-scan.pdf']);
+
+        [$result] = donnaCalls([['keep_file', ['file' => 'receipt-scan.pdf', 'keep' => true]]]);
+
+        expect($result)->toContain('It has no text, so you won\'t find it by what it says');
+    });
+
     it('does not keep images: there is nothing in them to search', function () {
         $file = File::factory()->image()->create(['name' => 'booth.png']);
 
@@ -171,6 +179,14 @@ describe('link_file', function () {
             ->and($file->projects->modelKeys())->toBe([$project->id])
             ->and($file->topics->modelKeys())->toBe([Topic::where('name', 'Houston festival')->sole()->id])
             ->and($anita->exists)->toBeTrue();
+    });
+    it('says so when asked to remove a link that was never there', function () {
+        File::factory()->pdf()->create(['name' => 'houston-logistics.pdf']);
+        Person::factory()->create(['name' => 'Anita']);
+
+        [$result] = donnaCalls([['link_file', ['file' => 'houston-logistics.pdf', 'unlink' => true, 'subjects' => [['type' => 'person', 'name' => 'Anita']]]]]);
+
+        expect($result)->toBe('houston-logistics.pdf wasn\'t linked to any of those.');
     });
 });
 

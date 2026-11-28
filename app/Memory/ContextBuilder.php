@@ -10,7 +10,6 @@ use App\Enums\PersonKind;
 use App\Enums\ProjectStatus;
 use App\Files\FileLibrary;
 use App\Memory\Context\AttachedFile;
-use App\Memory\Context\FileInPlay;
 use App\Memory\Context\Memory;
 use App\Memory\Context\Mentions;
 use App\Memory\Context\RelatedChunk;
@@ -56,7 +55,7 @@ class ContextBuilder
 
         $attached = $this->files->attached($message);
 
-        $memory = $this->fitToBudget($this->recall($message, $recent));
+        $memory = $this->fitToBudget($this->recall($message, $recent, $attached));
 
         $this->recollection->markRetrieved($memory->facts);
 
@@ -138,8 +137,9 @@ class ContextBuilder
 
     /**
      * @param  Collection<int, Message>  $recent
+     * @param  Collection<int, AttachedFile>  $attached
      */
-    private function recall(Message $message, Collection $recent): Memory
+    private function recall(Message $message, Collection $recent, Collection $attached): Memory
     {
         $embedding = $message->embedding;
 
@@ -176,7 +176,7 @@ class ContextBuilder
                 ->orderBy('id')
                 ->get(),
             mentions: $mentions,
-            chunks: $this->relatedChunks($message, $embedding, $filesInPlay, $relatedProjectIds, $topics, $everyone, $mentions),
+            chunks: $this->relatedChunks($message, $embedding, $attached, $relatedProjectIds, $topics, $everyone, $mentions),
             files: $filesInPlay,
             fileCounts: $this->library->counts(),
         );
@@ -184,12 +184,13 @@ class ContextBuilder
 
     /**
      * The best-matching parts of kept files: Archive Memory. Parts of a file
-     * already in play are left out, since she has that file to hand. A file
-     * linked to a project, person or topic this message relates to gets the
-     * same fixed boost a project gives its facts.
+     * whose whole text is already in this prompt are left out; a file that is
+     * merely in play is only a line in memory, so its parts still count. A
+     * file linked to a project, person or topic this message relates to gets
+     * the same fixed boost a project gives its facts.
      *
      * @param  list<float>|null  $embedding
-     * @param  Collection<int, FileInPlay>  $filesInPlay
+     * @param  Collection<int, AttachedFile>  $attached
      * @param  Collection<int, int>  $relatedProjectIds
      * @param  Collection<int, RelatedTopic>  $topics
      * @param  Collection<int, Person>  $everyone
@@ -198,7 +199,7 @@ class ContextBuilder
     private function relatedChunks(
         Message $message,
         ?array $embedding,
-        Collection $filesInPlay,
+        Collection $attached,
         Collection $relatedProjectIds,
         Collection $topics,
         Collection $everyone,
@@ -207,7 +208,11 @@ class ContextBuilder
         $scores = $this->search->chunks(
             $message->body,
             $embedding,
-            exceptFileIds: $filesInPlay->map(fn (FileInPlay $inPlay): int => $inPlay->file->id)->all(),
+            exceptFileIds: $attached
+                ->filter(fn (AttachedFile $file): bool => $file->whole)
+                ->map(fn (AttachedFile $file): int => $file->file->id)
+                ->values()
+                ->all(),
         );
 
         if ($scores === []) {

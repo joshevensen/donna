@@ -54,6 +54,10 @@ class Sniffer
             return new Sniffed(FileKind::Image, $type);
         }
 
+        if (in_array($type, ['image/heic', 'image/heif'], true)) {
+            throw new UnsupportedFile('Unsupported. Send the photo as a JPEG, not HEIC');
+        }
+
         $text = Encoding::toUtf8($bytes);
 
         if ($text === null) {
@@ -63,6 +67,7 @@ class Sniffer
         return match ($this->extension($name)) {
             'md', 'markdown', 'txt' => new Sniffed(FileKind::Markdown, 'text/markdown', $text),
             'csv' => new Sniffed(FileKind::Csv, 'text/csv', $text),
+            'tsv' => new Sniffed(FileKind::Csv, 'text/tab-separated-values', $text),
             default => new Sniffed(FileKind::Text, 'text/plain', $text),
         };
     }
@@ -75,7 +80,7 @@ class Sniffer
         return match ($this->extension($name)) {
             'pdf' => 'pdf',
             'jpg', 'jpeg', 'png', 'webp', 'gif' => 'image',
-            'md', 'markdown', 'txt', 'csv' => 'text',
+            'md', 'markdown', 'txt', 'csv', 'tsv' => 'text',
             default => null,
         };
     }

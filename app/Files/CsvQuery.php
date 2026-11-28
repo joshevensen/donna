@@ -20,7 +20,7 @@ class CsvQuery
 
     /**
      * @param  array{
-     *     where?: list<array{column: string, op: string, value?: mixed}>,
+     *     where?: list<array{column: string, op: string, value?: mixed, values?: list<string>}>,
      *     group_by?: list<string>,
      *     aggregate?: list<array{fn: string, column?: string|null}>,
      *     order_by?: list<array{column: string, direction?: string|null}>,
@@ -62,11 +62,17 @@ class CsvQuery
      */
     public static function number(string $value): ?BigDecimal
     {
-        $clean = preg_replace('/[\s$€£,]|%$/u', '', trim($value));
+        $clean = preg_replace('/[\s$€£]|%$/u', '', trim($value));
 
         if (preg_match('/^\((.+)\)$/', $clean, $match) === 1) {
             $clean = '-'.$match[1];
         }
+
+        // "12,50" and "1.000,00" are how much of Europe writes 12.50 and 1000.00: a comma
+        // with one or two digits after it is a decimal point, never a thousands separator.
+        $clean = preg_match('/^[+-]?(\d{1,3}(\.\d{3})+|\d+),\d{1,2}$/', $clean) === 1
+            ? str_replace(',', '.', str_replace('.', '', $clean))
+            : str_replace(',', '', $clean);
 
         return preg_match('/^[+-]?(\d+(\.\d*)?|\.\d+)$/', $clean) === 1 ? BigDecimal::of(rtrim($clean, '.')) : null;
     }
@@ -82,7 +88,13 @@ class CsvQuery
                 throw new InvalidArgumentException("\"{$condition['op']}\" isn't an operator. Use one of: ".implode(', ', self::OPERATORS).'.');
             }
 
-            return [$this->column($csv->columns, $condition['column']), $condition['op'], $condition['value'] ?? null];
+            $value = $condition['op'] === 'in' ? ($condition['values'] ?? $condition['value'] ?? []) : ($condition['value'] ?? null);
+
+            if (is_array($value) && $condition['op'] !== 'in') {
+                throw new InvalidArgumentException("\"{$condition['op']}\" compares with one value, not a list. Use \"in\" with values for a list.");
+            }
+
+            return [$this->column($csv->columns, $condition['column']), $condition['op'], $value];
         }, $conditions);
 
         return array_values(array_filter($csv->rows, function (array $row) use ($tests): bool {
@@ -112,10 +124,26 @@ class CsvQuery
             'not_contains' => $wanted === '' || ! str_contains($text, $wanted),
             'starts_with' => $wanted !== '' && str_starts_with($text, $wanted),
             'ends_with' => $wanted !== '' && str_ends_with($text, $wanted),
-            'in' => collect((array) $value)->contains(fn (mixed $option): bool => $this->compare($cell, (string) $option) === 0),
+            'in' => collect($this->options($value))->contains(fn (string $option): bool => $this->compare($cell, $option) === 0),
             'empty' => $text === '',
             'not_empty' => $text !== '',
         };
+    }
+
+    /**
+     * The values an "in" condition lists. The model may send a list, or one
+     * string holding a JSON list or values separated by commas.
+     *
+     * @return list<string>
+     */
+    private function options(mixed $value): array
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : explode(',', $value);
+        }
+
+        return array_values(array_map(fn (mixed $option): string => trim((string) $option), array_filter((array) $value, is_scalar(...))));
     }
 
     /**
@@ -161,7 +189,8 @@ class CsvQuery
     {
         $value = trim($value);
 
-        if (preg_match('/\d{1,4}[-\/.]\d{1,2}([-\/.]\d{1,4})?|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d/i', $value) !== 1) {
+        // A year-first date, a three-part date, or a month by name. "1001-2" is an order number, not a date.
+        if (preg_match('/^\d{4}-\d{1,2}-\d{1,2}|^\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d|\d\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i', $value) !== 1) {
             return null;
         }
 

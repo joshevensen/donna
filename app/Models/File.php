@@ -98,6 +98,20 @@ class File extends Model
         return $this->morphedByMany(Topic::class, 'subject', 'file_subjects');
     }
 
+    /**
+     * The names of everything the file is linked to: people, then projects, then topics.
+     *
+     * @return list<array{type: string, name: string}>
+     */
+    public function subjects(): array
+    {
+        return [
+            ...$this->people->map(fn (Person $person): array => ['type' => 'person', 'name' => $person->name]),
+            ...$this->projects->map(fn (Project $project): array => ['type' => 'project', 'name' => $project->name]),
+            ...$this->topics->map(fn (Topic $topic): array => ['type' => 'topic', 'name' => $topic->name]),
+        ];
+    }
+
     public function isKept(): bool
     {
         return $this->kept_at !== null;

@@ -91,7 +91,7 @@ it('edits markdown only: a CSV is read, not changed', function () {
 
     [$result] = donnaCalls([['edit_file', ['file' => 'payouts.csv', 'operation' => 'append', 'text' => 'Nov 4,220.00']]]);
 
-    expect($result)->toBe('payouts.csv is a CSV file. Only markdown and plain text files can be edited; the others are read.')
+    expect($result)->toBe('payouts.csv is a CSV file. Only markdown files (.md, .txt) can be edited; the others are read.')
         ->and($file->versions()->count())->toBe(1);
 });
 
@@ -139,4 +139,41 @@ it('never touches version 1, however many edits and reverts follow', function ()
         ->body->toBe(PLAN)
         ->author->toBe(MessageAuthor::Josh)
         ->summary->toBe('Uploaded');
+});
+
+// The model rarely words an edit the same way twice, so a retried reply is told what it already did.
+it('tells a reply that is being written again which changes it has already made', function () {
+    Queue::fake([EmbedMessage::class, TagTopics::class]);
+    $file = File::factory()->markdown("# Notes\n")->create(['name' => 'notes.md']);
+    $reply = pendingReplyTo('Add the venue to my notes.');
+
+    Donna::fake([new ToolCall('call_1', 'edit_file', ['file' => 'notes.md', 'operation' => 'append', 'text' => '- Venue: east dock']), '']);
+    expect(fn () => app()->call([new GenerateReply($reply), 'handle']))->toThrow(RuntimeException::class);
+
+    Donna::fake(['Added the venue.']);
+    GenerateReply::dispatchSync($reply->refresh());
+
+    Donna::assertPrompted(fn ($prompt): bool => $prompt->contains('An earlier attempt at this reply was cut short')
+        && $prompt->contains("- notes.md (file #{$file->id}): Appended 1 line, now version 2"));
+
+    expect($file->versions()->count())->toBe(2);
+});
+
+it('lets her make the same edit twice in one go when she means to', function () {
+    $file = File::factory()->markdown("one\ntwo\nthree\n")->create(['name' => 'notes.md']);
+
+    donnaCalls([
+        ['edit_file', ['file' => 'notes.md', 'operation' => 'delete_lines', 'from_line' => 1]],
+        ['edit_file', ['file' => 'notes.md', 'operation' => 'delete_lines', 'from_line' => 1]],
+    ], said: 'Delete the first two lines.');
+
+    expect($file->refresh()->body())->toBe("three\n");
+});
+
+it('leaves a form feed or a Unicode line separator inside a line alone when it edits around it', function () {
+    $file = File::factory()->markdown("first\fstill first\nsecond\u{2028}still second\nthird\n")->create(['name' => 'notes.md']);
+
+    donnaCalls([['edit_file', ['file' => 'notes.md', 'operation' => 'delete_lines', 'from_line' => 3]]]);
+
+    expect($file->refresh()->body())->toBe("first\fstill first\nsecond\u{2028}still second\n");
 });

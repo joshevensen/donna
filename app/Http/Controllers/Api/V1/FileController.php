@@ -60,6 +60,8 @@ class FileController extends Controller
         }
 
         if ($request->has('kept')) {
+            abort_if($request->boolean('kept') && ! $file->kind->hasBody(), 422, "Images can't be kept: there is no text in one for Donna to find it by.");
+
             $library->keep($file, $request->boolean('kept'));
         }
 

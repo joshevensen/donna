@@ -37,6 +37,8 @@ class FileContext
      */
     public function attached(Message $message): Collection
     {
+        $room = config('donna.files.model_request_bytes');
+
         return $message->files()
             ->wherePivot('role', FileRole::Attached->value)
             ->with('currentVersion')
@@ -51,6 +53,19 @@ class FileContext
                     'no text could be extracted (scanned, '.$this->pages($file).')',
                 ),
                 default => $this->text($file),
+            })
+            // One request can only carry so much. What doesn't fit isn't sent, and she is told.
+            ->map(function (AttachedFile $attached) use (&$room): AttachedFile {
+                if ($attached->attachment === null) {
+                    return $attached;
+                }
+
+                $room -= $this->shown->weight($attached->attachment);
+
+                return $room >= 0 ? $attached : new AttachedFile(
+                    $attached->file,
+                    'not shown to you: too much to send with the others at once. Use view_file to look at it on its own',
+                );
             })
             ->values();
     }
@@ -80,7 +95,7 @@ class FileContext
             ->unique();
 
         $files = File::withTrashed()
-            ->with('currentVersion:id,file_id,number,author,summary,created_at')
+            ->with(['currentVersion:id,file_id,number,author,summary,created_at', 'people', 'projects', 'topics'])
             ->findMany($fileIds)
             ->sortBy('id');
 
@@ -114,7 +129,9 @@ class FileContext
      */
     private function lastSawAt(Message $message): ?CarbonInterface
     {
+        // A reply that failed never had her attention, whatever was built for it.
         return Message::query()
+            ->complete()
             ->where('author', MessageAuthor::Donna)
             ->where('id', '<', $message->id)
             ->latest('id')
@@ -134,26 +151,28 @@ class FileContext
             return null;
         }
 
+        // Without the text: most files in play haven't changed, and theirs is never needed.
         $seen = $file->versions()
             ->where(fn ($query) => $query
                 ->where('author', MessageAuthor::Donna)
                 ->when($lastSawAt !== null, fn ($query) => $query->orWhere('created_at', '<=', $lastSawAt)))
             ->orderByDesc('number')
-            ->first();
+            ->first(['id', 'number']);
 
         if ($seen === null || $seen->number >= $file->currentVersion->number) {
             return null;
         }
 
+        $before = $file->versions()->whereKey($seen->id)->value('body');
         $now = $file->currentVersion()->value('body');
         $heading = "Josh has edited it by hand since you last saw it (version {$seen->number} → {$file->currentVersion->number}).";
-        $diff = LineDiff::between($seen->body, $now, config('donna.files.diff_cells'));
+        $diff = LineDiff::between($before, $now, config('donna.files.diff_cells'));
 
         if ($diff !== null && Tokens::estimate($diff) <= config('donna.files.diff_tokens')) {
             return "{$heading} What he changed:\n{$diff}";
         }
 
-        return "{$heading} Too much changed to show line by line. ".$this->changedSections($seen->body, $now).' Read the file before you edit it.';
+        return "{$heading} Too much changed to show line by line. ".$this->changedSections($before, $now).' Read the file before you edit it.';
     }
 
     private function changedSections(string $before, string $after): string
@@ -177,13 +196,18 @@ class FileContext
     {
         $body = $file->body() ?? '';
 
+        // Pages of a PDF that have no text at all: she has to be told, or she would answer as if they were empty.
+        $blank = $file->meta['blank_pages'] ?? [];
+        $missing = $blank === [] ? '' : ', except '.(count($blank) === 1 ? 'page ' : 'pages ').implode(', ', array_slice($blank, 0, 20))
+            .(count($blank) > 20 ? ' and others' : '').', which '.(count($blank) === 1 ? 'has' : 'have').' no text (use view_file to see them)';
+
         if (Tokens::estimate($body) <= config('donna.files.inline_tokens')) {
-            return new AttachedFile($file, 'read in full', implode("\n", FileText::lines($file, $body)));
+            return new AttachedFile($file, 'read in full'.$missing, implode("\n", FileText::lines($file, $body)), whole: true);
         }
 
         $outline = FileText::outline($file, $body);
 
-        return new AttachedFile($file, $outline['given'], $outline['text']);
+        return new AttachedFile($file, $outline['given'].$missing, $outline['text']);
     }
 
     /**

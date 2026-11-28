@@ -5,7 +5,6 @@ namespace App\Files;
 use App\Enums\FileRole;
 use App\Enums\MessageAuthor;
 use App\Models\File;
-use App\Models\FileVersion;
 use App\Models\Message;
 use Closure;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +21,7 @@ class FileEditor
     public function __construct(
         private FileWriter $writer,
         private FileLibrary $library,
+        private ReplyAttempt $attempt,
     ) {}
 
     /**
@@ -142,25 +142,27 @@ class FileEditor
 
     /**
      * Put the file back as it was at an earlier version, by writing that
-     * text as a new version. With no version given: as it was before
-     * Donna's last edit, which is what "undo that" means.
+     * text as a new version. With no version given: as it was before the
+     * last reply in which Donna edited it, which is what "undo that" means
+     * whether she made one change then or three.
+     *
+     * The operation is identified by what was asked for, not by what it
+     * resolves to: once an undo has happened, "her last edit" is a different
+     * edit, and a retried reply must not undo the undo.
      */
     public function revert(File $file, Message $reply, ?int $number = null): string
     {
-        $number ??= $this->beforeDonnasLastEdit($file);
+        return $this->apply($file, $reply, ['revert', $number], function () use ($file, $number): array {
+            $number ??= $this->beforeDonnasLastEdits($file);
 
-        $target = $file->versions()->where('number', $number)->first();
+            $target = $file->versions()->where('number', $number)->first();
 
-        if ($target === null) {
-            return "There is no version {$number} of {$file->name}. It has versions 1 to {$file->versions()->max('number')}. Nothing changed.";
-        }
+            if ($target === null) {
+                throw new EditRefused("There is no version {$number} of {$file->name}. It has versions 1 to {$file->versions()->max('number')}. Nothing changed.");
+            }
 
-        return $this->apply(
-            $file,
-            $reply,
-            ['revert', $number, $file->current_version_id],
-            fn (): array => [$target->body, "Reverted to version {$number}"],
-        );
+            return [$target->body, "Reverted to version {$number}"];
+        });
     }
 
     /**
@@ -168,8 +170,9 @@ class FileEditor
      * with the file locked, and write the result as a new version.
      *
      * A reply that fails partway is written again from the start, and would
-     * repeat its edits. So each one is recorded against the reply, and the
-     * same edit in the same reply is skipped and reported as already done.
+     * repeat its edits. So each one is recorded against the reply, and an
+     * edit identical to one an earlier attempt (or an earlier call of this
+     * one) already made is skipped and reported as already done.
      *
      * @param  list<mixed>  $operation  What identifies this edit: its kind and arguments.
      * @param  Closure(string): array{0: string, 1: string}  $change  Given the current text, returns the new text and a summary.
@@ -177,7 +180,7 @@ class FileEditor
     private function apply(File $file, Message $reply, array $operation, Closure $change): string
     {
         if (! $file->kind->isEditable()) {
-            return "{$file->name} is a {$file->kind->label()} file. Only markdown and plain text files can be edited; the others are read.";
+            return "{$file->name} is a {$file->kind->label()} file. Only markdown files (.md, .txt) can be edited; the others are read.";
         }
 
         $hash = hash('sha256', json_encode([$file->id, ...$operation]));
@@ -186,11 +189,7 @@ class FileEditor
             return DB::transaction(function () use ($file, $reply, $hash, $change): string {
                 $current = File::query()->lockForUpdate()->findOrFail($file->id)->currentVersion;
 
-                $done = FileVersion::query()
-                    ->where('file_id', $file->id)
-                    ->where('message_id', $reply->id)
-                    ->where('operation_hash', $hash)
-                    ->first();
+                $done = $this->attempt->alreadyDid($hash);
 
                 if ($done !== null) {
                     return "Already done earlier in this reply ({$done->summary}); not done again.";
@@ -214,13 +213,22 @@ class FileEditor
     }
 
     /**
-     * The version just before the last one Donna wrote.
+     * The version just before the edits Donna made in the last reply she
+     * edited the file in.
      */
-    private function beforeDonnasLastEdit(File $file): int
+    private function beforeDonnasLastEdits(File $file): int
     {
-        $last = $file->versions()->where('author', MessageAuthor::Donna)->max('number');
+        $last = $file->versions()->where('author', MessageAuthor::Donna)->orderByDesc('number')->first(['number', 'message_id']);
 
-        return max(1, ($last ?? $file->versions()->max('number')) - 1);
+        if ($last === null) {
+            return max(1, $file->versions()->max('number') - 1);
+        }
+
+        $first = $last->message_id === null
+            ? $last->number
+            : $file->versions()->where('message_id', $last->message_id)->min('number');
+
+        return max(1, $first - 1);
     }
 
     /**

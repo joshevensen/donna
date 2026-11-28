@@ -114,10 +114,18 @@ class FileIntake
             ]);
         }
 
-        $text = implode("\f", array_map(fn (string $page): string => Encoding::toUtf8($page) ?? '', $pages));
+        $pages = array_map(fn (string $page): string => Encoding::toUtf8($page) ?? '', $pages);
+        $text = implode("\f", $pages);
         $letters = mb_strlen(preg_replace('/\s+/u', '', $text));
+        $hasText = count($pages) > 0 && $letters >= count($pages) * config('donna.files.pdf_text_per_page');
 
-        return DB::transaction(function () use ($bytes, $name, $sniffed, $path, $pages, $text, $letters): File {
+        // In a PDF that does have text, the pages that have none: scanned inserts, or pages that are one picture.
+        $blank = $hasText ? array_values(array_map(
+            fn (int $index): int => $index + 1,
+            array_keys(array_filter($pages, fn (string $page): bool => trim($page) === '')),
+        )) : [];
+
+        return DB::transaction(function () use ($bytes, $name, $sniffed, $path, $pages, $text, $hasText, $blank): File {
             $file = File::create([
                 'name' => $name,
                 'kind' => FileKind::Pdf,
@@ -127,7 +135,8 @@ class FileIntake
                 'meta' => [
                     'pages' => count($pages),
                     // A scan has no words, or only a stamp the scanner added.
-                    'has_text' => count($pages) > 0 && $letters >= count($pages) * config('donna.files.pdf_text_per_page'),
+                    'has_text' => $hasText,
+                    ...($blank === [] ? [] : ['blank_pages' => array_slice($blank, 0, 200)]),
                 ],
             ]);
 
@@ -168,13 +177,11 @@ class FileIntake
     }
 
     /**
-     * @return array{rows: int, columns: int}
+     * @return array{rows: int}
      */
     private function csvMeta(string $text): array
     {
-        $csv = Csv::parse($text, 0);
-
-        return ['rows' => $csv->totalRows, 'columns' => count($csv->columns)];
+        return ['rows' => Csv::parse($text, 0)->totalRows];
     }
 
     private function store(string $bytes, string $extension): string

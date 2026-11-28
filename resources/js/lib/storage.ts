@@ -18,6 +18,8 @@ export interface OutboxItem {
     state: 'sending' | 'failed';
     /** It failed for lack of a connection, so it goes out by itself when there is one. */
     waitingForConnection?: boolean;
+    /** The server turned it down for good, and said why. Sending it again would get the same answer. */
+    refused?: string;
 }
 
 /** Text Josh typed into a file's edit mode and hasn't saved, with the version it started from. */

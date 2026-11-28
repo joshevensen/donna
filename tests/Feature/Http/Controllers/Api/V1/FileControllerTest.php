@@ -5,6 +5,7 @@ use App\Files\Pdf\PdfTextExtractor;
 use App\Jobs\IndexFile;
 use App\Models\File;
 use App\Models\Message;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Exceptions;
@@ -39,13 +40,14 @@ describe('store', function () {
         'a .txt note, which is edited like markdown' => ['notes.txt', "Call the venue.\r\nOrder labels.\r\n", 'markdown'],
         'a CSV' => ['payouts.csv', "Date,Amount\nNov 3,812.40\n", 'csv'],
         'JSON, which is text whatever its extension' => ['order.json', '{"total": 42}', 'text'],
+        'a tab-separated export, which is queried like a CSV' => ['orders.tsv', "Order\tTotal\n1001\t42.00\n", 'csv'],
         'a file with no extension at all' => ['Dockerfile', "FROM php:8.4\nRUN true\n", 'text'],
     ]);
 
-    it('counts a CSV\'s rows and columns so its card can say how big it is', function () {
+    it('counts a CSV\'s rows so its card can say how big it is', function () {
         upload('payouts.csv', "Date,Payout,Amount\nNov 3,po_1,812.40\nNov 4,po_2,\"1,220.00\"\n")
             ->assertCreated()
-            ->assertJsonPath('data.meta', ['rows' => 2, 'columns' => 3]);
+            ->assertJsonPath('data.meta', ['rows' => 2]);
     });
 
     it('converts a text file that isn\'t UTF-8, as spreadsheet exports often aren\'t', function () {
@@ -127,6 +129,7 @@ describe('store', function () {
         'text calling itself a PDF' => ['invoice.pdf', 'Total due: $40', 'Unsupported. The file isn\'t what its name says'],
         'a PDF calling itself a photo' => ['scan.png', fixtureFile('vendor.pdf'), 'Unsupported. The file isn\'t what its name says'],
         'an empty file' => ['empty.md', '', 'Unsupported. The file is empty'],
+        'an iPhone photo that wasn\'t converted' => ['IMG_2041.heic', "\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic".random_bytes(64), 'Unsupported. Send the photo as a JPEG, not HEIC'],
     ]);
 
     it('refuses a file over 10 MB', function () {
@@ -187,6 +190,16 @@ describe('show', function () {
             ->assertJsonPath('data.table', null);
     });
 
+    it('says how long a text file is and what it is linked to, for the viewer\'s details', function () {
+        $file = File::factory()->markdown("# Plan\n\nShip it.\n")->create();
+        $file->projects()->attach(Project::factory()->create(['name' => 'Fibermade']));
+
+        getJson("/api/v1/files/{$file->id}")
+            ->assertOk()
+            ->assertJsonPath('data.meta', ['lines' => 4])
+            ->assertJsonPath('data.subjects', [['type' => 'project', 'name' => 'Fibermade']]);
+    });
+
     it('returns a CSV as the first rows of a table, parsed, with how many there are in all', function () {
         config(['donna.files.viewer_rows' => 2]);
         $file = File::factory()->csv("Date,Note\nNov 3,\"Paid, late\"\nNov 4,Paid\nNov 5,Pending\n")->create();
@@ -223,6 +236,14 @@ describe('update', function () {
         expect($file->refresh()->kept_at)->toBeNull();
     });
 
+    it('refuses to keep an image: there is no text in one to find it by', function () {
+        $file = File::factory()->image()->create();
+
+        patchJson("/api/v1/files/{$file->id}", ['kept' => true])->assertUnprocessable();
+
+        expect($file->refresh()->isKept())->toBeFalse();
+    });
+
     it('renames a file, and refuses a name with a path in it', function () {
         $file = File::factory()->markdown()->create(['name' => 'plan.md']);
 
@@ -242,6 +263,7 @@ describe('content', function () {
         expect($response->streamedContent())->toBe('png bytes')
             ->and($response->headers->get('Content-Type'))->toBe('image/png')
             ->and($response->headers->get('X-Content-Type-Options'))->toBe('nosniff')
+            ->and($response->headers->get('Content-Security-Policy'))->toBe("default-src 'none'; sandbox")
             ->and($response->headers->get('Content-Disposition'))->toBe('inline; filename=booth.png');
     });
 

@@ -34,7 +34,7 @@ class EditFile implements Tool
 
     public function description(): string
     {
-        return 'Change a markdown or plain text file. Never retype a whole file for a small change. Pick one operation: '
+        return 'Change a markdown file (.md or .txt). Never retype a whole file for a small change. Pick one operation: '
             .'"replace" swaps exact text (find, replace; all=true for every match); '
             .'"replace_section" rewrites everything under a heading (heading, new_text; the heading line stays); '
             .'"append" adds text at the end (text); '

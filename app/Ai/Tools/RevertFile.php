@@ -24,7 +24,7 @@ class RevertFile implements Tool
 
     public function description(): string
     {
-        return 'Put a file back the way it was at an earlier version. With no version, it goes back to how it was before your last edit: '
+        return 'Put a file back the way it was at an earlier version. With no version, it goes back to how it was before the changes you made in your last reply that edited it: '
             .'that is what "undo that" means. Nothing is lost: the text in between stays in the file\'s history. Version 1 is always the original.';
     }
 

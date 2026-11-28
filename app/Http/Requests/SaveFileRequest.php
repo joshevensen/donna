@@ -18,7 +18,8 @@ class SaveFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'body' => ['present', 'string', 'max:'.(config('donna.files.max_kilobytes') * 1024)],
+            // No NUL bytes: Postgres can't store one, and a failed insert would put the text in the log.
+            'body' => ['present', 'string', 'max:'.(config('donna.files.max_kilobytes') * 1024), 'not_regex:/\x00/'],
             'base_version' => ['required', 'integer', 'min:1'],
         ];
     }

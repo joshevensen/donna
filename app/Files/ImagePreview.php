@@ -42,14 +42,16 @@ class ImagePreview
                 return null;
             }
 
-            $image = $this->upright($image, $orientation);
-
             $scale = min(1, $longEdge / max(imagesx($image), imagesy($image)));
             $target = imagecreatetruecolor((int) max(1, round(imagesx($image) * $scale)), (int) max(1, round(imagesy($image) * $scale)));
 
             // Transparent pixels would turn black in a JPEG; put them on white.
             imagefill($target, 0, 0, imagecolorallocate($target, 255, 255, 255));
             imagecopyresampled($target, $image, 0, 0, 0, 0, imagesx($target), imagesy($target), imagesx($image), imagesy($image));
+
+            // Turned after it is made small: turning the full-size photo would take as much memory again.
+            unset($image);
+            $target = $this->upright($target, $orientation);
 
             ob_start();
             imagejpeg($target, null, config('donna.files.preview.quality'));

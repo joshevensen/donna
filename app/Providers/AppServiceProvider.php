@@ -8,6 +8,7 @@ use App\Extraction\Contracts\BatchClient;
 use App\Files\Pdf\ParserExtractor;
 use App\Files\Pdf\PdfTextExtractor;
 use App\Files\Pdf\PopplerExtractor;
+use App\Files\ReplyAttempt;
 use App\Models\ExtractionRun;
 use App\Models\File;
 use App\Models\Message;
@@ -35,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PdfTextExtractor::class, fn (): PdfTextExtractor => PopplerExtractor::isInstalled()
             ? new PopplerExtractor
             : new ParserExtractor);
+
+        // What a reply has already done to files, kept for the one job writing it.
+        $this->app->scoped(ReplyAttempt::class);
 
         $this->app->bind(BatchClient::class, fn (): BatchClient => new AnthropicBatchClient(
             new Client(apiKey: config('ai.providers.anthropic.key')),

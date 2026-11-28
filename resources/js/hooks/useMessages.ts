@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { api, NetworkError } from '../api/client';
+import { api, ApiError, NetworkError } from '../api/client';
 import type { Costs, FileItem, Message } from '../api/types';
 import type { AttachedFile } from '../lib/attachments';
 import type { FileState } from '../lib/files';
@@ -34,6 +34,8 @@ export interface Conversation {
     fileStates: ReadonlyMap<number, FileState>;
     send: (body: string, files?: AttachedFile[]) => void;
     retrySend: (key: string) => void;
+    /** Drop a message the server refused. */
+    discardSend: (key: string) => void;
     retryReply: (id: number) => void;
     loadOlder: () => void;
     /** Say something locally, as Donna would: the answer to a slash command. With files, the answer to /files. */
@@ -188,8 +190,12 @@ export function useMessages(): Conversation {
             } catch (error) {
                 const waitingForConnection = error instanceof NetworkError;
 
+                // A 422 is the server saying this message can never be sent as it is (a file
+                // it names is gone, or already went with another message). Retrying can't help.
+                const refused = error instanceof ApiError && error.status === 422 ? error.firstMessage : undefined;
+
                 updateOutbox((items) =>
-                    items.map((other) => (other.key === item.key ? { ...other, state: 'failed', waitingForConnection } : other)),
+                    items.map((other) => (other.key === item.key ? { ...other, state: 'failed', waitingForConnection, refused } : other)),
                 );
             }
         },
@@ -224,6 +230,12 @@ export function useMessages(): Conversation {
             }
         },
         [deliver],
+    );
+
+    /** Take a message that can't be sent out of the thread. */
+    const discardSend = useCallback(
+        (key: string) => updateOutbox((items) => items.filter((other) => other.key !== key)),
+        [updateOutbox],
     );
 
     const retryReply = useCallback(
@@ -437,6 +449,7 @@ export function useMessages(): Conversation {
         fileStates,
         send,
         retrySend,
+        discardSend,
         retryReply,
         loadOlder,
         addNote,

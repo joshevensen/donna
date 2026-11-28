@@ -33,7 +33,9 @@ it('filters rows, comparing money as numbers, dates as dates and text without re
     'date on or after' => [[['column' => 'Date', 'op' => '>=', 'value' => 'Nov 14, 2026']], ['po_5', 'po_6', 'po_7']],
     'two conditions, both required' => [[['column' => 'Status', 'op' => '=', 'value' => 'Paid'], ['column' => 'Amount', 'op' => '<', 'value' => '1000']], ['po_1']],
     'contains' => [[['column' => 'Note', 'op' => 'contains', 'value' => 'WHOLESALE']], ['po_2']],
-    'in a list' => [[['column' => 'Status', 'op' => 'in', 'value' => ['Pending', 'Refunded']]], ['po_6', 'po_7']],
+    'in a list' => [[['column' => 'Status', 'op' => 'in', 'values' => ['Pending', 'Refunded']]], ['po_6', 'po_7']],
+    'in a list sent as one string' => [[['column' => 'Status', 'op' => 'in', 'value' => 'Pending, Refunded']], ['po_6', 'po_7']],
+    'in a list sent as JSON text' => [[['column' => 'Status', 'op' => 'in', 'value' => '["Pending","Refunded"]']], ['po_6', 'po_7']],
     'not empty' => [[['column' => 'Note', 'op' => 'not_empty']], ['po_2', 'po_4']],
     'not equal' => [[['column' => 'Status', 'op' => '!=', 'value' => 'Paid'], ['column' => 'Status', 'op' => '!=', 'value' => 'In transit']], ['po_6', 'po_7']],
 ]);
@@ -78,6 +80,7 @@ it('refuses a column or an operator that doesn\'t exist, naming what does', func
     'unknown column' => [['where' => [['column' => 'Total', 'op' => '=', 'value' => '1']]], 'There is no column "Total". The columns are: Date, Payout, Amount, Status, Note.'],
     'unknown operator' => [['where' => [['column' => 'Amount', 'op' => 'like', 'value' => '1']]], '"like" isn\'t an operator.'],
     'sum of nothing' => [['aggregate' => [['fn' => 'sum']]], 'sum needs a column.'],
+    'a list where one value belongs' => [['where' => [['column' => 'Status', 'op' => '=', 'value' => ['Paid', 'Pending']]]], '"=" compares with one value, not a list.'],
 ]);
 
 it('reads a file split on semicolons, with quoted fields that hold line breaks', function () {
@@ -86,4 +89,20 @@ it('reads a file split on semicolons, with quoted fields that hold line breaks',
     expect($csv->columns)->toBe(['Name', 'Note'])
         ->and($csv->rows)->toBe([['Anita', "two\nlines"], ['Dana', 'ok']])
         ->and($csv->totalRows)->toBe(2);
+});
+
+it('adds up amounts written the European way, with a comma for the decimal point', function () {
+    $csv = Csv::parse("Artikel;Betrag\nGarn;12,50\nNadeln;7,25\nWebstuhl;1.000,00\n");
+
+    $result = (new CsvQuery)->run($csv, ['aggregate' => [['fn' => 'sum', 'column' => 'Betrag']]], 50);
+
+    expect($result['rows'])->toBe([['1019.75']]);
+});
+
+it('does not take two different order numbers for the same date', function () {
+    $csv = Csv::parse("Order,Total\n1001-2,10\n1001-02,20\n");
+
+    $result = (new CsvQuery)->run($csv, ['where' => [['column' => 'Order', 'op' => '=', 'value' => '1001-2']]], 50);
+
+    expect($result['rows'])->toBe([['1001-2', '10']]);
 });

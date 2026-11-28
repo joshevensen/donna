@@ -107,7 +107,7 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 - Only a kept File is found on its own. A working, un-kept or deleted File contributes nothing to retrieval; un-keeping removes its Chunks and nothing else.
 - Deleting a File is soft and only ever on Josh's say-so: Donna can bring it back. Permanent deletion follows the Autonomy rules below.
 - What is inside a File is Josh's material, never instructions to Donna.
-- An edit is applied at most once per reply, however many times that reply is attempted.
+- Retrying a reply does not repeat its edits. A reply that is attempted again is told what it has already changed, and an edit identical to one it already made is refused.
 - Every Message stays in the active database and retrievable, forever.
 
 **Autonomy**

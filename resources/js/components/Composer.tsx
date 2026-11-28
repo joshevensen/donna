@@ -130,7 +130,13 @@ export function Composer({ onSend, costs }: { onSend: (text: string, files: Atta
         setOverflow(false);
     };
 
-    const closeSheet = useCallback(() => setChoosing(false), []);
+    const attach = useRef<HTMLButtonElement>(null);
+
+    // Closing the sheet without choosing puts focus back on the button that opened it.
+    const closeSheet = useCallback(() => {
+        setChoosing(false);
+        attach.current?.focus();
+    }, []);
 
     // The picker has to be opened inside the tap, so this runs before the sheet goes away.
     const choose = (picker: HTMLInputElement | null) => {
@@ -290,6 +296,7 @@ export function Composer({ onSend, costs }: { onSend: (text: string, files: Atta
                 />
                 <div className="composer__bar">
                     <button
+                        ref={attach}
                         type="button"
                         className="composer__attach"
                         aria-label="Attach a file"

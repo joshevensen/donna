@@ -40,8 +40,12 @@ export function FileViewer({ id, busy, timeZone, onClose, onFile }: Props) {
 
     const reading = edit.mode === 'reading';
 
+    // What is on screen, for telling a refresh that changed nothing from one that did.
+    const shown = useRef<FileDetail | null>(null);
+
     const show = useCallback(
         (fresh: FileDetail) => {
+            shown.current = fresh;
             setFile(fresh);
             setProblem(null);
             onFile(fresh);
@@ -54,8 +58,19 @@ export function FileViewer({ id, busy, timeZone, onClose, onFile }: Props) {
         async (quiet: boolean) => {
             try {
                 const fresh = await api.file(id);
+                const before = shown.current;
 
-                if (alive.current) {
+                // While Donna writes, the file is asked for every couple of seconds. Nothing is
+                // redrawn unless something about it changed.
+                const unchanged =
+                    quiet &&
+                    before !== null &&
+                    before.version === fresh.version &&
+                    before.updated_at === fresh.updated_at &&
+                    before.kept === fresh.kept &&
+                    before.name === fresh.name;
+
+                if (alive.current && !unchanged) {
                     show(fresh);
                 }
             } catch (error) {
@@ -552,6 +567,12 @@ function Details({ id, file, timeZone }: { id: string; file: FileDetail; timeZon
                 <>
                     <dt>Version</dt>
                     <dd>{file.version === 1 ? '1 (original)' : file.version}</dd>
+                </>
+            )}
+            {file.subjects !== undefined && file.subjects.length > 0 && (
+                <>
+                    <dt>About</dt>
+                    <dd>{file.subjects.map((subject) => subject.name).join(', ')}</dd>
                 </>
             )}
             {downloadable && (

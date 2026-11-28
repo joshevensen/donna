@@ -100,7 +100,7 @@ describe('store', function () {
             ->assertAccepted()
             ->assertJsonPath('data.message.files', [
                 ['id' => $plan->id, 'name' => 'launch-plan.md', 'kind' => 'markdown', 'role' => 'attached', 'kept' => false, 'deleted' => false, 'size_bytes' => $plan->size_bytes, 'meta' => [], 'note' => null],
-                ['id' => $export->id, 'name' => 'payouts.csv', 'kind' => 'csv', 'role' => 'attached', 'kept' => true, 'deleted' => false, 'size_bytes' => $export->size_bytes, 'meta' => ['rows' => 1, 'columns' => 2], 'note' => null],
+                ['id' => $export->id, 'name' => 'payouts.csv', 'kind' => 'csv', 'role' => 'attached', 'kept' => true, 'deleted' => false, 'size_bytes' => $export->size_bytes, 'meta' => ['rows' => 1], 'note' => null],
             ])
             ->assertJsonPath('data.reply.files', []);
     });

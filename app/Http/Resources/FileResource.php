@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Enums\FileKind;
 use App\Files\Csv;
+use App\Files\Markdown;
 use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -43,7 +44,13 @@ class FileResource extends JsonResource
             'deleted' => $this->trashed(),
             'extraction' => $this->extraction,
             'extraction_error' => $this->extraction_error,
-            'meta' => (object) self::publicMeta($this->resource),
+            'meta' => (object) [
+                ...self::publicMeta($this->resource),
+                // How long a text file is, for the viewer's details.
+                ...($this->content && in_array($this->kind, [FileKind::Markdown, FileKind::Text], true) && $this->body() !== null
+                    ? ['lines' => count(Markdown::lines($this->body()))]
+                    : []),
+            ],
             'version' => $this->currentVersion?->number,
             'last_author' => $this->currentVersion?->author,
             'editable' => $this->isEditable(),
@@ -61,18 +68,21 @@ class FileResource extends JsonResource
      */
     public static function publicMeta(File $file): array
     {
-        return array_intersect_key($file->meta ?? [], array_flip(['rows', 'columns', 'pages', 'has_text', 'width', 'height']));
+        return array_intersect_key($file->meta ?? [], array_flip(['rows', 'pages', 'has_text', 'width', 'height']));
     }
 
     /**
-     * @return array{body: string|null, truncated: bool, table: array{columns: list<string>, rows: list<list<string>>, total_rows: int}|null}
+     * @return array{body: string|null, truncated: bool, table: array{columns: list<string>, rows: list<list<string>>, total_rows: int}|null, subjects: list<array{type: string, name: string}>}
      */
     private function content(): array
     {
         $body = $this->body();
 
+        // Who and what the file is linked to, for the viewer's details.
+        $about = ['subjects' => $this->resource->subjects()];
+
         if ($body === null) {
-            return ['body' => null, 'truncated' => false, 'table' => null];
+            return ['body' => null, 'truncated' => false, 'table' => null, ...$about];
         }
 
         if ($this->kind === FileKind::Csv) {
@@ -82,6 +92,7 @@ class FileResource extends JsonResource
                 'body' => null,
                 'truncated' => false,
                 'table' => ['columns' => $csv->columns, 'rows' => $csv->rows, 'total_rows' => $csv->totalRows],
+                ...$about,
             ];
         }
 
@@ -91,6 +102,7 @@ class FileResource extends JsonResource
             'body' => strlen($body) > $limit ? mb_strcut($body, 0, $limit) : $body,
             'truncated' => strlen($body) > $limit,
             'table' => null,
+            ...$about,
         ];
     }
 }

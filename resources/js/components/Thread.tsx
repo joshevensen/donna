@@ -29,13 +29,14 @@ interface Props {
     loadingOlder: boolean;
     onLoadOlder: () => void;
     onRetrySend: (key: string) => void;
+    onDiscardSend: (key: string) => void;
     onRetryReply: (id: number) => void;
     onShowSources: (sources: Source[]) => void;
     onOpenFile: (id: number) => void;
     runAction: (type: AppAction['type']) => Promise<PushResult>;
 }
 
-export function Thread({ ref, rows, timeZone, hasOlder, loadingOlder, onLoadOlder, onRetrySend, onRetryReply, onShowSources, onOpenFile, runAction }: Props) {
+export function Thread({ ref, rows, timeZone, hasOlder, loadingOlder, onLoadOlder, onRetrySend, onDiscardSend, onRetryReply, onShowSources, onOpenFile, runAction }: Props) {
     const scroller = useRef<HTMLDivElement>(null);
     const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -146,6 +147,7 @@ export function Thread({ ref, rows, timeZone, hasOlder, loadingOlder, onLoadOlde
                                     timeZone={timeZone}
                                     onToggle={() => setOpenKey((current) => (current === row.key ? null : row.key))}
                                     onRetrySend={onRetrySend}
+                                    onDiscardSend={onDiscardSend}
                                     onShowSources={onShowSources}
                                     onOpenFile={onOpenFile}
                                     runAction={runAction}
@@ -165,12 +167,13 @@ interface BubbleProps {
     timeZone: string;
     onToggle: () => void;
     onRetrySend: (key: string) => void;
+    onDiscardSend: (key: string) => void;
     onShowSources: (sources: Source[]) => void;
     onOpenFile: (id: number) => void;
     runAction: (type: AppAction['type']) => Promise<PushResult>;
 }
 
-function Bubble({ row, open, time, timeZone, onToggle, onRetrySend, onShowSources, onOpenFile, runAction }: BubbleProps) {
+function Bubble({ row, open, time, timeZone, onToggle, onRetrySend, onDiscardSend, onShowSources, onOpenFile, runAction }: BubbleProps) {
     const failed = row.outbox?.state === 'failed';
     const count = row.sources.length;
 
@@ -218,10 +221,18 @@ function Bubble({ row, open, time, timeZone, onToggle, onRetrySend, onShowSource
                 </button>
             )}
 
-            {failed && row.outbox && (
+            {failed && row.outbox && row.outbox.refused === undefined && (
                 <button type="button" className="not-delivered" onClick={() => onRetrySend(row.outbox!.key)}>
                     <RetryIcon size={15} />
                     <span>Not delivered. Tap to retry</span>
+                </button>
+            )}
+
+            {/* The server said no for good: trying again would get the same answer. */}
+            {failed && row.outbox && row.outbox.refused !== undefined && (
+                <button type="button" className="not-delivered" onClick={() => onDiscardSend(row.outbox!.key)}>
+                    <AlertIcon size={15} />
+                    <span>Not sent. {row.outbox.refused} Tap to remove it.</span>
                 </button>
             )}
 

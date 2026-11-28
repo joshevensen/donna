@@ -19,7 +19,7 @@ class CodeFences
         $lines = [];
         $fence = null;
 
-        foreach (preg_split('/\R/u', $text) as $line) {
+        foreach (preg_split('/\r\n|\n|\r/', $text) as $line) {
             if ($fence === null && preg_match('/^ {0,3}(`{3,}|~{3,})/', $line, $opening) === 1) {
                 $fence = $opening[1];
                 $lines[] = ['line' => $line, 'code' => true];

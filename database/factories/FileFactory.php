@@ -46,7 +46,7 @@ class FileFactory extends Factory
                 'name' => fake()->unique()->slug(2).'.csv',
                 'kind' => FileKind::Csv,
                 'mime' => 'text/csv',
-                'meta' => ['rows' => max(0, substr_count(trim($body), "\n")), 'columns' => substr_count(strtok($body, "\n"), ',') + 1],
+                'meta' => ['rows' => max(0, substr_count(trim($body), "\n"))],
             ])
             ->withBody($body);
     }

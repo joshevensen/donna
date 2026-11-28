@@ -59,6 +59,15 @@ describe('reading a file', () => {
         expect(onFile).toHaveBeenCalledWith(expect.objectContaining({ id: 7, kept: true }));
     });
 
+    it('lists who and what the file is linked to in its details', async () => {
+        const user = userEvent.setup();
+        open(file({ subjects: [{ type: 'person', name: 'Anita' }, { type: 'project', name: 'Fibermade' }] }));
+
+        await user.click(await screen.findByRole('button', { name: 'Details' }));
+
+        expect(screen.getByText('Anita, Fibermade')).toBeTruthy();
+    });
+
     it('shows a CSV as a read-only table and says how much of it is shown', async () => {
         open(
             file({
@@ -68,7 +77,7 @@ describe('reading a file', () => {
                 editable: false,
                 version: 1,
                 body: null,
-                meta: { rows: 1284, columns: 3 },
+                meta: { rows: 1284 },
                 table: { columns: ['Date', 'Payout', 'Amount'], rows: [['Nov 3', 'po_1QxA', '$812.40']], total_rows: 1284 },
             }),
         );

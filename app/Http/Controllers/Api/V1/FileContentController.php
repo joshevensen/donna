@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\FileKind;
 use App\Http\Controllers\Controller;
 use App\Models\File;
 use Illuminate\Http\Request;
@@ -31,6 +32,8 @@ class FileContentController extends Controller
         return Storage::response($path, $file->name, [
             'Content-Type' => $preview !== null ? 'image/jpeg' : $file->mime,
             'X-Content-Type-Options' => 'nosniff',
+            // An image opened on its own is only ever an image. (A PDF needs the browser's own viewer, so it gets no such fence.)
+            ...($file->kind === FileKind::Image ? ['Content-Security-Policy' => "default-src 'none'; sandbox"] : []),
             // What was uploaded never changes, so the browser can keep it. Only this browser: it is Josh's.
             'Cache-Control' => 'private, max-age=31536000, immutable',
         ]);

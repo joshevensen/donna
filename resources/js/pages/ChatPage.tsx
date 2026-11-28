@@ -135,6 +135,7 @@ export function ChatPage({ me }: { me: Me }) {
                         loadingOlder={conversation.loadingOlder}
                         onLoadOlder={conversation.loadOlder}
                         onRetrySend={conversation.retrySend}
+                        onDiscardSend={conversation.discardSend}
                         onRetryReply={conversation.retryReply}
                         onShowSources={setSheet}
                         onOpenFile={openViewer}

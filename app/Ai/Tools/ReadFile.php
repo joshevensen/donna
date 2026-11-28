@@ -48,6 +48,10 @@ class ReadFile implements Tool
 
         $body = $file->body();
 
+        if ($file->kind === FileKind::Pdf && $body !== null && ! ($file->meta['has_text'] ?? true)) {
+            return "{$file->name} is a scan: its pages are pictures with no text to read. Use view_file to look at it.";
+        }
+
         if ($body === null) {
             return "{$file->name} has no text to read: ".($file->extraction_error ?? 'nothing could be extracted.');
         }
@@ -90,7 +94,10 @@ class ReadFile implements Tool
             $text = mb_substr($text, 0, $budget * 4).'… (this line is too long to give whole)';
         }
 
-        $header = "{$file->name} (file #{$file->id}, version {$file->currentVersion->number}), lines {$from}–{$to} of {$total}";
+        $blank = $file->meta['blank_pages'] ?? [];
+
+        $header = "{$file->name} (file #{$file->id}, version {$file->currentVersion->number}), lines {$from}–{$to} of {$total}"
+            .($blank === [] ? '' : ' (no text on '.(count($blank) === 1 ? 'page ' : 'pages ').implode(', ', array_slice($blank, 0, 20)).': use view_file for those)');
 
         return $header.($to < $total && $to < $from + $count - 1 ? '. There is more: ask again with from_line '.($to + 1) : '').":\n".$text;
     }

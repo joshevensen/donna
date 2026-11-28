@@ -56,6 +56,8 @@ function message(author: 'josh' | 'donna', bubbles: string[], files: MessageFile
 
 function show(items: TimelineItem[]) {
     const onOpenFile = vi.fn();
+    const onRetrySend = vi.fn();
+    const onDiscardSend = vi.fn();
 
     render(
         <Thread
@@ -64,7 +66,8 @@ function show(items: TimelineItem[]) {
             hasOlder={false}
             loadingOlder={false}
             onLoadOlder={vi.fn()}
-            onRetrySend={vi.fn()}
+            onRetrySend={onRetrySend}
+            onDiscardSend={onDiscardSend}
             onRetryReply={vi.fn()}
             onShowSources={vi.fn()}
             onOpenFile={onOpenFile}
@@ -72,7 +75,7 @@ function show(items: TimelineItem[]) {
         />,
     );
 
-    return { onOpenFile };
+    return { onOpenFile, onRetrySend, onDiscardSend };
 }
 
 describe('file cards in the thread', () => {
@@ -137,5 +140,25 @@ describe('file cards in the thread', () => {
         await user.click(within(kept).getByRole('button', { name: 'Open houston-logistics.pdf, kept' }));
 
         expect(onOpenFile).toHaveBeenCalledExactlyOnceWith(2);
+    });
+});
+
+describe('a message the server refused', () => {
+    // Its files were already sent, or are gone: sending it again would be refused again.
+    it('says why and offers to remove it, instead of a retry that can never work', async () => {
+        const user = userEvent.setup();
+        const { onRetrySend, onDiscardSend } = show([
+            {
+                kind: 'outbox',
+                item: { key: 'k1', body: 'Here it is.', files: [], createdAt: '2026-11-27T20:05:00Z', state: 'failed', refused: 'One of those files can’t be attached.' },
+            },
+        ]);
+
+        expect(screen.queryByText('Not delivered. Tap to retry')).toBeNull();
+
+        await user.click(screen.getByRole('button', { name: 'Not sent. One of those files can’t be attached. Tap to remove it.' }));
+
+        expect(onDiscardSend).toHaveBeenCalledExactlyOnceWith('k1');
+        expect(onRetrySend).not.toHaveBeenCalled();
     });
 });

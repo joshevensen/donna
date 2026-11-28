@@ -234,6 +234,12 @@ return [
             'max_pixels' => 60_000_000,
         ],
         'model_image_bytes' => 3_500_000,
+        'model_image_pixels' => 8000,
+
+        // Everything shown to the model in one call travels as base64 in one
+        // request, which has a size limit. Past this, a file isn't sent and
+        // she is told to look at it on its own.
+        'model_request_bytes' => 24_000_000,
 
         // A PDF with fewer letters per page than this is treated as a scan,
         // and shown to the model as pages when it has no more pages than this.

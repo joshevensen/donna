@@ -64,7 +64,8 @@ class FileLibrary
      */
     public function keep(File $file, bool $keep): void
     {
-        if ($keep === $file->isKept()) {
+        // An image has nothing to index, so there is nothing keeping it would do.
+        if ($keep === $file->isKept() || ($keep && ! $file->kind->hasBody())) {
             return;
         }
 

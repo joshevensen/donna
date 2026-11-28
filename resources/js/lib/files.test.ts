@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { arrivalLabel, type CardFile, cardLine, describeFile, formatSize, isNumeric, numericColumns, sizeDetail, splitPages, withState } from './files';
 
 function card(overrides: Partial<CardFile> = {}): CardFile {
-    return { id: 1, name: 'stripe-payouts-nov.csv', kind: 'csv', size_bytes: 49_152, meta: { rows: 1284, columns: 5 }, kept: false, deleted: false, ...overrides };
+    return { id: 1, name: 'stripe-payouts-nov.csv', kind: 'csv', size_bytes: 49_152, meta: { rows: 1284 }, kept: false, deleted: false, ...overrides };
 }
 
 describe('formatSize', () => {

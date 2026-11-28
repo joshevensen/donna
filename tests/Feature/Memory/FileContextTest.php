@@ -11,6 +11,8 @@ use App\Jobs\GenerateReply;
 use App\Jobs\TagTopics;
 use App\Models\File;
 use App\Models\Message;
+use App\Models\Person;
+use App\Models\Topic;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Ai\Files\Base64Document;
 use Laravel\Ai\Files\Base64Image;
@@ -113,6 +115,27 @@ describe('what Josh attached', function () {
             ->and($sent->attachments)->toHaveCount(0);
     });
 
+    it('says which pages of a PDF had no text, instead of calling a partly scanned one read in full', function () {
+        $message = Message::factory()->create(['body' => 'Summarise this statement.']);
+        $file = File::factory()->pdf(['Opening balance $100.', '', 'Closing balance $90.'])->on($message)->create(['name' => 'statement.pdf']);
+        $file->update(['meta' => [...$file->meta, 'blank_pages' => [2]]]);
+
+        expect(promptFor($message)->prompt)->toContain('given="read in full, except page 2, which has no text (use view_file to see them)"');
+    });
+
+    it('holds back what would make the request too big to send, and tells her to look at it on its own', function () {
+        config(['donna.files.model_request_bytes' => 20]);
+        $message = Message::factory()->create(['body' => 'What are these?']);
+        File::factory()->image()->on($message)->create(['name' => 'one.png']);
+        File::factory()->image()->on($message)->create(['name' => 'two.png']);
+
+        $sent = promptFor($message);
+
+        expect($sent->attachments)->toHaveCount(1)
+            ->and($sent->prompt)->toContain('name="one.png" kind="image" given="shown to you as an image" />')
+            ->toContain('name="two.png" kind="image" given="not shown to you: too much to send with the others at once. Use view_file to look at it on its own" />');
+    });
+
     it('answers a message that is only a file, with the file as the whole message', function () {
         $message = Message::factory()->create(['body' => '']);
         File::factory()->markdown("# Plan\n")->on($message)->create();
@@ -158,6 +181,34 @@ describe('files in play', function () {
             ."    @@ line 8 @@\n"
             .'    +- Studio two'
         );
+    });
+
+    // A reply that failed never had her attention: his edit before it is still news to her.
+    it('still shows Josh\'s edit when the reply after it failed and he wrote again', function () {
+        travelTo('2026-11-27 15:00:00');
+        $sent = Message::factory()->create(['body' => 'Here is the plan.']);
+        $file = File::factory()->markdown("# Plan\n\nLaunch Jan 25.\n")->on($sent)->create(['name' => 'plan.md']);
+        Message::factory()->replyTo($sent)->create(['body' => 'Read it.']);
+
+        travelTo('2026-11-27 16:00:00');
+        app(FileWriter::class)->write($file, "# Plan\n\nLaunch Feb 1.\n", MessageAuthor::Josh, 'Edited by Josh');
+
+        travelTo('2026-11-27 16:01:00');
+        Message::factory()->failed()->create(['in_reply_to_id' => Message::factory()->create(['body' => 'I moved the date.'])->id]);
+
+        travelTo('2026-11-27 16:10:00');
+
+        expect(promptFor(Message::factory()->create(['body' => 'Did you see my change?']))->prompt)
+            ->toContain("    -Launch Jan 25.\n    +Launch Feb 1.");
+    });
+
+    it('says who or what a file is linked to', function () {
+        $file = File::factory()->pdf()->on(Message::factory()->create())->create(['name' => 'houston-logistics.pdf']);
+        $file->people()->attach(Person::factory()->create(['name' => 'Anita']));
+        $file->topics()->attach(Topic::factory()->create(['name' => 'Houston festival']));
+
+        expect(promptFor(Message::factory()->create(['body' => 'What do we owe the venue?']))->prompt)
+            ->toContain('— working, not kept — about Anita, Houston festival');
     });
 
     it('names the sections that changed when Josh changed too much to show line by line', function () {

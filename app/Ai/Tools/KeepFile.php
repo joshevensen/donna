@@ -62,9 +62,12 @@ class KeepFile implements Tool
         $this->library->keep($file, $keep);
         $this->library->touch($file, $this->reply, FileRole::Opened);
 
-        return $keep
-            ? "Kept {$file->name}. Its card under your reply shows it. Say in a line that you kept it, so Josh can tell you to forget it."
-            : "{$file->name} is no longer kept. The file itself is still there.";
+        if (! $keep) {
+            return "{$file->name} is no longer kept. The file itself is still there.";
+        }
+
+        return "Kept {$file->name}. Its card under your reply shows it. Say in a line that you kept it, so Josh can tell you to forget it."
+            .(blank(trim((string) $file->body(), " \n\r\t\f")) ? ' It has no text, so you won\'t find it by what it says: link it to who or what it is about with link_file.' : '');
     }
 
     public function schema(JsonSchema $schema): array
