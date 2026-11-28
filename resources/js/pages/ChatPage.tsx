@@ -56,9 +56,10 @@ export function ChatPage({ me }: { me: Me }) {
                 return;
             }
 
-            // The answer is a note on this device only: gone on reload, never sent.
+            // The command and its answer are notes on this device only: gone on reload, never sent.
+            addNote(text, 'josh');
             ANSWERS[command]()
-                .then(addNote)
+                .then((answer) => addNote(answer))
                 .catch(() => addNote(ANSWER_FAILED));
         },
         [addNote, send],

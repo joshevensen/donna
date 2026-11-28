@@ -32,7 +32,8 @@ export interface Conversation {
     retrySend: (key: string) => void;
     retryReply: (id: number) => void;
     loadOlder: () => void;
-    addNote: (text: string) => void;
+    /** Show something on this device only, as Donna's (the default) or as what Josh typed. */
+    addNote: (text: string, who?: Note['who']) => void;
 }
 
 function localTime(item: TimelineItem): string {
@@ -229,8 +230,8 @@ export function useMessages(): Conversation {
             .finally(() => setLoadingOlder(false));
     }, [loadingOlder, merge, nextBefore, reach]);
 
-    const addNote = useCallback((text: string) => {
-        setNotes((existing) => [...existing, { id: uuid(), text, createdAt: new Date().toISOString() }]);
+    const addNote = useCallback((text: string, who: Note['who'] = 'donna') => {
+        setNotes((existing) => [...existing, { id: uuid(), who, text, createdAt: new Date().toISOString() }]);
     }, []);
 
     // The first page, then anything left unsent from last time.

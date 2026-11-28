@@ -8,9 +8,11 @@ import type { OutboxItem } from './storage';
  | dividers, bubbles grouped into runs, the "couldn't reply" line, the dots.
  */
 
-/** Something the app said locally, like the answer to /help. Never sent anywhere. */
+/** Something shown on this device only, like a command and its answer. Never sent anywhere. */
 export interface Note {
     id: string;
+    /** Donna's answer, or the command Josh typed. */
+    who: Who;
     text: string;
     createdAt: string;
 }
@@ -100,9 +102,9 @@ function bubblesOf(item: TimelineItem): Array<Draft | Extract<Row, { kind: 'repl
             {
                 kind: 'bubble',
                 key: `note:${item.note.id}`,
-                who: 'donna',
+                who: item.note.who,
                 text: item.note.text,
-                markdown: true,
+                markdown: item.note.who === 'donna',
                 createdAt: item.note.createdAt,
                 sources: [],
                 actions: [],
