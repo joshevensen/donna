@@ -97,7 +97,7 @@ export function ChatPage({ me }: { me: Me }) {
                 </div>
             )}
 
-            <Composer onSend={onSend} />
+            <Composer onSend={onSend} costs={conversation.costs} />
 
             {sheet !== null && <SourcesSheet sources={sheet} onClose={closeSheet} />}
         </div>

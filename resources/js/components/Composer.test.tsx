@@ -12,7 +12,7 @@ describe('Composer', () => {
     it('cannot send while the field is empty or only spaces', async () => {
         const user = userEvent.setup();
         const onSend = vi.fn();
-        render(<Composer onSend={onSend} />);
+        render(<Composer onSend={onSend} costs={null} />);
 
         expect(screen.getByRole('button', { name: 'Send' })).toHaveProperty('disabled', true);
 
@@ -25,7 +25,7 @@ describe('Composer', () => {
     it('sends on Enter with a mouse and keyboard, and Shift+Enter is a new line', async () => {
         const user = userEvent.setup();
         const onSend = vi.fn();
-        render(<Composer onSend={onSend} />);
+        render(<Composer onSend={onSend} costs={null} />);
 
         await user.type(screen.getByLabelText('Message Donna'), 'First line{Shift>}{Enter}{/Shift}second line{Enter}');
 
@@ -37,7 +37,7 @@ describe('Composer', () => {
         onAPhone();
         const user = userEvent.setup();
         const onSend = vi.fn();
-        render(<Composer onSend={onSend} />);
+        render(<Composer onSend={onSend} costs={null} />);
 
         await user.type(screen.getByLabelText('Message Donna'), 'One{Enter}two');
 
@@ -50,12 +50,12 @@ describe('Composer', () => {
 
     it('keeps the draft across the app being closed, and clears it once sent', async () => {
         const user = userEvent.setup();
-        const first = render(<Composer onSend={() => {}} />);
+        const first = render(<Composer onSend={() => {}} costs={null} />);
 
         await user.type(screen.getByLabelText('Message Donna'), 'Half a thought');
         first.unmount();
 
-        render(<Composer onSend={() => {}} />);
+        render(<Composer onSend={() => {}} costs={null} />);
 
         expect(screen.getByLabelText('Message Donna')).toHaveProperty('value', 'Half a thought');
 
@@ -66,7 +66,7 @@ describe('Composer', () => {
 
     it('is a slim bar until it is focused or holds text, without swapping the field for another', async () => {
         const user = userEvent.setup();
-        const { container } = render(<Composer onSend={() => {}} />);
+        const { container } = render(<Composer onSend={() => {}} costs={null} />);
         const field = screen.getByLabelText('Message Donna');
 
         expect(container.querySelector('.composer__field')?.getAttribute('data-open')).toBe('false');
@@ -75,5 +75,15 @@ describe('Composer', () => {
 
         expect(container.querySelector('.composer__field')?.getAttribute('data-open')).toBe('true');
         expect(screen.getByLabelText('Message Donna')).toBe(field);
+    });
+
+    it('shows what Donna has cost today and this cycle once the server has said', () => {
+        const { rerender } = render(<Composer onSend={vi.fn()} costs={null} />);
+
+        expect(screen.queryByText(/Cycle/)).toBeNull();
+
+        rerender(<Composer onSend={vi.fn()} costs={{ today: '0.42', cycle: '12.30' }} />);
+
+        expect(screen.getByText('Today $0.42 · Cycle $12.30')).toBeTruthy();
     });
 });

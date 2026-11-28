@@ -24,6 +24,8 @@ export interface FakeMessage {
 
 type ReplyPlan = { fails: true } | { fails?: false; bubbles: string[]; sources?: FakeMessage['sources']; actions?: FakeMessage['actions'] };
 
+const COSTS = { today: '0.42', cycle: '12.30' };
+
 export class FakeDonna {
     signedIn = true;
     messages: FakeMessage[] = [];
@@ -188,13 +190,13 @@ export class FakeDonna {
         if (query.has('after')) {
             const newer = this.messages.filter((message) => message.id > Number(query.get('after')));
 
-            return { data: newer.slice(0, limit), meta: { next_after: newer.length > limit ? newer[limit - 1]!.id : null } };
+            return { data: newer.slice(0, limit), meta: { next_after: newer.length > limit ? newer[limit - 1]!.id : null, costs: COSTS } };
         }
 
         const before = query.has('before') ? Number(query.get('before')) : Infinity;
         const older = this.messages.filter((message) => message.id < before).reverse();
 
-        return { data: older.slice(0, limit), meta: { next_before: older.length > limit ? older[limit - 1]!.id : null } };
+        return { data: older.slice(0, limit), meta: { next_before: older.length > limit ? older[limit - 1]!.id : null, costs: COSTS } };
     }
 
     /** Save a send, or return the original pair when its key has been seen before. */

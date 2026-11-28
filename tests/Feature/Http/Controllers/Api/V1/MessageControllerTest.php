@@ -3,8 +3,10 @@
 use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
 use App\Jobs\GenerateReply;
+use App\Models\Cost;
 use App\Models\Message;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -266,4 +268,18 @@ it('says how many background jobs have failed, so the app can tell Josh', functi
     ]);
 
     getJson('/api/v1/messages?after=0')->assertJsonPath('meta.failed_jobs', 1);
+});
+
+it('reports today\'s and this month\'s spend by midnight in Josh\'s timezone, not UTC', function () {
+    actingAs(User::factory()->create());
+    $this->travelTo(CarbonImmutable::parse('2026-12-02 12:00', 'America/Chicago'));
+
+    // 11:30pm Nov 30 in Chicago is already Dec 1 in UTC, but still last month's.
+    Cost::factory()->create(['usd' => 1, 'created_at' => CarbonImmutable::parse('2026-11-30 23:30', 'America/Chicago')->utc()]);
+    Cost::factory()->create(['usd' => 2, 'created_at' => CarbonImmutable::parse('2026-12-01 00:30', 'America/Chicago')->utc()]);
+    Cost::factory()->create(['usd' => 4, 'created_at' => CarbonImmutable::parse('2026-12-02 00:30', 'America/Chicago')->utc()]);
+
+    getJson('/api/v1/messages')
+        ->assertJsonPath('meta.costs.today', '4.00')
+        ->assertJsonPath('meta.costs.cycle', '6.00');
 });

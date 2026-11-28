@@ -137,7 +137,8 @@ The chat components below are built (Phase 2); the rest are first drafts. See vi
 - **Typing indicator** — three dots in a Donna bubble that bounce in turn (a deliberate exception to the quiet principle; reduced-motion users get static dots). No progress messages and no "thinking" text: it should feel like texting, not like watching a tool work.
 - **Errors** — all in Error red with an icon and words, never color alone, and the input stays usable. A message that didn't send keeps its bubble with "Not delivered. Tap to retry" under it. If she couldn't answer, a centered line says "Donna couldn't reply." with Try again. While offline a slim strip above the input says messages will send when you're back. A bad attachment's chip explains itself.
 - **Buttons** — primary is Shirt with Tie text; secondary is transparent with Shirt text. Accent fills are reserved for Donna's bubbles and send.
-- **Code blocks** — Canvas-colored inside Donna's bubble, with a monospace font, a language label and a copy button. No syntax coloring.
+- **Code blocks** — Canvas-colored inside Donna's bubble, with a monospace font, a language label and a copy button. No syntax coloring. Josh's own fenced blocks (triple backticks) get the same treatment in his bubbles; the rest of what he types is never read as markdown.
+- **Input** — a full-width textarea with a bar beneath it: today's and this month's spend centered (midnight in Josh's timezone), a 30×30 send button at the right.
 - **File viewer** — Panel. Visual mode renders on Panel; edit mode is visually distinct (Inset, monospace) so Josh always knows which he's in. Metadata is expandable at the bottom.
 - **Quick capture** — a single Raised field that gets out of the way; same tokens as chat input.
 - **Notifications** — system styling only; Donna's icon and plain text.

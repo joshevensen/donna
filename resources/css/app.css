@@ -533,8 +533,7 @@ a.button {
 
 .composer__field {
     display: flex;
-    align-items: flex-end;
-    gap: 6px;
+    flex-direction: column;
     padding: 5px;
     border: 1px solid transparent;
     border-radius: 26px;
@@ -546,10 +545,11 @@ a.button {
 }
 
 .composer__input {
-    flex: 1 1 0;
+    display: block;
+    width: 100%;
     min-width: 0;
     height: 2.5rem;
-    padding: 0.5625rem 0 0.5625rem 12px;
+    padding: 0.5625rem 12px;
     border: 0;
     outline: none;
     background: transparent;
@@ -564,13 +564,30 @@ a.button {
     opacity: 1;
 }
 
+.composer__bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0 3px 1px;
+}
+
+/* In the middle column, so it is centred on the box whatever sits either side. */
+.composer__costs {
+    grid-column: 2;
+    margin: 0;
+    color: var(--donna-shirt-65);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
 .composer__send {
     display: flex;
-    flex-shrink: 0;
+    grid-column: 3;
+    justify-self: end;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     border: 0;
     border-radius: 999px;
     background: var(--donna-accent);

@@ -43,7 +43,13 @@ export interface Me {
     };
 }
 
+/** What Donna has cost, in dollars as text ("0.42"), today and this month, by Josh's clock. */
+export interface Costs {
+    today: string;
+    cycle: string;
+}
+
 export interface MessagePage {
     data: Message[];
-    meta: { next_before?: number | null; next_after?: number | null; failed_jobs?: number };
+    meta: { next_before?: number | null; next_after?: number | null; failed_jobs?: number; costs?: Costs };
 }

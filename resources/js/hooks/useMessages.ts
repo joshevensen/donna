@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { api, NetworkError } from '../api/client';
-import type { Message } from '../api/types';
+import type { Costs, Message } from '../api/types';
 import { uuid } from '../lib/platform';
 import { RevealQueue } from '../lib/reveal';
 import { type OutboxItem, storage } from '../lib/storage';
@@ -22,6 +22,8 @@ export interface Conversation {
     offline: boolean;
     /** Background jobs that gave up: the strip says Donna may not be remembering. */
     failedJobs: number;
+    /** Spend today and this cycle, as of the last poll; null until the server has said. */
+    costs: Costs | null;
     /** The first page has loaded. */
     ready: boolean;
     loadingOlder: boolean;
@@ -58,6 +60,7 @@ export function useMessages(): Conversation {
     const [loadingOlder, setLoadingOlder] = useState(false);
     const [unreachable, setUnreachable] = useState(false);
     const [failedJobs, setFailedJobs] = useState(0);
+    const [costs, setCosts] = useState<Costs | null>(null);
     const unreachableRef = useRef(unreachable);
     unreachableRef.current = unreachable;
 
@@ -244,6 +247,7 @@ export function useMessages(): Conversation {
                     merge(page.data);
                     setNextBefore(page.meta.next_before ?? null);
                     setFailedJobs(page.meta.failed_jobs ?? 0);
+                    setCosts(page.meta.costs ?? null);
                     setReady(true);
 
                     // A send that was in flight when the app closed never got its answer. Sending
@@ -305,6 +309,7 @@ export function useMessages(): Conversation {
                 if (!stopped) {
                     merge([...replies, ...fresh.data]);
                     setFailedJobs(fresh.meta.failed_jobs ?? 0);
+                    setCosts((current) => fresh.meta.costs ?? current);
                 }
             } catch {
                 // Offline or signed out; both are handled where they are detected.
@@ -384,6 +389,7 @@ export function useMessages(): Conversation {
         typing: waiting || (reveal.current?.typing ?? false) || outbox.some((item) => item.state === 'sending'),
         offline,
         failedJobs,
+        costs,
         ready,
         loadingOlder,
         hasOlder: nextBefore !== null,

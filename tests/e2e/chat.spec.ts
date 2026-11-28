@@ -25,7 +25,7 @@ test('send a message and get a reply that arrives as texts, one at a time', asyn
     await send.click();
 
     // His message is there at once, under today's date, and she starts typing.
-    await expect(page.getByText('Today')).toBeVisible();
+    await expect(page.getByText('Today', { exact: true })).toBeVisible();
     await expect(page.getByText('What am I working on?')).toBeVisible();
     await expect(page.getByRole('status', { name: 'Donna is typing' })).toBeVisible();
     await expect(page.getByLabel('Message Donna')).toHaveValue('');
@@ -176,4 +176,16 @@ test('scrolling up loads earlier messages and holds the place; a new message onl
     await poll();
 
     await expect(page.getByText('And another.')).toBeInViewport();
+});
+
+test('shows what Donna has cost under the input, and draws code Josh types as code', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByText('Today $0.42 · Cycle $12.30')).toBeVisible();
+
+    await page.getByLabel('Message Donna').fill('Why does this fail?\n```php\necho 1;\n```');
+    await page.getByRole('button', { name: 'Send' }).click();
+
+    await expect(page.locator('.code-block pre', { hasText: 'echo 1;' })).toBeVisible();
+    await expect(page.getByText('```')).toBeHidden();
 });
