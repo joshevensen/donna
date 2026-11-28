@@ -165,7 +165,7 @@ Each does its work in code; none calls a model. The edit tools (`edit_section` t
 | `delete_file`, `restore_file` | Soft delete (`deleted_at`) and bring back. Deleting removes the chunks; restoring re-indexes if it was kept. Only on Josh's say-so, and an explicit permanent delete arrives with Autonomy (Phase 5) |
 | `revert_file` | Restore a previous version as a new one |
 | `list_files` | `{q?}`. What is there, for "show my files". Puts file cards on the reply |
-| `view_file` | `{file, page?}`. Shows an image, or a page of a PDF with no text layer, to the model again, for a later turn. Nothing is stored; it is the original read from Spaces and passed to the model, in the same reply call. Needs the Laravel AI SDK to let a tool result carry an image *(unverified: check first when building; if it can't, the tool queues the image to be attached to the next step of the same reply)* |
+| `view_file` | `{file, page?}`. Looks at an image, or a page of a PDF with no text layer, again. The SDK can't return an image from a tool (checked against `laravel/ai` 1.4.2: a tool returns a string, and images only go in as attachments on a prompt), so the tool records the request and answers "I'll look at it now". When the first call finishes, the reply job makes one more call in the same reply, with the file attached as the SDK expects, and that call's answer is the reply. At most two looks per reply. Nothing is stored; the original is read from Spaces |
 
 These are all reversible and internal, so they need no confirmation (Graduated Autonomy, `vision.md`). They are only tools on files in Donna's own store; she has no access to anything outside it.
 
@@ -216,7 +216,7 @@ These are all reversible and internal, so they need no confirmation (Graduated A
 | Every file operation: replace, append, delete lines, rename, section replace, revert | The new text for "rewrite this section", "write that up as a plan" |
 | CSV queries and totals | Which question to ask of a CSV |
 | Chunking, hashing, indexing, hybrid search, token budgeting | Deciding whether a file looks like reference material worth offering to keep |
-| Diffs of Josh's edits, version summaries, conflict detection | Reading a scan or a photo (in the same reply call), including looking at one again |
+| Diffs of Josh's edits, version summaries, conflict detection | Reading a scan or a photo, in the call it arrives in or, for a later look, in the follow-up call `view_file` triggers |
 | The kept and working counts, the "Kept" badge | Noticing that a file disagrees with a fact, and saying so |
 
 No new kind of model call. Embedding chunks is the existing embedding call and records its own `costs` row.
@@ -251,7 +251,7 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 - Retrieval: a kept file's chunk comes back for a related message and is recorded as a source; a working file's never does; a chunk of a file linked to a related project is ranked above an otherwise equal one.
 - Provenance and honesty: the context states when a file arrived and with which message, and whether it was read whole, as an outline, as images, or failed; a scanned PDF is flagged rather than passed as empty text.
 - Originals: after any number of edits and reverts, version 1 is unchanged and retrievable.
-- `view_file`: returns the image or the requested PDF page for a kept or working file; refuses a text file and a file that isn't there.
+- `view_file`, through the reply job: the follow-up call is made with the image or PDF page attached and its answer becomes the reply; a text file or a missing file is refused; the first call's tool effects happen once; at most two looks; the second call records its own cost.
 - The message resource marks each file card kept or not, and a keep or un-keep changes it.
 - The memory block carries the kept and working counts; they change when a file is kept.
 - Content endpoint: session required; correct headers.
@@ -260,7 +260,7 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 
 ### Risks to check early
 
-- **Images in tool results.** `view_file` depends on the SDK letting a tool return an image; check before building, and use the fallback in its row if not.
+- **`view_file` costs a second model call** when she uses it (same purpose, `reply`, so it records its own `costs` row). The first call's text before it is discarded, and its tool effects (edits, keeps) must not run twice; test this carefully.
 - **PDF text from real files.** Stripe and Shopify PDFs vary; try the extractor on a handful of Josh's before building on it.
 - **The photo picker on iOS**, in Safari and the installed app: which formats arrive, and whether the file input works from the Home Screen app. Device check.
 - **The viewer beside the chat on a Mac** changes the Phase 2 layout; the keyboard and scroll behavior shouldn't regress. Re-run the Phase 2 device checks.
