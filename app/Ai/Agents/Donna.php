@@ -8,6 +8,7 @@ use App\Ai\Tools\AppAction;
 use App\Ai\Tools\CorrectFact;
 use App\Ai\Tools\CostReport;
 use App\Ai\Tools\DecideCharacterChange;
+use App\Ai\Tools\FlagReply;
 use App\Ai\Tools\ForgetFact;
 use App\Ai\Tools\ProposeCharacterChange;
 use App\Ai\Tools\ProposeProject;
@@ -72,6 +73,7 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
             resolve(WhatIKnow::class),
             resolve(CorrectFact::class, $about),
             resolve(ForgetFact::class),
+            resolve(FlagReply::class, $about),
             resolve(SavePerson::class),
             resolve(ProposeProject::class),
             resolve(UpdateProject::class),
