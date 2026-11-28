@@ -38,7 +38,7 @@ Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Scre
 - I sign in with my email: Donna sends a 6-digit code and a link. On my iPhone I type the code into the installed app; on my Mac I tap the link. I stay signed in on each device for 30 days after I last use it, so in practice I almost never sign in again. After 90 days in a row I sign in again whatever I do.
 - There are no passwords. If I lose a phone, I can sign out everywhere.
 - Every time a new device signs in, I get an email saying which device and when, with a button to sign everything out. If it wasn't me, I know within minutes.
-- I can sign out, and turn notifications on or off, by telling Donna ("sign me out", "sign me out everywhere", "turn on notifications") and tapping the button she gives me, or with `/signout` (or `/signout all`) and `/notifications`.
+- I can sign out, and turn notifications on or off, by telling Donna ("sign me out", "sign me out everywhere", "turn on notifications") and tapping the button she gives me, or in the Settings drawer (`/settings`). *(Changed by #11: the `/signout`, `/signout all` and `/notifications` commands were replaced by the drawer.)*
 
 ### Not in this phase
 
@@ -135,7 +135,7 @@ All still under `/api/v1`, JSON, `auth:sanctum` (cookie session for the web app,
 
 **App actions.** A new tool, `app_action`, with `type` of `sign_out`, `sign_out_everywhere`, `enable_notifications` or `disable_notifications`. It does no work server-side except append `{type, label}` to `meta.actions` on the reply being written (held in memory and saved with the reply, so a reply that fails and is retried starts clean); her text explains what the button does. The label is fixed per type, in code. This is Graduated Autonomy's confirm-first: she can only offer, and Josh's tap does it. Browsers only allow the notification permission prompt from a tap, so the button is needed anyway.
 
-**Slash commands**, handled in the client with no model call: `/signout`, `/notifications` (toggle), `/help` (lists them as a local, unsent message). They never reach the API. Anything else starting with `/` is sent as a normal message.
+**Slash commands**, handled in the client with no model call. They never reach `/messages`, and anything else starting with `/` is sent as a normal message. *Changed by #11:* a `/` button in the input bar lists every command (alphabetical, never filtered); tapping one puts it in the field without sending. `/settings` opens a drawer with this device's notifications switch, Sign out and Sign out everywhere. `/projects`, `/people` and `/cost` fetch from read-only endpoints (`GET /api/v1/projects`, `/people`, `/costs`) and answer as a local, unsent note from Donna, gone on reload. `/help`, `/signout`, `/signout all` and `/notifications` were removed.
 
 ### Login and the account
 
