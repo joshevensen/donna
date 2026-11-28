@@ -29,7 +29,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Hosting | One DigitalOcean droplet, provisioned and deployed with Laravel Forge |
 | Database | Postgres on the droplet itself (one server, managed by Forge); full-text + pgvector (hybrid retrieval) |
 | File storage | Text files and their versions in Postgres; original PDFs and images in DigitalOcean Spaces (Laravel's `s3` disk); PDF text read with `pdftotext` (poppler-utils), a PHP parser when it isn't installed |
-| Auth | Laravel Sanctum — cookie sessions for the web app, signed in by an emailed code or link (no passwords); tokens for the terminal |
+| Auth | Laravel Sanctum — cookie sessions for the web app, signed in by an emailed code or link (no passwords); tokens for API clients (the native app, later) |
 | Mail | Resend, over its API (sign-in codes and the new-sign-in notice only) |
 | Backups | Droplet backups + database dumps to Spaces |
 | Voice | Apple SpeechAnalyzer (dictation) + App Intents (Siri), in the native app |
@@ -249,3 +249,21 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 </laravel-boost-guidelines>
+
+## Verification
+
+```bash
+vendor/bin/pint --test
+php artisan test --parallel
+npm run typecheck
+npm test
+npm run build
+```
+
+## Focused Verification
+
+```bash
+php artisan test --compact {test file or directory}    # or --filter={name}
+npx vitest run {test file}
+vendor/bin/pint --dirty --format agent
+```

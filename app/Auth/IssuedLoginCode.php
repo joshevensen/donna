@@ -6,7 +6,7 @@ use Carbon\CarbonInterface;
 
 /**
  * A sign-in code as it is the one time it exists in the clear: on its way
- * into the email, or onto the server's terminal.
+ * into the email, or printed on the server by `donna:login`.
  */
 final readonly class IssuedLoginCode
 {

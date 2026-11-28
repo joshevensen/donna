@@ -55,7 +55,6 @@ Josh attaches files in the chat as context for Donna: text, CSV, PDF and images.
 - A history screen. Versions are kept and Donna can undo, but there's no UI to browse them.
 - Editing anything but markdown and plain text: CSVs, PDFs and images are read, not changed. Word, Excel and zip files, and OCR as a feature.
 - Sharing files outside Donna, and exporting everything at once. A single file can be downloaded.
-- A file viewer in the terminal. The terminal can't attach.
 - Skills, which are also files but arrive with the skills loader (Phase 4).
 - Deleting forever, and any automatic deletion. See the open questions.
 
@@ -288,7 +287,6 @@ Small things the build added or changed, each for a reason found in the code. Th
 - **The viewer gets a CSV as a parsed table** (`table`), not as text, and long text cut at 500 KB (`truncated`). A markdown file over that size can't be edited by hand.
 - **`PUT /files/{id}` is left out of the middleware that trims strings**, so a file is saved exactly as typed.
 - **Past messages name their attachments in the conversation she is shown** (`[attached: plan.md (file #12)]`), and a message of only files reaches her as "(Josh sent this with no message.)".
-- **The terminal client names a message's files** (`[attached] plan.md`), since a message from the web app can be nothing else.
 - **CSV sums use exact decimal arithmetic** (`brick/math`, already installed with Laravel and now required directly), and say how many values weren't numbers.
 - **The side panel moved the keyboard pinning** from the chat to an outer shell, so edit mode's textarea rides above the keys as well. The Phase 2 keyboard checks need re-running on the phone.
 - **"Choose a file" has no `accept` list**, so nothing is unselectable and the server decides. On iOS that may show the system's own menu (Photo Library, Take Photo, Choose Files) before Files. A device check.

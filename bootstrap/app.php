@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // The web app signs in with a cookie session; the terminal keeps its token.
+        // The web app signs in with a cookie session; API clients use a token.
         $middleware->statefulApi();
 
         // The session's age is checked once the session has started and before
