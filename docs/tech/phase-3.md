@@ -197,7 +197,7 @@ These are all reversible and internal, so they need no confirmation (Graduated A
 - **A message of only files** has no text, and the API returns `bubbles: []` for blank text, which the thread draws as nothing. The thread draws a bubble for any message that has files, with just its cards. (Found on review of `main`; a test covers it.)
 - **Sent files** show as a card at the top of the bubble: icon, name, size. Files Donna created, edited or opened show the same card under her bubble. Tapping a card opens the viewer. An edit's card says what changed ("Edited · 14 replacements"). A kept file's card carries a small **Kept** badge, in the thread and in `/files`, following the keep switch, so a keep Donna made on her own is visible without reading her reply.
 - **The viewer.** On a phone, a full-screen sheet over the chat. At 768px and wider, a side panel: the chat keeps its width on the left and the file takes the right half, so the 600px centred column becomes two columns while a file is open. Header: the file's name, a **Keep** switch, Edit and Close. Body by kind: rendered markdown (the same safe renderer as replies; images and raw HTML are not shown), a table for CSV, extracted text with "Open original" for a PDF, the image. Edit mode (markdown only): Inset background, monospace, Save and Cancel, and a conflict banner when a save is refused. Metadata (created, modified, size, who edited last, version) expands at the bottom.
-- **`/files`** is a slash command handled in the client, no model call: it lists files as cards in a local message. Anything else about files goes through Donna.
+- **`/files`** is a slash command handled in the client, no model call: it lists files as cards in a local message, and sits in the `/` command list with the others. Anything else about files goes through Donna.
 - The CSP stays as is: images and PDFs load from the app's own address through `GET /files/{id}/content`.
 - The keyboard behavior from Phase 2 applies to edit mode's textarea too; it is a second input that has to sit above the keyboard.
 
@@ -297,6 +297,7 @@ Small things the build added or changed, each for a reason found in the code. Th
 - **"Used in the last 30 days" means changed in the last 30 days** (`updated_at`). Opening or re-reading a file doesn't count; `?q=` finds the rest.
 - **`content_hash` is what a manual save is compared with**, so saving text that hasn't changed writes no version. A CSV's column count was dropped from `meta`: nothing read it.
 - **A send the server refuses for good** (a file it names was already sent, or is gone) shows the reason and "Tap to remove it" instead of a retry that could never work.
+- **The plus shares the bar's left side with the `/` command button**, which arrived on `main` while this was being built (plus first, then `/`); `/files` is in the command list with the others, and its answer is a bubble of file cards. The viewer's keep switch has its own style (Accent when on), separate from the Settings drawer's.
 - **"Choose a file" has no `accept` list**, so nothing is unselectable and the server decides. On iOS that may show the system's own menu (Photo Library, Take Photo, Choose Files) before Files. A device check.
 - **Edit mode keeps unsaved text on the device** per file, and Save is disabled until the text differs.
 
