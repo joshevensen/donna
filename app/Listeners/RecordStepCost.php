@@ -21,9 +21,10 @@ class RecordStepCost
     {
         $agent = $event->agent;
         $usage = $event->response->usage;
+        $purpose = $agent instanceof TracksCost ? $agent->costPurpose() : CostPurpose::Reply;
 
         $this->costs->record(
-            purpose: $agent instanceof TracksCost ? $agent->costPurpose() : CostPurpose::Reply,
+            purpose: $purpose,
             provider: $event->provider->name(),
             // The model that answered, which differs from the one asked after a refusal fallback.
             model: $event->response->meta->model ?: $event->model,
@@ -33,7 +34,24 @@ class RecordStepCost
             cacheWriteTokens: $usage->cacheWriteInputTokens ?? 0,
             webSearchRequests: $this->webSearchRequests($event->response),
             trigger: $agent instanceof TracksCost ? $agent->costTrigger() : null,
+            cacheWriteOneHourTokens: $this->cacheWriteOneHourTokens($event, $purpose, $usage->cacheWriteInputTokens ?? 0),
         );
+    }
+
+    /**
+     * Cache writes on the one-hour cache cost more than five-minute ones.
+     * Anthropic reports the split; without it, her replies are assumed to
+     * use the TTL they ask for.
+     */
+    private function cacheWriteOneHourTokens(StepCompleted $event, CostPurpose $purpose, int $written): int
+    {
+        $reported = $event->response->raw?->json('usage.cache_creation.ephemeral_1h_input_tokens');
+
+        if ($reported !== null) {
+            return (int) $reported;
+        }
+
+        return $purpose === CostPurpose::Reply && config('donna.models.reply.cache_ttl') === '1h' ? $written : 0;
     }
 
     /**

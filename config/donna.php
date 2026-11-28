@@ -123,6 +123,13 @@ return [
             'max_tokens' => 16000,
             'max_steps' => 8,
 
+            // How long Anthropic keeps her system prompt cached. Josh's messages
+            // are often more than five minutes apart, so a five-minute cache
+            // was rewritten on most replies. A one-hour write costs 2x input
+            // instead of 1.25x, and every read inside the hour is 0.1x. Use
+            // '5m' to go back.
+            'cache_ttl' => '1h',
+
             // Seconds allowed for one model call, and for the whole reply.
             'timeout' => 120,
             'job_timeout' => 600,
@@ -243,6 +250,7 @@ return [
             'claude-sonnet-5-5' => [
                 'input' => 2.00,
                 'cache_write' => 2.50,
+                'cache_write_1h' => 4.00,
                 'cache_read' => 0.10,
                 'output' => 10.00,
             ],
@@ -251,6 +259,7 @@ return [
             'claude-sonnet-5' => [
                 'input' => 2.00,
                 'cache_write' => 2.50,
+                'cache_write_1h' => 4.00,
                 'cache_read' => 0.20,
                 'output' => 10.00,
             ],
@@ -258,12 +267,14 @@ return [
             'claude-haiku-5-5' => [
                 'input' => 0.10,
                 'cache_write' => 0.125,
+                'cache_write_1h' => 0.20,
                 'cache_read' => 0.01,
                 'output' => 0.50,
                 'long_context' => [
                     'threshold' => 100_000,
                     'input' => 0.50,
                     'cache_write' => 0.625,
+                    'cache_write_1h' => 1.00,
                     'cache_read' => 0.05,
                     'output' => 2.50,
                 ],

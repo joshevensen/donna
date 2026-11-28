@@ -20,6 +20,8 @@ export interface Conversation {
     typing: boolean;
     /** No connection: the strip shows and sends wait. */
     offline: boolean;
+    /** Background jobs that gave up: the strip says Donna may not be remembering. */
+    failedJobs: number;
     /** The first page has loaded. */
     ready: boolean;
     loadingOlder: boolean;
@@ -55,6 +57,7 @@ export function useMessages(): Conversation {
     const [nextBefore, setNextBefore] = useState<number | null>(null);
     const [loadingOlder, setLoadingOlder] = useState(false);
     const [unreachable, setUnreachable] = useState(false);
+    const [failedJobs, setFailedJobs] = useState(0);
     const unreachableRef = useRef(unreachable);
     unreachableRef.current = unreachable;
 
@@ -240,6 +243,7 @@ export function useMessages(): Conversation {
 
                     merge(page.data);
                     setNextBefore(page.meta.next_before ?? null);
+                    setFailedJobs(page.meta.failed_jobs ?? 0);
                     setReady(true);
 
                     // A send that was in flight when the app closed never got its answer. Sending
@@ -300,6 +304,7 @@ export function useMessages(): Conversation {
 
                 if (!stopped) {
                     merge([...replies, ...fresh.data]);
+                    setFailedJobs(fresh.meta.failed_jobs ?? 0);
                 }
             } catch {
                 // Offline or signed out; both are handled where they are detected.
@@ -378,6 +383,7 @@ export function useMessages(): Conversation {
         items: [...fromServer, ...local],
         typing: waiting || (reveal.current?.typing ?? false) || outbox.some((item) => item.state === 'sending'),
         offline,
+        failedJobs,
         ready,
         loadingOlder,
         hasOlder: nextBefore !== null,

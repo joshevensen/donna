@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Me, Source } from '../api/types';
 import { Composer } from '../components/Composer';
-import { OfflineIcon } from '../components/icons';
+import { AlertIcon, OfflineIcon } from '../components/icons';
 import { SourcesSheet } from '../components/SourcesSheet';
 import { Thread, type ThreadHandle } from '../components/Thread';
 import { useAppActions } from '../hooks/useAppActions';
@@ -85,6 +85,15 @@ export function ChatPage({ me }: { me: Me }) {
                         <OfflineIcon size={18} />
                     </span>
                     <span>You&rsquo;re offline. Messages will send when you&rsquo;re back.</span>
+                </div>
+            )}
+
+            {conversation.failedJobs > 0 && (
+                <div className="offline" role="status">
+                    <span className="offline__icon">
+                        <AlertIcon size={18} />
+                    </span>
+                    <span>Something failed behind the scenes. She may not be remembering everything until it&rsquo;s fixed.</span>
                 </div>
             )}
 

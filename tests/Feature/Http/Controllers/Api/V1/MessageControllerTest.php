@@ -5,7 +5,9 @@ use App\Enums\MessageStatus;
 use App\Jobs\GenerateReply;
 use App\Models\Message;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\getJson;
@@ -251,4 +253,17 @@ describe('me', function () {
         'with half a key pair' => [['subject' => null, 'public_key' => 'public', 'private_key' => null], false],
         'without them' => [['subject' => null, 'public_key' => null, 'private_key' => null], false],
     ]);
+});
+
+it('says how many background jobs have failed, so the app can tell Josh', function () {
+    actingAs(User::factory()->create());
+
+    getJson('/api/v1/messages')->assertJsonPath('meta.failed_jobs', 0);
+
+    DB::table('failed_jobs')->insert([
+        'uuid' => (string) Str::uuid(), 'connection' => 'database', 'queue' => 'default',
+        'payload' => '{}', 'exception' => 'Embedding failed', 'failed_at' => now(),
+    ]);
+
+    getJson('/api/v1/messages?after=0')->assertJsonPath('meta.failed_jobs', 1);
 });

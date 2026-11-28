@@ -31,9 +31,10 @@ class CostRecorder
         int $webSearchRequests = 0,
         bool $batched = false,
         ?Model $trigger = null,
+        int $cacheWriteOneHourTokens = 0,
     ): Cost {
         $usd = $this->pricing->price(
-            $model, $inputTokens, $outputTokens, $cacheReadTokens, $cacheWriteTokens, $webSearchRequests, $batched,
+            $model, $inputTokens, $outputTokens, $cacheReadTokens, $cacheWriteTokens, $webSearchRequests, $batched, $cacheWriteOneHourTokens,
         );
 
         if ($usd === null) {

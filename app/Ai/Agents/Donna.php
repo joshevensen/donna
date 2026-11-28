@@ -103,10 +103,12 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
             return [];
         }
 
+        $cache = array_filter(['type' => 'ephemeral', 'ttl' => config('donna.models.reply.cache_ttl') === '1h' ? '1h' : null]);
+
         return [
             'system' => [
-                ['type' => 'text', 'text' => $this->context->character, 'cache_control' => ['type' => 'ephemeral']],
-                ['type' => 'text', 'text' => $this->context->profile, 'cache_control' => ['type' => 'ephemeral']],
+                ['type' => 'text', 'text' => $this->context->character, 'cache_control' => $cache],
+                ['type' => 'text', 'text' => $this->context->profile, 'cache_control' => $cache],
             ],
             'output_config' => ['effort' => config('donna.models.reply.effort')],
             // Lets Anthropic retry a declined request on another model before it reaches Josh.
