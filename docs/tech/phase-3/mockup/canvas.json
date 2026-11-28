@@ -1,0 +1,33 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-27T22:00:00Z" },
+  "title": "Donna Phase 3 — Files mockups",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "1 · The plus opens the attach sheet" },
+    "Chips.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "2 · Chips: uploading, ready, refused" },
+    "Thread.dc.html": { "x": 940, "y": 0, "w": 390, "h": 844, "title": "3 · File cards in the thread, and /files" },
+    "ViewerRead.dc.html": { "x": 0, "y": 1200, "w": 390, "h": 844, "title": "4 · Viewer: a kept markdown file" },
+    "ViewerEdit.dc.html": { "x": 470, "y": 1200, "w": 390, "h": 844, "title": "5 · Viewer: edit mode, save conflict" },
+    "ViewerCsv.dc.html": { "x": 940, "y": 1200, "w": 390, "h": 844, "title": "6 · Viewer: a CSV, not kept" },
+    "ViewerPdf.dc.html": { "x": 0, "y": 2300, "w": 390, "h": 844, "title": "7 · Viewer: a PDF" },
+    "MacSplit.dc.html": { "x": 470, "y": 2300, "w": 1280, "h": 800, "title": "8 · Mac: chat and file side by side" }
+  },
+  "order": [
+    "Main.dc.html",
+    "Chips.dc.html",
+    "Thread.dc.html",
+    "ViewerRead.dc.html",
+    "ViewerEdit.dc.html",
+    "ViewerCsv.dc.html",
+    "ViewerPdf.dc.html",
+    "MacSplit.dc.html"
+  ],
+  "notes": {
+    "t1": { "x": 0, "y": -260, "text": "Attaching files (phone)", "kind": "title1", "maxW": 1330 },
+    "t2": { "x": 0, "y": 977, "text": "Viewing and editing (phone)", "kind": "title1", "maxW": 1330 },
+    "t3": { "x": 0, "y": 2077, "text": "PDF, and the Mac layout", "kind": "title1", "maxW": 1750 }
+  },
+  "designSystems": []
+}

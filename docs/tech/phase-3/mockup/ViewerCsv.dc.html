@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Viewer, CSV file</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0F0B0B}
+th,td{padding:10px 14px;text-align:left;white-space:nowrap;font-size:13px}
+th{font-weight:600;color:rgba(244,235,225,0.65);background:#1A1414;position:sticky;top:0}
+tbody tr:nth-child(even) td{background:#1A1414}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; background: #1F1718; color: #F4EBE1; font-family: ui-sans-serif, -apple-system, system-ui, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif">
+
+  <header style="flex-shrink: 0; padding: 20px 12px 10px 8px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #1A1414">
+    <div style="display: flex; align-items: center; gap: 4px">
+      <button aria-label="Close" style="flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+      </button>
+      <h1 style="flex: 1 1 0; min-width: 0; margin: 0; font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">stripe-payouts-nov.csv</h1>
+      <span style="flex-shrink: 0; padding: 0 10px; font-size: 13px; color: rgba(244,235,225,0.65)">Read-only</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 0 4px 0 12px">
+      <span id="keep-label" style="flex: 1 1 0; font-size: 14px; color: rgba(244,235,225,0.65)">Not kept. Only for this conversation</span>
+      <button role="switch" aria-checked="false" aria-labelledby="keep-label" style="flex-shrink: 0; position: relative; width: 52px; height: 32px; border: 0; border-radius: 999px; background: #3A2D2E; padding: 0">
+        <span style="position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 999px; background: rgba(244,235,225,0.65)"></span>
+      </button>
+    </div>
+  </header>
+
+  <div style="flex: 1 1 0; min-height: 0; overflow: hidden">
+    <div style="overflow: hidden; height: 100%">
+      <table style="border-collapse: collapse; width: 560px; color: #F4EBE1">
+        <thead><tr><th>Date</th><th>Payout</th><th style="text-align: right">Amount</th><th>Status</th><th>Expected</th></tr></thead>
+        <tbody>
+          <tr><td>Nov 3</td><td>po_1QxA</td><td class="num">$812.40</td><td>Paid</td><td>Nov 5</td></tr>
+          <tr><td>Nov 4</td><td>po_1QxB</td><td class="num">$220.00</td><td>Paid</td><td>Nov 6</td></tr>
+          <tr><td>Nov 7</td><td>po_1QyC</td><td class="num">$1,094.15</td><td>Paid</td><td>Nov 9</td></tr>
+          <tr><td>Nov 11</td><td>po_1QzD</td><td class="num">$640.00</td><td style="font-weight: 600">In transit</td><td>Nov 13</td></tr>
+          <tr><td>Nov 13</td><td>po_1Qz9</td><td class="num">$1,030.00</td><td style="font-weight: 600">In transit</td><td>Nov 15</td></tr>
+          <tr><td>Nov 14</td><td>po_1R02</td><td class="num">$470.00</td><td style="font-weight: 600">In transit</td><td>Nov 16</td></tr>
+          <tr><td>Nov 18</td><td>po_1R1F</td><td class="num">$388.20</td><td>Paid</td><td>Nov 20</td></tr>
+          <tr><td>Nov 19</td><td>po_1R1G</td><td class="num">$905.75</td><td>Paid</td><td>Nov 21</td></tr>
+          <tr><td>Nov 21</td><td>po_1R2H</td><td class="num">$151.60</td><td>Paid</td><td>Nov 23</td></tr>
+          <tr><td>Nov 24</td><td>po_1R3J</td><td class="num">$720.00</td><td>Pending</td><td>Nov 26</td></tr>
+          <tr><td>Nov 25</td><td>po_1R3K</td><td class="num">$99.00</td><td>Pending</td><td>Nov 27</td></tr>
+          <tr><td>Nov 26</td><td>po_1R4L</td><td class="num">$512.30</td><td>Pending</td><td>Nov 28</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="flex-shrink: 0; padding: 8px 20px; font-size: 12px; color: rgba(244,235,225,0.65); border-top: 1px solid #1A1414">Showing 12 of 1,284 rows. Scroll sideways for more columns. Ask Donna for totals.</div>
+
+  <footer style="flex-shrink: 0; padding: 0 0 28px; background: #1F1718; border-top: 1px solid #1A1414">
+    <button aria-expanded="true" style="width: 100%; min-height: 48px; padding: 0 20px; border: 0; background: transparent; color: rgba(244,235,225,0.65); font: inherit; font-size: 14px; display: flex; align-items: center; justify-content: space-between">
+      <span>Details</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4EBE1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <dl style="margin: 0; padding: 0 20px 4px; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px">
+      <dt style="color: rgba(244,235,225,0.65)">Added</dt><dd style="margin: 0">Today, 2:03 PM</dd>
+      <dt style="color: rgba(244,235,225,0.65)">Size</dt><dd style="margin: 0">48 KB, 1,284 rows</dd>
+      <dt style="color: rgba(244,235,225,0.65)">Version</dt><dd style="margin: 0">1 (original)</dd>
+    </dl>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
