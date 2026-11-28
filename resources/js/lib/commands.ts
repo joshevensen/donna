@@ -3,32 +3,26 @@
  | cost nothing. Anything else that starts with "/" is an ordinary message.
  */
 
-export type Command = { name: 'signout'; everywhere: boolean } | { name: 'notifications' } | { name: 'help' };
+export type CommandName = 'cost' | 'people' | 'projects' | 'settings';
 
-export const HELP = [
-    'Things you can type here:',
-    '',
-    '- `/signout` signs this device out',
-    '- `/signout all` signs every device out',
-    '- `/notifications` turns notifications on or off on this device',
-    '- `/help` shows this',
-    '',
-    'Or just ask me. "Sign me out" works too.',
-].join('\n');
+export interface CommandInfo {
+    name: CommandName;
+    /** What's typed: "/cost". */
+    text: string;
+    description: string;
+}
 
-export function parseCommand(text: string): Command | null {
-    const words = text.trim().toLowerCase().split(/\s+/);
+/** Every command, alphabetical, as the command list shows them. */
+export const COMMANDS: CommandInfo[] = [
+    { name: 'cost', text: '/cost', description: "What I've cost today and this month" },
+    { name: 'people', text: '/people', description: 'The people I know about' },
+    { name: 'projects', text: '/projects', description: 'Your projects and where they stand' },
+    { name: 'settings', text: '/settings', description: 'Notifications and signing out' },
+];
 
-    switch (words.join(' ')) {
-        case '/signout':
-            return { name: 'signout', everywhere: false };
-        case '/signout all':
-            return { name: 'signout', everywhere: true };
-        case '/notifications':
-            return { name: 'notifications' };
-        case '/help':
-            return { name: 'help' };
-        default:
-            return null;
-    }
+/** The command the text is exactly, ignoring case and extra spaces, or null. */
+export function parseCommand(text: string): CommandName | null {
+    const typed = text.trim().toLowerCase().split(/\s+/).join(' ');
+
+    return COMMANDS.find((command) => command.text === typed)?.name ?? null;
 }
