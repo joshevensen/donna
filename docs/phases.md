@@ -71,7 +71,7 @@ The first front end, so Josh can leave the terminal. A web app he opens in a bro
 
 Detailed in [`tech/phase-3.md`](tech/phase-3.md).
 
-**Status:** doc in draft; not yet approved or built.
+**Status:** doc approved; not yet built.
 
 - Files (MD, CSV) — create, view, manual edit, Donna-edit
 - Deterministic operations without the LLM (replace, rename, append, delete line)

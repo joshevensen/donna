@@ -2,7 +2,7 @@
 
 Josh attaches files in the chat as context for Donna: text, CSV, PDF and images. He reads them in a viewer and edits markdown files together with her. Donna works out which files are worth keeping, and those become something she finds on her own. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); look and feel in [`design.md`](../design.md); the chat this builds on is [`phase-2.md`](phase-2.md).
 
-**Status:** draft for discussion; not approved, not built. Open questions are at the end.
+**Status:** approved by Josh; not yet built. The open question at the end (skills' store) is deferred to Phase 4.
 
 **Mockup:** eight screens on one canvas, [open the artifact](https://claude.ai/artifact/4R8ZFyMEguk2GUAeidqBj3) (private to Josh). The source is kept in [`phase-3/mockup/`](phase-3/mockup/) so the design survives if the link doesn't. They are static drawings of: the attach sheet, the upload chips (uploading, ready, refused), file cards in the thread with `/files`, the viewer for a kept markdown file, its edit mode with the save conflict, a CSV that isn't kept, a PDF, and the Mac layout with the chat and the file side by side. Where the mockup and this doc disagree, the doc wins.
 
