@@ -115,7 +115,29 @@ Do this after the first deploy, once `dig +short donna.joshevensen.com` prints t
 
 Then `https://donna.joshevensen.com/up` should answer 200, and `https://donna.joshevensen.com` should show Donna's icon and a sign-in form. Signing in needs either mail ([mail.md](mail.md)) or `donna:login` on the server.
 
-## 7. Check the app's folder
+## 7. Upload limits
+
+Files are attached one per request, up to 10 MB each. PHP and Nginx each have their own limit on the size of a request, and both must be above that, or a large file is turned away before Donna sees it.
+
+In Forge, open the **server**, then its **PHP** settings, and set **Max File Upload Size** to `15` (megabytes) *(unverified: Forge has had this setting for years and it changes PHP and Nginx together, but its name and place may have moved)*.
+
+Then check both over SSH:
+
+```bash
+grep -E '^(upload_max_filesize|post_max_size)' /etc/php/8.4/fpm/php.ini
+```
+
+Both should be `15M` or more *(unverified: the path, and Forge's defaults, which are thought to be higher than this already)*.
+
+```bash
+grep -rh client_max_body_size /etc/nginx/ | sort -u
+```
+
+Should show `15M` or more, or the limit Nginx applies is its own default of 1 MB.
+
+How to tell from the web app: attach a file of about 9 MB. If its chip says "Too large. Max 10 MB" although the file is under 10 MB, one of the two limits is too low.
+
+## 8. Check the app's folder
 
 Forge builds each deploy in its own folder and points `current` at the live one. SSH in and check that the app is where the other instructions run their commands:
 

@@ -2,7 +2,7 @@
 
 Josh attaches files in the chat as context for Donna: text, CSV, PDF and images. He reads them in a viewer and edits markdown files together with her. Donna works out which files are worth keeping, and those become something she finds on her own. Scope is in [`phases.md`](../phases.md); concepts in [`domain.md`](../domain.md); look and feel in [`design.md`](../design.md); the chat this builds on is [`phase-2.md`](phase-2.md).
 
-**Status:** approved by Josh; not yet built. The open question at the end (skills' store) is deferred to Phase 4.
+**Status:** built; awaiting daily use. Where the build had to depart from this doc, the text below has been corrected and the change is listed under [What changed while building](#what-changed-while-building). The pickers, edit mode's keyboard, the viewer and "Open original" have not been checked on a real iPhone, and PDF text has not been tried on Josh's real Stripe and Shopify files. The open question at the end (skills' store) is deferred to Phase 4.
 
 **Mockup:** eight screens on one canvas, [open the artifact](https://claude.ai/artifact/4R8ZFyMEguk2GUAeidqBj3) (private to Josh). The source is kept in [`phase-3/mockup/`](phase-3/mockup/) so the design survives if the link doesn't. They are static drawings of: the attach sheet, the upload chips (uploading, ready, refused), file cards in the thread with `/files`, the viewer for a kept markdown file, its edit mode with the save conflict, a CSV that isn't kept, a PDF, and the Mac layout with the chat and the file side by side. Where the mockup and this doc disagree, the doc wins. Boards 1, 2, 3 and 8 draw the input as it was before the full-width input with its bottom bar (spend line, small send button); the plus belongs in that bar's left column.
 
@@ -80,8 +80,8 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 | Versions | Every change creates a version: Josh's saves, each of Donna's edits, a revert. | "Undo that" and "I edited it, continue" both need it. Cheap for text of this size. |
 | Simple edits | Donna's tools do find-and-replace, append, delete lines and rename in code. Rewriting a section is her judgment, but applying it is code, by heading. | The vision's rule: no tokens spent on deterministic work, and no rewriting a whole file for a small edit. |
 | CSV maths | A `query_csv` tool: filter, sort, group, count, sum, average, evaluated in PHP. | `CLAUDE.md`: totals and filtering are always code. A Shopify export with thousands of rows can't go into a prompt anyway. |
-| PDFs | Text extracted by code and stored as the file's one version. A PDF with no text (a scan) is shown to the model directly in the turn it arrives. | Most PDFs Josh uploads (Stripe, Shopify) have text. The model only reads pixels when there are no words to extract. |
-| Images | Stored, shown in the thread and viewer, and shown to the model in the turn they arrive. Not indexed. Donna can view one again later with `view_file`. | Nothing to chunk, and Josh doesn't need image search. But she can't answer about a screenshot she saw once, so she can look again on request. |
+| PDFs | Text extracted by code (`pdftotext`, with a PHP parser as the fallback) and stored as the file's one version, pages separated by form feeds. A PDF with no text (a scan) is shown to the model directly in the turn it arrives. | Most PDFs Josh uploads (Stripe, Shopify) have text. The model only reads pixels when there are no words to extract. |
+| Images | Stored, shown in the thread and viewer, and shown to the model in the turn they arrive. Not indexed, and can't be kept. Donna can view one again later with `view_file`. A large photo gets a smaller copy on upload (longest side 1568px, turned upright), which is what the thread, the viewer and the model are given; the original is untouched. | Nothing to chunk, and Josh doesn't need image search. But she can't answer about a screenshot she saw once, so she can look again on request. A phone photo can be bigger than the model accepts, and it reads nothing above 1568px anyway. |
 | Uploading | Two steps: `POST /files` per file, then `POST /messages` with the file IDs. | Matches the chips in the mockup (progress and a per-file error) and keeps the message request small. |
 | Archive search | The same hybrid search as messages and facts, over chunks, using the embedding already made for Josh's message. | No new kind of model call. |
 
@@ -103,8 +103,8 @@ Where this section is silent, follow Laravel and React best practice, `CLAUDE.md
 
 | Table | Columns and notes |
 |---|---|
-| `files` | `id`, `name`, `kind`, `mime`, `size_bytes`, `storage_path` (null for text), `current_version_id`, `kept_at` (null while working), `deleted_at`, `extraction` (`ready`, `failed`), `extraction_error`, `meta` (jsonb: page count, row count, whether a PDF has a text layer, so the "what she was given" line can be stated), timestamps |
-| `file_versions` | `id`, `file_id`, `number`, `body` (text), `content_hash`, `author` (`josh`, `donna`), `message_id` (null), `summary` (what changed, written by code, e.g. "Replaced 14 matches of 'Fibermade Co'"), `created_at`. A PDF has one; an image has none |
+| `files` | `id`, `name`, `kind`, `mime`, `size_bytes` (a text file's is its current text's), `storage_path` (null for text), `current_version_id`, `kept_at` (null while working), `deleted_at`, `extraction` (`ready`, `failed`), `extraction_error`, `meta` (jsonb: page count, row and column count, whether a PDF has a text layer, an image's width and height and where its smaller copy is, and when keeping was last turned off), timestamps |
+| `file_versions` | `id`, `file_id`, `number`, `body` (text), `content_hash`, `author` (`josh`, `donna`), `message_id` (the reply Donna made the change in; null for Josh's), `operation_hash` (identifies the change within that reply; null for Josh's), `summary` (what changed, written by code, e.g. "Replaced 14 matches of "Fibermade Co""), `created_at`. A PDF has one; an image has none |
 | `file_chunks` | `id`, `file_id`, `position`, `heading_path` (e.g. "Pricing › Wholesale"), `body`, `content_hash`, `embedding` (vector 1024), `search` (tsvector, generated), timestamps. Current version only; rebuilt on change |
 | `file_subjects` | `file_id`, `subject_type`, `subject_id`: a file linked to people, projects or topics, the same polymorphic shape as `fact_subjects`. Written by `link_file`; read by retrieval and the viewer |
 | `file_message` | `file_id`, `message_id`, `role` (`attached`, `created`, `edited`, `opened`). What Josh attached and what Donna touched in a turn |
@@ -120,13 +120,13 @@ All under `/api/v1`, JSON, `auth:sanctum`.
 | Endpoint | Detail |
 |---|---|
 | `POST /files` | Multipart, one file. Validates size and content, stores it, extracts text, returns the file. Throttled (30 a minute). The file belongs to no message until one names it |
-| `GET /files` | The list for `/files` and Donna's cards: kept first, then working files from the last 30 days; `?q=` filters by name and also finds older working files |
-| `GET /files/{id}` | Metadata, the current version's number and, for text kinds, its body |
-| `GET /files/{id}/content` | The bytes, for image display and "Open original". Served by the app after the session check, never as a public Spaces URL, with `X-Content-Type-Options: nosniff` and, for anything but images and PDFs, `Content-Disposition: attachment`. Read from the Spaces bucket |
+| `GET /files` | The list for `/files` and Donna's cards: kept first, then working files used in the last 30 days; `?q=` filters by name and also finds older working files. An upload that was never sent with a message isn't listed |
+| `GET /files/{id}` | Metadata, the current version's number and who wrote it, and what the viewer draws: `body` for markdown, text and PDF (cut at 500 KB, with `truncated`), or `table` (`columns`, the first 200 `rows`, `total_rows`) for a CSV, parsed by the server |
+| `GET /files/{id}/content` | The bytes, for image display, "Open original" and downloading a text file. Served by the app after the session check, never as a public Spaces URL, with `X-Content-Type-Options: nosniff` and, for anything but images and PDFs, `Content-Disposition: attachment` as `text/plain`. Images and PDFs are read from the Spaces bucket; `?variant=preview` gives an image's smaller copy |
 | `PUT /files/{id}` | Manual save: `{body, base_version}`. 409 with the current version if `base_version` is stale. Markdown only |
 | `PATCH /files/{id}` | `{kept?, name?}`: the keep switch and rename |
 | `POST /messages` | Gains optional `file_ids` (up to five of the user's uploaded, unattached files). `body` may be empty when there are files. A message with no text is not embedded or tagged (nothing to embed); its prompt is the memory block and the attached files |
-| `MessageResource` | Gains `files: [{id, name, kind, role}]` for what was attached and what Donna created, edited or opened |
+| `MessageResource` | Gains `files: [{id, name, kind, role, kept, deleted, size_bytes, meta, note}]` for what was attached and what Donna created, edited or opened; `note` is an edit's summary. A `file` source in `sources` carries its `file_id` |
 
 There is no `DELETE`. Deleting is a tool of Donna's.
 
@@ -164,7 +164,7 @@ Each does its work in code; none calls a model. `edit_file` works on markdown fi
 | `delete_file`, `restore_file` | Soft delete (`deleted_at`) and bring back. Deleting removes the chunks; restoring re-indexes if it was kept. Only on Josh's say-so, and an explicit permanent delete arrives with Autonomy (Phase 5) |
 | `revert_file` | Restore a previous version as a new one |
 | `list_files` | `{q?}`. What is there, for "show my files". Puts file cards on the reply |
-| `view_file` | `{file, page?}`. Looks at an image, or a page of a PDF with no text layer, again. The SDK can't return an image from a tool (checked against `laravel/ai` 1.4.2: a tool returns a string, and images only go in as attachments on a prompt), so the tool records the request and answers "I'll look at it now". When the first call finishes, the reply job makes one more call in the same reply, with the file attached as the SDK expects, and that call's answer is the reply. At most two looks per reply. Nothing is stored; the original is read from Spaces. The second call mostly reads her cached system prompt, so it is cheap |
+| `view_file` | `{file, page?}`. Looks at an image or a PDF again (the whole PDF is attached and the page she asked for is named: cutting one page out would need another library). The SDK can't return an image from a tool (checked against `laravel/ai` 1.4.2: a tool returns a string, and images only go in as attachments on a prompt), so the tool records the request and answers "I'll look at it now". When the first call finishes, the reply job makes one more call in the same reply, with the file attached as the SDK expects, and that call's answer is the reply. At most two looks per reply. Nothing is stored; the original is read from Spaces. The second call mostly reads her cached system prompt, so it is cheap |
 
 These are all reversible and internal, so they need no confirmation (Graduated Autonomy, `vision.md`). They are only tools on files in Donna's own store; she has no access to anything outside it.
 
@@ -189,6 +189,7 @@ These are all reversible and internal, so they need no confirmation (Graduated A
 - **Retrieval** adds `file_chunks` to `HybridSearch`: full-text and vector, fused by rank like messages and facts, scored with the same embedding of Josh's message (no extra call), and boosted for chunks of files linked to a project, person or topic the message relates to (the same fixed boost projects give facts). They compete for the memory block's token budget with facts and exchanges.
 - **Sources**: a chunk Donna was given appears in "What I looked at" as a `file` source labelled "File name › Heading". Tapping it opens the file.
 - A deleted or un-kept file contributes nothing; its chunks are gone.
+- **A floor on meaning.** A chunk further than a set cosine distance from the message isn't a match by meaning (it can still match by its words). Messages and facts have no such floor, but a chunk is hundreds of tokens, and without one the nearest few chunks of an unrelated library went into every prompt.
 
 ### The web app
 
@@ -230,8 +231,8 @@ No new kind of model call. Embedding chunks is the existing embedding call and r
 - **Storage setup is already written**: [`storage.md`](../instructions/storage.md) covers the private bucket, a separate `donna-app` access key, and the `AWS_*` variables with `FILESYSTEM_DISK=s3`, which are Laravel's standard names. The build uses that default disk, so there are no new variables and no new instruction file. It adds `league/flysystem-aws-s3-v3`, and updates `storage.md` to drop "unused until Phase 3" and the "don't set `FILESYSTEM_DISK=s3` yet" caveat, so it can be followed as a live setup. Tests use `Storage::fake`; local development stays on the local disk.
 - **Backups.** Spaces is durable on its own, and the database dumps hold all text files and versions. `backups.md` already says the backup key is separate from the app's, and should note the app's Space isn't part of the dumps.
 - **Upload limits on the server**: PHP's `upload_max_filesize` and `post_max_size` and Nginx's `client_max_body_size` must allow 10 MB per file and five files *(unverified: Forge's defaults are higher than this; check)*. Written into `forge-site.md`.
-- **PDF text extraction**: a pure-PHP package, chosen when building after trying it on real Stripe and Shopify PDFs *(unverified: quality on those)*; if it isn't good enough, `pdftotext` (poppler) is installed on the droplet and `forge-server.md` says how.
-- **Updated**: `storage.md` (above), `environment-variables.md` (its file-storage section: `FILESYSTEM_DISK` is `s3` once this deploys), `forge-site.md` (upload limits), `backups.md`, `verify-setup.md` (attach a file, edit a markdown file, see it kept, get it back), and `operating.md` (what working files accumulate and the storage bill).
+- **PDF text extraction**: `pdftotext` (poppler-utils), installed by the server recipe in `forge-server.md`, with the pure-PHP `smalot/pdfparser` as the fallback when it isn't there. Decided while building: the PHP parser read every word of a test statement but ran its table cells together, and `pdftotext -layout` kept the columns *(unverified: neither has been tried on Josh's real Stripe and Shopify PDFs)*.
+- **Updated**: `storage.md` (above), `environment-variables.md` (its file-storage section: `FILESYSTEM_DISK` is `s3` once this deploys), `forge-server.md` (`pdftotext` in the recipe, and the GD check), `forge-site.md` (upload limits), `backups.md`, `verify-setup.md` (attach a file, edit a markdown file, see it kept, get it back), and `operating.md` (what working files accumulate and the storage bill).
 - `CLAUDE.md`'s stack row for file storage, `domain.md`'s File concept and invariants (working and kept, versions), `design.md`'s viewer and attachment components (and its old "Chat input" bullet, which the input change on `main` superseded) and `vision.md`'s Files section where the build departs from it are updated in the build PR.
 - The build PR's "Before deploying" lists these in order.
 
@@ -270,6 +271,28 @@ Follow the Testing rules in `CLAUDE.md`. Fake every model and `Storage`; no real
 - **Token cost of files in context.** The inline limit and outlines exist for this; watch real `costs` rows in the first week and move the limit.
 - **Spaces from the server.** The bucket, key and region have to be right before the first upload can work; `storage.md` ends with a check that stores and reads back a file; run it before the first upload.
 - **Embedding cost of large kept files.** The CSV caps exist for this; the first big kept export will show whether they're right.
+
+### What changed while building
+
+Small things the build added or changed, each for a reason found in the code. The sections above already say the same; this is the list in one place.
+
+- **PDF text is read with `pdftotext`, the PHP parser is the fallback.** Tried early, as Risks asks. The PHP parser ran table cells together (`Nov 1po_1Qx0 $100.00In transit`), which is ambiguous for exactly the statements this is for. The server recipe installs `poppler-utils`; without it nothing breaks, tables just read worse. The viewer shows PDF text in monospace so the columns line up.
+- **Images get a smaller copy on upload**, made with GD: longest side 1568px, turned upright from the phone's EXIF rotation. It is what the thread, the viewer and the model get (`?variant=preview`); "Open original" serves the untouched upload. Without it a photo over the model's size limit could never be shown to her. Images can't be kept.
+- **`file_versions.operation_hash`.** "Its content hash on the version's `message_id`" became a hash of the operation (kind and arguments) stored beside `message_id`. `create_file` uses it too, so a retried reply doesn't write the file twice.
+- **A relevance floor for chunks** (`context.chunk_max_distance`). See Archive Memory.
+- **`view_file` works for any PDF, and attaches the whole document**, naming the page asked for. Looking at the original of a PDF that has text is strictly more than the doc asked for, and splitting a PDF needs another library. A PDF over 100 pages isn't shown; she is told why.
+- **An upload never sent with a message isn't listed or counted.** Removing a chip can't delete the file (nothing is deleted automatically, and there is no `DELETE`), so it stays in storage, out of sight.
+- **`keep_file`, `rename_file`, `delete_file` and `restore_file` put the file's card on her reply** (as `opened`), not only `list_files`. That is how a keep she made on her own shows its Kept badge under the reply that made it.
+- **Files in play also include any file Josh edited by hand since her last reply**, however long ago it was attached. Otherwise an edit to an older file would reach her with no diff.
+- **"Donna last saw" is worked out, not stored**: the newest version she wrote herself or that existed when her last reply was started. Everything after it is Josh's, and that is what the diff covers.
+- **The viewer gets a CSV as a parsed table** (`table`), not as text, and long text cut at 500 KB (`truncated`). A markdown file over that size can't be edited by hand.
+- **`PUT /files/{id}` is left out of the middleware that trims strings**, so a file is saved exactly as typed.
+- **Past messages name their attachments in the conversation she is shown** (`[attached: plan.md (file #12)]`), and a message of only files reaches her as "(Josh sent this with no message.)".
+- **The terminal client names a message's files** (`[attached] plan.md`), since a message from the web app can be nothing else.
+- **CSV sums use exact decimal arithmetic** (`brick/math`, already installed with Laravel and now required directly), and say how many values weren't numbers.
+- **The side panel moved the keyboard pinning** from the chat to an outer shell, so edit mode's textarea rides above the keys as well. The Phase 2 keyboard checks need re-running on the phone.
+- **"Choose a file" has no `accept` list**, so nothing is unselectable and the server decides. On iOS that may show the system's own menu (Photo Library, Take Photo, Choose Files) before Files. A device check.
+- **Edit mode keeps unsaved text on the device** per file, and Save is disabled until the text differs.
 
 ### Open questions
 

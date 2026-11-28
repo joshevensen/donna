@@ -20,9 +20,32 @@ After setup, and again after anything big changes on the server.
 - Ask her "what did you cost me today?" A non-zero answer means cost tracking is recording.
 - Write `@` in front of a name she doesn't know ("lunch with @Dave on Friday"). She should ask who that is.
 
+## Files
+
+After Phase 3 is deployed and [storage.md](storage.md)'s check has printed `ok`:
+
+- **Attach a markdown file.** Tap the plus, **Choose a file**, pick a `.md` file, and send it with "here are my notes". A chip appears above the text, the message shows the file as a card, and she answers about what is in it.
+  - The chip says "Couldn't upload" for a PDF or a photo but text files work: the Space isn't reachable ([storage.md](storage.md)).
+  - The chip says "Too large. Max 10 MB" for a file under 10 MB: the server's upload limits ([forge-site.md](forge-site.md), step 7).
+- **Edit it together.** "Replace X with Y everywhere in that file." Her reply has a card that says what changed. Tap it: the viewer shows the new text.
+- **Edit it yourself.** In the viewer press **Edit**, change a line, **Save**. Then tell her "I changed it, carry on" and ask what you changed. She should know without being told.
+- **See it kept.** Give her something to keep ("this is my vendor notes file, I'll be coming back to it"). She says she kept it and its card shows **Kept**. Flip the switch in the viewer off and on: the badge follows.
+- **Get it back.** Much later, or after other talk, ask about something only that file says. She answers from it, and "sources" on her reply lists the file and the section. Tap that source: the file opens.
+- **Undo and delete.** "Undo that" after one of her edits puts the text back. "Delete that file", then "bring it back".
+- **A CSV.** Attach a Stripe or Shopify export and ask for a total. Check her number against the export. (She gets it from a query run in code, not by adding it up herself.)
+- **A PDF.** Attach a real Stripe or Shopify PDF, open it in the viewer, and read the text she was given. The columns of a table should be apart, each amount under its heading. If the cells run together, `pdftotext` isn't installed ([forge-server.md](forge-server.md)). **This is the one check that has never been run on your real files.**
+- **A scan.** Attach a scanned PDF or a photo of a receipt and ask what it says. Then, a few messages later, "look at that receipt again".
+- `/files` lists kept files, then recent ones, without her.
+- Ask "what did you cost me today?" after keeping a long file: the number includes embedding it.
+
 ## On the iPhone
 
 These can only be checked on the phone itself:
+
+- **The pickers, in the installed app and in a Safari tab.** **Choose a photo** opens the photo library and the photo arrives as a JPEG (a HEIC original is converted by iOS). **Choose a file** opens Files, possibly after iOS's own menu, and `.md`, `.csv`, `.json` and `.pdf` files can all be picked.
+- **The viewer.** It covers the whole screen, the chat behind it can't be scrolled or tapped, and a long file scrolls inside it.
+- **Edit mode.** Tapping the text raises the keyboard, the text area shrinks to sit above it, **Cancel** and **Save** stay visible, and the page doesn't zoom.
+- **A PDF's "Open original"**, in Safari and in the installed app. In the installed app, check it opens without asking you to sign in and that there is a way back.
 
 - **The keyboard, in the installed app and in a Safari tab.** Tap the input: it opens three lines tall and sits directly above the keyboard, with the newest message still visible above it. Type until it grows to six lines, then scrolls. Send: the keyboard stays up. Tap the thread or swipe the keyboard away: the input drops back to the bottom as a slim bar, with no gap under it and nothing cut off. The page behind never scrolls or bounces.
 - **The top of the screen** in the installed app: messages scroll up to the status bar and stop under it; the clock stays readable.

@@ -20,7 +20,7 @@ Note the server's IP address. [forge-site.md](forge-site.md) needs it for DNS.
 
 ## 2. Run the setup recipe
 
-The droplet needs a 2 GB swap file as a safety net, and Postgres needs pgvector, the extension Donna's memory search uses. One recipe sets up both.
+The droplet needs a 2 GB swap file as a safety net, Postgres needs pgvector (the extension Donna's memory search uses), and reading attached PDFs needs `pdftotext`. One recipe sets up all three.
 
 In Forge, create a new recipe *(unverified; recipes live under your account in Forge)*:
 
@@ -76,6 +76,10 @@ apt-get -o DPkg::Lock::Timeout=120 install -y "postgresql-${PG_VER}-pgvector"
 sudo -u postgres psql -d "${DB_NAME}" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
 sudo -u postgres psql -d "${DB_NAME}" -c '\dx vector'
 
+echo "==> pdftotext (reads the text out of attached PDFs)"
+apt-get -o DPkg::Lock::Timeout=120 install -y poppler-utils
+pdftotext -v 2>&1 | head -n 1
+
 echo "==> Done. Safe to run again."
 ```
 
@@ -85,10 +89,11 @@ What it does:
 
 - **Swap.** It makes sure `/swapfile` is 2 GB and kept across reboots. If there isn't one it makes it; if one already exists at another size it is replaced at the right size. Swap that isn't `/swapfile` is left alone. The droplet has little memory, so this is the safety net.
 - **pgvector.** It finds which Postgres version is running, installs the matching pgvector package, and turns the extension on in the `donna` database. The extension has to be created by the Postgres superuser, and the migrations assume it is there. If the `donna` database doesn't exist, it stops and says so.
+- **pdftotext.** It installs `poppler-utils`. Donna uses its `pdftotext` to read the text of a PDF you attach, because it keeps the columns of a table apart, which matters for statements and exports. Without it she falls back to a reader written in PHP that finds the same words but runs a table's cells together (`Nov 1po_1Qx0 $100.00In transit`). Nothing breaks; her reading of tables just gets worse. A server set up before Files existed needs the recipe run once more to get it.
 
 ## 3. Check it
 
-The recipe's output ends with the swap file listed and a `vector` row from Postgres. To look again later, SSH in:
+The recipe's output shows the swap file, a `vector` row from Postgres and a `pdftotext version` line. To look again later, SSH in:
 
 ```bash
 ssh forge@<server-ip>
@@ -101,6 +106,18 @@ swapon --show
 ```bash
 sudo -u postgres psql -d donna -c '\dx vector'
 ```
+
+```bash
+pdftotext -v
+```
+
+One more thing Files use, which Forge should already have installed with PHP *(unverified: Forge's PHP comes with the GD and EXIF extensions)*:
+
+```bash
+php8.4 -m | grep -i -E '^(gd|exif)$'
+```
+
+It should print `exif` and `gd`. They make the smaller, upright copy of a photo that the thread shows and Donna is shown. If either is missing, install it as root (`apt-get install -y php8.4-gd`; EXIF is part of `php8.4-common`) and restart PHP from Forge. Without GD a photo is still stored and shown, but at full size, and one over about 3.5 MB can't be shown to Donna at all: she will say it is too large to look at.
 
 Next: [forge-site.md](forge-site.md).
 

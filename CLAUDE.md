@@ -15,7 +15,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Layer | Choice |
 |---|---|
 | Backend | Laravel — the API returns JSON only; the one view is the web app's shell |
-| Web client | Browser app, installable to the iPhone Home Screen; chat only; dark mode only. The first front end (Phase 2): React + TypeScript + Vite inside the Laravel app (`resources/js`) |
+| Web client | Browser app, installable to the iPhone Home Screen; the chat and the file viewer; dark mode only. The first front end (Phase 2): React + TypeScript + Vite inside the Laravel app (`resources/js`) |
 | Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only. Arrives with Presence (Phase 7) |
 | Home Node | Mac mini — headless Swift agent, outbound-only over Tailscale, EventKit, Messages database, Foundation Models framework |
 | Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive with Orchestration (Phase 6) |
@@ -28,7 +28,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Code worker | Claude Code (headless) + Orc plugin, on a DigitalOcean droplet |
 | Hosting | One DigitalOcean droplet, provisioned and deployed with Laravel Forge |
 | Database | Postgres on the droplet itself (one server, managed by Forge); full-text + pgvector (hybrid retrieval) |
-| File storage | DigitalOcean Spaces |
+| File storage | Text files and their versions in Postgres; original PDFs and images in DigitalOcean Spaces (Laravel's `s3` disk); PDF text read with `pdftotext` (poppler-utils), a PHP parser when it isn't installed |
 | Auth | Laravel Sanctum — cookie sessions for the web app, signed in by an emailed code or link (no passwords); tokens for the terminal |
 | Mail | Resend, over its API (sign-in codes and the new-sign-in notice only) |
 | Backups | Droplet backups + database dumps to Spaces |
