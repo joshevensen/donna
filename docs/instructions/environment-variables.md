@@ -59,7 +59,7 @@ Forge fills in `APP_KEY` and the database username and password. The mail lines 
 | `DB_DATABASE` | Server | | `donna`. |
 | `DB_USERNAME`, `DB_PASSWORD` | Server | | Forge sets these. |
 | `QUEUE_CONNECTION` | Server | `database` | No Redis: one user doesn't need it. |
-| `CACHE_STORE` | Server | `database` | |
+| `CACHE_STORE` | Server | `database` | No Redis, as with the queue. |
 | `SESSION_DRIVER` | Server | `database` | Must be `database`: "sign out everywhere" works by deleting the sessions stored there. |
 | `SESSION_LIFETIME` | Server | `43200` | Minutes a web sign-in lasts **after it was last used**: 43200 is 30 days. Using the app keeps renewing it, up to `DONNA_SESSION_MAX_DAYS`. |
 | `SESSION_SECURE_COOKIE` | Server | | `true`. The sign-in cookie is then only ever sent over HTTPS. Leave it unset on a Mac running the app over plain `http://localhost`. |

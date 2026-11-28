@@ -31,7 +31,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 - Web search via Anthropic's server-side web search tool, so Donna can go find out instead of guessing
 - `costs` table — every LLM call records a row
 - Messages stored permanently, with their source
-- Message endpoint + `donna:chat` artisan command, run from Josh's Mac against the deployed API
+- Message endpoint + `donna:chat` artisan command, run from Josh's Mac against the deployed API (the terminal was later removed; the web app is the only client)
 - Character profile in the database, versioned — version 1 is the profile Josh wrote, seeded by `CharacterProfileSeeder`. Cached as the start of the system prompt.
 
 **Memory**
