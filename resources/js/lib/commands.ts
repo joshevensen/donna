@@ -3,7 +3,7 @@
  | cost nothing. Anything else that starts with "/" is an ordinary message.
  */
 
-export type CommandName = 'cost' | 'people' | 'projects' | 'settings';
+export type CommandName = 'cost' | 'files' | 'people' | 'projects' | 'settings';
 
 export interface CommandInfo {
     name: CommandName;
@@ -15,6 +15,7 @@ export interface CommandInfo {
 /** Every command, alphabetical, as the command list shows them. */
 export const COMMANDS: CommandInfo[] = [
     { name: 'cost', text: '/cost', description: "What I've cost today and this month" },
+    { name: 'files', text: '/files', description: 'Your files, kept ones first' },
     { name: 'people', text: '/people', description: 'The people I know about' },
     { name: 'projects', text: '/projects', description: 'Your projects and where they stand' },
     { name: 'settings', text: '/settings', description: 'Notifications and signing out' },

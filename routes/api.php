@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\V1\Auth\LoginCodeController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\CostController;
+use App\Http\Controllers\Api\V1\FileBodyController;
+use App\Http\Controllers\Api\V1\FileContentController;
+use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\MessageRetryController;
@@ -51,6 +54,15 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('messages/{message}/retry', [MessageRetryController::class, 'store'])
             ->middleware('throttle:messages')
             ->name('messages.retry.store');
+
+        // Files. Uploads are limited; there is no delete: that is Donna's to do, when asked.
+        Route::apiResource('files', FileController::class)
+            ->only(['index', 'store', 'show'])
+            ->middlewareFor('store', 'throttle:files');
+
+        Route::patch('files/{file}', [FileController::class, 'update'])->name('files.update');
+        Route::put('files/{file}', [FileBodyController::class, 'update'])->name('files.body.update');
+        Route::get('files/{file}/content', [FileContentController::class, 'show'])->name('files.content.show');
 
         // Web Push for the device making the request, and whether the app is open on it.
         Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');

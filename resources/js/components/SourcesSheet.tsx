@@ -7,6 +7,7 @@ const KINDS: Record<string, string> = {
     message: 'Message',
     person: 'Person',
     topic: 'Topic',
+    file: 'File',
 };
 
 /**
@@ -14,21 +15,23 @@ const KINDS: Record<string, string> = {
  * given. "Looked at", not "used": being shown something isn't proof she
  * relied on it.
  */
-export function SourcesSheet({ sources, onClose }: { sources: Source[]; onClose: () => void }) {
+export function SourcesSheet({ sources, onClose, onOpenFile }: { sources: Source[]; onClose: () => void; onOpenFile: (id: number) => void }) {
     const done = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         done.current?.focus();
 
+        // Heard first and marked handled, so Escape closes this sheet and not a file open behind it.
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
+                event.preventDefault();
                 onClose();
             }
         };
 
-        document.addEventListener('keydown', onKey);
+        document.addEventListener('keydown', onKey, true);
 
-        return () => document.removeEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey, true);
     }, [onClose]);
 
     return (
@@ -45,6 +48,11 @@ export function SourcesSheet({ sources, onClose }: { sources: Source[]; onClose:
                                 <a href={source.url} target="_blank" rel="noopener noreferrer">
                                     {source.label}
                                 </a>
+                            ) : source.file_id !== undefined ? (
+                                // A part of a file she was given: tapping it opens the file.
+                                <button type="button" className="source__open" onClick={() => onOpenFile(source.file_id!)}>
+                                    {source.label}
+                                </button>
                             ) : (
                                 <span>{source.label}</span>
                             )}

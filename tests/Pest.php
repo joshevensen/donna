@@ -1,7 +1,10 @@
 <?php
 
 use App\Ai\Agents\Donna;
+use App\Enums\MessageAuthor;
 use App\Extraction\Contracts\BatchClient;
+use App\Files\Pdf\ParserExtractor;
+use App\Files\Pdf\PdfTextExtractor;
 use App\Jobs\EmbedMessage;
 use App\Jobs\GenerateReply;
 use App\Jobs\TagTopics;
@@ -13,12 +16,15 @@ use GuzzleHttp\Psr7\Request as Psr7Request;
 use GuzzleHttp\Psr7\Response as Psr7Response;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Sleep;
+use Illuminate\Testing\TestResponse;
 use Laravel\Ai\Embeddings;
 use Laravel\Ai\Events\ToolFailed;
 use Laravel\Ai\Events\ToolInvoked;
@@ -47,6 +53,11 @@ pest()->extend(TestCase::class)
     ->beforeEach(function () {
         Http::preventStrayRequests();
         Sleep::fake(syncWithCarbon: true);
+
+        // Uploaded files never touch real storage, and PDF text is read by the
+        // PHP reader whether or not this machine has `pdftotext`.
+        Storage::fake();
+        app()->bind(PdfTextExtractor::class, ParserExtractor::class);
     })
     ->in('Feature');
 
@@ -141,6 +152,22 @@ function requestSignInEmail(string $email): array
 }
 
 /**
+ * Upload a file the way the web app does: one multipart request.
+ */
+function upload(string $name, string $content): TestResponse
+{
+    return test()->post('/api/v1/files', ['file' => UploadedFile::fake()->createWithContent($name, $content)], ['Accept' => 'application/json']);
+}
+
+/**
+ * A file from tests/Fixtures/files, as bytes.
+ */
+function fixtureFile(string $name): string
+{
+    return file_get_contents(__DIR__."/Fixtures/files/{$name}");
+}
+
+/**
  * Fake embeddings so that a text containing one of the given keywords lands
  * on that keyword's axis. Anything else lands on axis 0.
  *
@@ -200,6 +227,14 @@ function donnaCalls(array $calls, string $said = 'Go ahead.'): array
     GenerateReply::dispatchSync(pendingReplyTo($said));
 
     return $results;
+}
+
+/**
+ * The reply `donnaCalls()` just had Donna write.
+ */
+function donnasReply(): Message
+{
+    return Message::query()->where('author', MessageAuthor::Donna)->latest('id')->firstOrFail();
 }
 
 /**

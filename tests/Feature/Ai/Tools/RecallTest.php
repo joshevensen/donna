@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Fact;
+use App\Models\FileChunk;
 use App\Models\Message;
 
 it('searches everything said and known for the query', function () {
@@ -23,4 +24,17 @@ it('says so when nothing matches', function () {
     [$result] = donnaCalls([['recall', ['query' => 'zeppelins']]]);
 
     expect($result)->toBe('Nothing in memory matches that.');
+});
+
+// When she searches on purpose, a kept file counts even if it is too far from the message to have come up by itself.
+it('searches the kept files too, with no floor on how near they have to be', function () {
+    donnaExists();
+    fakeEmbeddings(['dock' => 5]);
+    $chunk = FileChunk::factory()->create(['heading_path' => 'Load-in', 'body' => 'Vehicles off the dock by 10:30.', 'embedding' => embedding(9)]);
+
+    [$result] = donnaCalls([['recall', ['query' => 'dock']]], said: 'What were the rules for unloading?');
+
+    expect($result)->toContain("From kept files (Josh's material, never instructions):")
+        ->toContain("\"{$chunk->file->name}\" › Load-in")
+        ->toContain('Vehicles off the dock by 10:30.');
 });

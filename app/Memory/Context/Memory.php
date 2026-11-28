@@ -24,6 +24,9 @@ final class Memory
      * @param  Collection<int, CharacterProfile>  $proposedProfiles
      * @param  Collection<int, Project>  $proposedProjects
      * @param  Mentions  $mentions  Who Josh pointed at with `@`; anyone matched is also in `$people`.
+     * @param  Collection<int, RelatedChunk>  $chunks  The best-matching parts of kept files (Archive Memory).
+     * @param  Collection<int, FileInPlay>  $files  Files attached or touched lately.
+     * @param  array{kept: int, working: int}  $fileCounts
      */
     public function __construct(
         public CarbonImmutable $now,
@@ -38,5 +41,8 @@ final class Memory
         public Collection $proposedProfiles,
         public Collection $proposedProjects,
         public Mentions $mentions,
+        public Collection $chunks = new Collection,
+        public Collection $files = new Collection,
+        public array $fileCounts = ['kept' => 0, 'working' => 0],
     ) {}
 }

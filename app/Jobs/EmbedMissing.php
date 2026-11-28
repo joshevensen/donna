@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Memory\Embedder;
 use App\Models\Fact;
+use App\Models\FileChunk;
 use App\Models\Message;
 use App\Models\Topic;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,6 +33,7 @@ class EmbedMissing implements ShouldQueue
         $this->embed($embedder, Topic::query(), fn (Topic $topic): string => $topic->summary === null
             ? $topic->name
             : "{$topic->name}: {$topic->summary}");
+        $this->embed($embedder, FileChunk::query()->with('file'), fn (FileChunk $chunk): string => $chunk->embeddingText());
     }
 
     /**

@@ -3,9 +3,11 @@
 namespace App\Memory;
 
 use App\Enums\MessageStatus;
+use App\Memory\Context\RelatedChunk;
 use App\Memory\Context\RelatedExchange;
 use App\Memory\Context\RelatedFact;
 use App\Models\Fact;
+use App\Models\FileChunk;
 use App\Models\Message;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +61,24 @@ class Recollection
             ->with(['people', 'projects', 'topics', 'predecessors'])
             ->findMany(array_keys($scores))
             ->map(fn (Fact $fact): RelatedFact => new RelatedFact($fact, $scores[$fact->id]))
+            ->sortByDesc('score')
+            ->values();
+    }
+
+    /**
+     * Each chunk with the file it is part of.
+     *
+     * @param  array<int, float>  $scores  Keyed by chunk ID.
+     * @return Collection<int, RelatedChunk>
+     */
+    public function chunks(array $scores, int $limit): Collection
+    {
+        $scores = array_slice($scores, 0, $limit, preserve_keys: true);
+
+        return FileChunk::query()
+            ->with('file')
+            ->findMany(array_keys($scores))
+            ->map(fn (FileChunk $chunk): RelatedChunk => new RelatedChunk($chunk, $scores[$chunk->id]))
             ->sortByDesc('score')
             ->values();
     }

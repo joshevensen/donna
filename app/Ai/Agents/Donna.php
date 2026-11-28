@@ -7,18 +7,31 @@ use App\Ai\Middleware\AnswerOnFinalStep;
 use App\Ai\Tools\AppAction;
 use App\Ai\Tools\CorrectFact;
 use App\Ai\Tools\CostReport;
+use App\Ai\Tools\CreateFile;
 use App\Ai\Tools\DecideCharacterChange;
+use App\Ai\Tools\DeleteFile;
+use App\Ai\Tools\EditFile;
 use App\Ai\Tools\FlagReply;
 use App\Ai\Tools\ForgetFact;
+use App\Ai\Tools\KeepFile;
+use App\Ai\Tools\LinkFile;
+use App\Ai\Tools\ListFiles;
 use App\Ai\Tools\ProposeCharacterChange;
 use App\Ai\Tools\ProposeProject;
+use App\Ai\Tools\QueryCsv;
+use App\Ai\Tools\ReadFile;
 use App\Ai\Tools\Recall;
 use App\Ai\Tools\Remember;
+use App\Ai\Tools\RenameFile;
+use App\Ai\Tools\RestoreFile;
+use App\Ai\Tools\RevertFile;
 use App\Ai\Tools\SavePerson;
 use App\Ai\Tools\UpdateInterview;
 use App\Ai\Tools\UpdateProject;
+use App\Ai\Tools\ViewFile;
 use App\Ai\Tools\WhatIKnow;
 use App\Enums\CostPurpose;
+use App\Files\Looks;
 use App\Memory\Context\ReplyContext;
 use App\Models\Message;
 use Laravel\Ai\Contracts\Agent;
@@ -40,11 +53,13 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
     /**
      * @param  Message  $message  The message of Josh's being answered.
      * @param  Message  $reply  The reply being written.
+     * @param  Looks  $looks  The files she asks to be shown while writing it.
      */
     public function __construct(
         public ReplyContext $context,
         public Message $message,
         public Message $reply,
+        public Looks $looks = new Looks,
     ) {}
 
     public function instructions(): string
@@ -66,6 +81,7 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
     public function tools(): iterable
     {
         $about = ['message' => $this->message];
+        $writing = ['reply' => $this->reply];
 
         return [
             resolve(Remember::class, $about),
@@ -81,7 +97,19 @@ class Donna implements Agent, Conversational, HasMiddleware, HasProviderOptions,
             resolve(DecideCharacterChange::class, $about),
             resolve(UpdateInterview::class),
             resolve(CostReport::class),
-            resolve(AppAction::class, ['reply' => $this->reply]),
+            resolve(AppAction::class, $writing),
+            resolve(CreateFile::class, $writing),
+            resolve(ReadFile::class),
+            resolve(EditFile::class, $writing),
+            resolve(QueryCsv::class),
+            resolve(RenameFile::class, $writing),
+            resolve(KeepFile::class, $writing),
+            resolve(LinkFile::class, $about),
+            resolve(DeleteFile::class, $writing),
+            resolve(RestoreFile::class, $writing),
+            resolve(RevertFile::class, $writing),
+            resolve(ListFiles::class, $writing),
+            resolve(ViewFile::class, ['looks' => $this->looks]),
             (new WebSearch)->max(config('donna.web_search.max_uses')),
         ];
     }

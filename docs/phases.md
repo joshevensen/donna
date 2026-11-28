@@ -25,7 +25,7 @@ Donna runs on the real server, every call is accounted for, and she remembers. M
 **Status:** built; awaiting daily use.
 
 **Foundation**
-- One Forge-managed droplet with Postgres + pgvector on it; droplet backups + database dumps to Spaces (the app itself doesn't use Spaces until Files)
+- One Forge-managed droplet with Postgres + pgvector on it; droplet backups + database dumps to Spaces (the app itself doesn't use Spaces until Files, Phase 3)
 - Sanctum token auth (one user)
 - Laravel AI SDK wired to Anthropic behind a provider-agnostic interface; Voyage AI for embeddings (Anthropic has no embeddings model)
 - Web search via Anthropic's server-side web search tool, so Donna can go find out instead of guessing
@@ -70,13 +70,14 @@ The first front end, so Josh can leave the terminal. A web app he opens in a bro
 
 Detailed in [`tech/phase-3.md`](tech/phase-3.md).
 
-**Status:** doc approved; not yet built.
+**Status:** built; awaiting daily use. The pickers, edit mode's keyboard, the viewer and a PDF's "Open original" still need checking on Josh's iPhone, and PDF text has not been tried on his real Stripe and Shopify files.
 
-- Files (MD, CSV) — create, view, manual edit, Donna-edit
-- Deterministic operations without the LLM (replace, rename, append, delete line)
-- Chunking at logical boundaries + embeddings; files join per-message context
+- Files — any plain text, PDFs and images, attached in the chat; create, view, manual edit (markdown), Donna-edit
+- Deterministic operations without the LLM (replace, replace a section, rename, append, delete lines, revert, CSV queries)
+- Working and kept files: Donna decides what to keep and says so; only kept files are chunked and embedded
+- Chunking at logical boundaries + embeddings; kept files join per-message context, and show in "What I looked at"
 - File viewer in the web chat (side panel on wide screens, sheet on the phone)
-- Attachments in chat
+- Attachments in chat: the plus, chips, cards, `/files`
 
 Moved ahead of the code-project phases because Josh wants files sooner: code projects don't need them, but nothing else waits on them either. Spaces, the Files storage, arrives here; the skills loader in the next phase reuses it.
 

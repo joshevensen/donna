@@ -13,6 +13,7 @@ describe('COMMANDS', () => {
 describe('parseCommand', () => {
     it.each([
         ['/cost', 'cost'],
+        ['/files', 'files'],
         ['/people', 'people'],
         ['/projects', 'projects'],
         ['/settings', 'settings'],
@@ -31,7 +32,7 @@ describe('parseCommand', () => {
         '/notifications',
         '/',
         '/cost please',
-        '/files',
+        '/files/launch-plan.md',
         '/etc/hosts is wrong',
         'what is /cost',
         'cost',

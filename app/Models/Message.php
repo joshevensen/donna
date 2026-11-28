@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
@@ -59,6 +60,27 @@ class Message extends Model
     public function topics(): BelongsToMany
     {
         return $this->belongsToMany(Topic::class);
+    }
+
+    /**
+     * The files Josh attached to this message, or Donna created, edited or
+     * opened while writing it. Deleted ones are included: the card says so.
+     *
+     * @return BelongsToMany<File, $this>
+     */
+    public function files(): BelongsToMany
+    {
+        return $this->belongsToMany(File::class)->withTrashed()->withPivot('role');
+    }
+
+    /**
+     * The file versions Donna wrote in this reply.
+     *
+     * @return HasMany<FileVersion, $this>
+     */
+    public function fileVersions(): HasMany
+    {
+        return $this->hasMany(FileVersion::class);
     }
 
     /**

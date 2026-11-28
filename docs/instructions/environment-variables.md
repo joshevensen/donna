@@ -37,12 +37,21 @@ VAPID_SUBJECT=mailto:you@example.com
 ANTHROPIC_API_KEY=...
 VOYAGEAI_API_KEY=...
 
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_DEFAULT_REGION=nyc3
+AWS_BUCKET=donna-joshevensen
+AWS_ENDPOINT=https://nyc3.digitaloceanspaces.com
+AWS_URL=https://donna-joshevensen.nyc3.digitaloceanspaces.com
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
 DONNA_TIMEZONE=America/Chicago
 DONNA_USER_NAME=Josh
 DONNA_USER_EMAIL=you@example.com
 ```
 
-Forge fills in `APP_KEY` and the database username and password. The mail lines come from [mail.md](mail.md) and the `VAPID_` lines from [web-push.md](web-push.md); the site runs without them, but you can then only sign in with `donna:login` and get no notifications.
+Forge fills in `APP_KEY` and the database username and password. The `FILESYSTEM_DISK` and `AWS_` lines come from [storage.md](storage.md), the mail lines from [mail.md](mail.md) and the `VAPID_` lines from [web-push.md](web-push.md); the site runs without them, but you can then only sign in with `donna:login` and get no notifications.
 
 **A site created before the web chat existed has `SESSION_LIFETIME=120` in its environment**, copied from the old `.env.example`. Change it to `43200`, or the web app signs you out after two hours.
 
@@ -68,11 +77,11 @@ Forge fills in `APP_KEY` and the database username and password. The mail lines 
 
 ## File storage
 
-The Space for files ([storage.md](storage.md)). Unused until Phase 3.
+The Space that holds the original of every PDF and image you attach ([storage.md](storage.md)). Text files live in the database and don't use it.
 
 | Variable | Where | Default | Secret | Notes |
 |---|---|---|---|---|
-| `FILESYSTEM_DISK` | Server | `local` | No | `s3` once Phase 3 is deployed. |
+| `FILESYSTEM_DISK` | Server | `local` | No | `s3`. With the default, attached PDFs and images are written to the droplet's own small disk instead of the Space. Leave it unset on a Mac. |
 | `AWS_ACCESS_KEY_ID` | Server | | Yes | The Space's access key (the `AWS_` names are Laravel's; the values are DigitalOcean's). |
 | `AWS_SECRET_ACCESS_KEY` | Server | | Yes | Its secret. |
 | `AWS_DEFAULT_REGION` | Server | | No | `nyc3`. |

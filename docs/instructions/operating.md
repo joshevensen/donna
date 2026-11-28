@@ -32,6 +32,21 @@ API tokens made with `donna:token` are separate and are **not** revoked by any o
 cd /home/forge/donna.joshevensen.com/current && php8.4 artisan tinker --execute 'App\Models\Person::josh()->user->tokens()->delete();'
 ```
 
+## Files and what they cost to keep
+
+- **Nothing is deleted automatically.** Every file you attach stays, kept or not. So does every version of every text file, and every upload you removed from the input before sending. Asking Donna to delete a file only hides it; she can bring it back.
+- **Where it adds up.** Text and its versions are in the database, which is on the droplet's disk: a 100 KB plan edited 50 times is 5 MB. Original PDFs and images are in the Space ([storage.md](storage.md)), where the base plan covers 250 GB *(unverified: DigitalOcean's current Spaces pricing)*. At 10 MB a file it takes thousands of photos to matter.
+- **To see how much there is**, on the server:
+
+```bash
+cd /home/forge/donna.joshevensen.com/current && php8.4 artisan tinker --execute 'echo App\Models\File::withTrashed()->count()." files, ".App\Models\FileVersion::count()." versions, ".round(App\Models\File::withTrashed()->whereNotNull("storage_path")->sum("size_bytes") / 1e6)." MB in the Space";'
+```
+
+- **What a kept file costs.** Keeping a file embeds it once, in pieces, and an edit re-embeds only the pieces that changed. A 10 MB kept text file is a few cents; a CSV is only indexed for its first 2,000 rows. It shows in the spend line under the input like any other cost.
+- **What a file costs per message.** A small attached file goes to the model whole (up to about 6,000 tokens); a larger one goes as an outline and she reads the parts she needs. An image or a scanned PDF is sent as pictures, which costs more than text, and again each time she looks at it again. If files make replies expensive, the limits are in `config/donna.php` under `files`.
+- **If she doesn't find a kept file she should**, or drags in unrelated ones: `context.chunk_max_distance` and `context.related_chunks` in `config/donna.php`.
+- Indexing runs on the `default` queue, which the worker already works ([queue-and-scheduler.md](queue-and-scheduler.md)). If it fails, the strip above the input says something failed behind the scenes, and `php8.4 artisan queue:failed` names `IndexFile`.
+
 ## Resizing the server
 
 If the droplet regularly sits above about 80% memory, or swap is in steady use, resize it. **Change CPU and RAM only.** That kind of resize is reversible. Never grow the disk: a disk resize can't be undone.

@@ -76,6 +76,10 @@ test('a message that does not send stays, survives a reload, and a retry sends i
     // iOS closes Home Screen apps freely: the unsent message has to still be there afterwards.
     await page.reload();
     await expect(page.getByText('Did Kristen send the pattern files?')).toBeVisible();
+
+    // On reopening, the app tries once by itself. Let that fail too, so the tap below is what sends it:
+    // otherwise the two race, and the button can be gone before it is pressed.
+    await expect.poll(() => donna.droppedSends).toBeGreaterThanOrEqual(2);
     await expect(retry).toBeVisible();
 
     donna.dropSends = false;
@@ -136,9 +140,17 @@ test('scrolling up loads earlier messages and holds the place; a new message onl
     }
 
     const poll = () => page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    // Resolves once the thread has heard about the scroll, as it would have long before a person could do anything else.
     const scrollTo = (where: 'top' | 'bottom') =>
         page.locator('.messages').evaluate((element, to) => {
+            const heard = new Promise<void>((resolve) => {
+                element.addEventListener('scroll', () => resolve(), { once: true });
+                setTimeout(resolve, 500);
+            });
+
             element.scrollTop = to === 'top' ? -element.scrollHeight : 0;
+
+            return heard;
         }, where);
 
     await page.goto('/');

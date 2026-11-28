@@ -10,12 +10,12 @@ Each file is one task. Do them in this order the first time. Afterwards they are
 
 | # | File | What it covers |
 |---|---|---|
-| 1 | [`forge-server.md`](forge-server.md) | The droplet, and one recipe that gives it swap and pgvector |
-| 2 | [`forge-site.md`](forge-site.md) | The site: DNS, environment, the deploy script (which also builds the web app), first deploy, then the certificate once DNS has spread. The keys below go into its environment |
+| 1 | [`forge-server.md`](forge-server.md) | The droplet, and one recipe that gives it swap, pgvector and the PDF reader |
+| 2 | [`forge-site.md`](forge-site.md) | The site: DNS, environment, the deploy script (which also builds the web app), first deploy, the certificate once DNS has spread, and the upload limits. The keys below go into its environment |
 | 3 | [`anthropic-api-key.md`](anthropic-api-key.md) | The key Donna thinks with, and the spend limit on it |
 | 4 | [`voyage-api-key.md`](voyage-api-key.md) | The key her memory searches with |
 | 5 | [`queue-and-scheduler.md`](queue-and-scheduler.md) | The worker that writes her replies and the clock that runs the daily jobs |
-| 6 | [`storage.md`](storage.md) | The Space where files live, and the key the app uses for it |
+| 6 | [`storage.md`](storage.md) | The Space where attached PDFs and images live, the key the app uses for it, and the setting that sends files there |
 | 7 | [`backups.md`](backups.md) | Droplet backups and database dumps to Spaces |
 | 8 | [`mail.md`](mail.md) | The email provider that delivers sign-in codes, its DNS records, and signing in without email |
 | 9 | [`web-push.md`](web-push.md) | Notification keys, installing Donna to the iPhone's Home Screen, and turning notifications on |
@@ -26,7 +26,7 @@ Each file is one task. Do them in this order the first time. Afterwards they are
 | File | What it covers |
 |---|---|
 | [`environment-variables.md`](environment-variables.md) | Every setting: where it lives, its default, what it does |
-| [`operating.md`](operating.md) | Resizing, spend, updating, and what to look at when something is off |
+| [`operating.md`](operating.md) | Resizing, spend, updating, what files accumulate, and what to look at when something is off |
 
 ## Conventions
 

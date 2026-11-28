@@ -2,6 +2,8 @@
 
 Everything Donna knows lives in one Postgres database, so that is what to protect. Two layers.
 
+Files are split between the two places. The text of every markdown, CSV and text file, all of its versions, and the text read out of each PDF are in the database, so the dumps below hold them. The **original PDFs and images are in the app's own Space** (`donna-joshevensen`, see [storage.md](storage.md)) and are **not in the dumps**. Spaces keeps several copies of everything by itself, so there is nothing to set up for them; just know that restoring a dump alone brings back every file's text and none of its pictures.
+
 ## 1. Droplet backups
 
 Turned on when you created the server ([forge-server.md](forge-server.md)). These capture the whole machine.
@@ -29,7 +31,7 @@ pg_dump -U forge donna | gzip | s3cmd put - s3://YOUR-BUCKET/donna/$(date +\%F).
 
 Restore one dump into a scratch database once, so you know the backups are real and how long a restore takes.
 
-The backup key is separate from the app's own file-storage key ([storage.md](storage.md)), and never goes in the app's environment.
+The backup key is separate from the app's own file-storage key ([storage.md](storage.md)), and never goes in the app's environment. Use a different bucket for the dumps than the app's `donna-joshevensen`, so the app's key can't reach them.
 
 Next: [mail.md](mail.md).
 

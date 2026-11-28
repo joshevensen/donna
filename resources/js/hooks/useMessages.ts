@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { api, NetworkError } from '../api/client';
-import type { Costs, Message } from '../api/types';
+import { api, ApiError, NetworkError } from '../api/client';
+import type { Costs, FileItem, Message } from '../api/types';
+import type { AttachedFile } from '../lib/attachments';
+import type { FileState } from '../lib/files';
 import { uuid } from '../lib/platform';
 import { RevealQueue } from '../lib/reveal';
 import { type OutboxItem, storage } from '../lib/storage';
@@ -28,12 +30,18 @@ export interface Conversation {
     ready: boolean;
     loadingOlder: boolean;
     hasOlder: boolean;
-    send: (body: string) => void;
+    /** The latest known name and keep state of every file seen, so each of its cards agrees. */
+    fileStates: ReadonlyMap<number, FileState>;
+    send: (body: string, files?: AttachedFile[]) => void;
     retrySend: (key: string) => void;
+    /** Drop a message the server refused. */
+    discardSend: (key: string) => void;
     retryReply: (id: number) => void;
     loadOlder: () => void;
-    /** Show something on this device only, as Donna's (the default) or as what Josh typed. */
-    addNote: (text: string, who?: Note['who']) => void;
+    /** Show something on this device only, as Donna's (the default) or as what Josh typed. With files, the answer to /files. */
+    addNote: (text: string, who?: Note['who'], files?: FileItem[]) => void;
+    /** Take in a file as the server just described it (the viewer saw it, or changed it). */
+    noteFile: (file: FileState & { id: number }) => void;
 }
 
 function localTime(item: TimelineItem): string {
@@ -70,6 +78,28 @@ export function useMessages(): Conversation {
 
     // When each retried reply was retried: it is old, but she is writing it now.
     const retriedAt = useRef(new Map<number, number>());
+
+    // What each file is called and whether it is kept, as of the last time the server said.
+    // Every message carries its files' state as it was when fetched, so the latest fetch wins.
+    const [fileStates, setFileStates] = useState<ReadonlyMap<number, FileState>>(() => new Map());
+
+    const noteFiles = useCallback((files: Array<FileState & { id: number }>) => {
+        if (files.length === 0) {
+            return;
+        }
+
+        setFileStates((known) => {
+            const next = new Map(known);
+
+            for (const file of files) {
+                next.set(file.id, { name: file.name, kept: file.kept, deleted: file.deleted });
+            }
+
+            return next;
+        });
+    }, []);
+
+    const noteFile = useCallback((file: FileState & { id: number }) => noteFiles([file]), [noteFiles]);
 
     /** Is Donna writing this one right now? */
     const isWaiting = useCallback((message: Message): boolean => {
@@ -118,9 +148,11 @@ export function useMessages(): Conversation {
                 updateOutbox((items) => items.filter((item) => !delivered.has(item.key)));
             }
 
+            noteFiles(incoming.flatMap((message) => message.files ?? []));
+
             render();
         },
-        [isWaiting, updateOutbox],
+        [isWaiting, noteFiles, updateOutbox],
     );
 
     /** Run a request, tracking whether the server can be reached at all. */
@@ -145,15 +177,25 @@ export function useMessages(): Conversation {
             updateOutbox((items) => items.map((other) => (other.key === item.key ? { ...other, state: 'sending' } : other)));
 
             try {
-                const sent = await reach(() => api.send(item.body, item.key));
+                const sent = await reach(() =>
+                    api.send(
+                        item.body,
+                        item.key,
+                        (item.files ?? []).map((file) => file.id),
+                    ),
+                );
 
                 updateOutbox((items) => items.filter((other) => other.key !== item.key));
                 merge(sent.reply === null ? [sent.message] : [sent.message, sent.reply]);
             } catch (error) {
                 const waitingForConnection = error instanceof NetworkError;
 
+                // A 422 is the server saying this message can never be sent as it is (a file
+                // it names is gone, or already went with another message). Retrying can't help.
+                const refused = error instanceof ApiError && error.status === 422 ? error.firstMessage : undefined;
+
                 updateOutbox((items) =>
-                    items.map((other) => (other.key === item.key ? { ...other, state: 'failed', waitingForConnection } : other)),
+                    items.map((other) => (other.key === item.key ? { ...other, state: 'failed', waitingForConnection, refused } : other)),
                 );
             }
         },
@@ -161,8 +203,8 @@ export function useMessages(): Conversation {
     );
 
     const send = useCallback(
-        (body: string) => {
-            const item: OutboxItem = { key: uuid(), body, createdAt: new Date().toISOString(), state: 'sending' };
+        (body: string, files: AttachedFile[] = []) => {
+            const item: OutboxItem = { key: uuid(), body, ...(files.length > 0 ? { files } : {}), createdAt: new Date().toISOString(), state: 'sending' };
 
             updateOutbox((items) => [...items, item]);
 
@@ -188,6 +230,12 @@ export function useMessages(): Conversation {
             }
         },
         [deliver],
+    );
+
+    /** Take a message that can't be sent out of the thread. */
+    const discardSend = useCallback(
+        (key: string) => updateOutbox((items) => items.filter((other) => other.key !== key)),
+        [updateOutbox],
     );
 
     const retryReply = useCallback(
@@ -230,9 +278,13 @@ export function useMessages(): Conversation {
             .finally(() => setLoadingOlder(false));
     }, [loadingOlder, merge, nextBefore, reach]);
 
-    const addNote = useCallback((text: string, who: Note['who'] = 'donna') => {
-        setNotes((existing) => [...existing, { id: uuid(), who, text, createdAt: new Date().toISOString() }]);
-    }, []);
+    const addNote = useCallback(
+        (text: string, who: Note['who'] = 'donna', files?: FileItem[]) => {
+            setNotes((existing) => [...existing, { id: uuid(), who, text, ...(files ? { files } : {}), createdAt: new Date().toISOString() }]);
+            noteFiles(files ?? []);
+        },
+        [noteFiles],
+    );
 
     // The first page, then anything left unsent from last time.
     useEffect(() => {
@@ -394,10 +446,13 @@ export function useMessages(): Conversation {
         ready,
         loadingOlder,
         hasOlder: nextBefore !== null,
+        fileStates,
         send,
         retrySend,
+        discardSend,
         retryReply,
         loadOlder,
         addNote,
+        noteFile,
     };
 }

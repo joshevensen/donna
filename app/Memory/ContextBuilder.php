@@ -3,18 +3,23 @@
 namespace App\Memory;
 
 use App\Enums\CharacterProfileStatus;
+use App\Enums\FileRole;
 use App\Enums\InterviewAreaStatus;
 use App\Enums\MessageAuthor;
 use App\Enums\PersonKind;
 use App\Enums\ProjectStatus;
+use App\Files\FileLibrary;
+use App\Memory\Context\AttachedFile;
 use App\Memory\Context\Memory;
 use App\Memory\Context\Mentions;
+use App\Memory\Context\RelatedChunk;
 use App\Memory\Context\RelatedExchange;
 use App\Memory\Context\RelatedFact;
 use App\Memory\Context\RelatedPerson;
 use App\Memory\Context\RelatedTopic;
 use App\Memory\Context\ReplyContext;
 use App\Models\CharacterProfile;
+use App\Models\File;
 use App\Models\InterviewArea;
 use App\Models\Message;
 use App\Models\Person;
@@ -23,7 +28,8 @@ use App\Models\Topic;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\File as Filesystem;
+use Laravel\Ai\Files\File as Attachment;
 use Laravel\Ai\Messages\Message as Turn;
 
 /**
@@ -39,13 +45,17 @@ class ContextBuilder
         private MemoryRenderer $renderer,
         private MentionResolver $mentions,
         private ContextSources $sources,
+        private FileContext $files,
+        private FileLibrary $library,
     ) {}
 
     public function build(Message $message): ReplyContext
     {
         $recent = $this->recentMessages($message);
 
-        $memory = $this->fitToBudget($this->recall($message, $recent));
+        $attached = $this->files->attached($message);
+
+        $memory = $this->fitToBudget($this->recall($message, $recent, $attached));
 
         $this->recollection->markRetrieved($memory->facts);
 
@@ -53,9 +63,15 @@ class ContextBuilder
             character: $this->character(),
             profile: $this->profile(),
             turns: $this->turns($recent),
-            prompt: $this->renderer->render($memory)."\n\n".$message->body,
+            // His memory, then anything he attached, then what he said.
+            prompt: implode("\n\n", array_filter([
+                $this->renderer->render($memory),
+                $this->renderer->attached($attached),
+                filled($message->body) ? $message->body : '(Josh sent this with no message.)',
+            ])),
             memory: $memory,
             sources: $this->sources->from($memory),
+            attachments: $attached->map(fn (AttachedFile $file): ?Attachment => $file->attachment)->filter()->values()->all(),
         );
     }
 
@@ -95,16 +111,35 @@ class ContextBuilder
      */
     private function turns(Collection $recent): array
     {
+        $recent->loadMissing('files');
+
         return $recent->map(fn (Message $message): Turn => $message->isFromDonna()
             ? new Turn('assistant', $message->body)
-            : new Turn('user', '['.$this->renderer->timestamp($message->created_at).']'."\n".$message->body)
+            : new Turn('user', implode("\n", array_filter([
+                '['.$this->renderer->timestamp($message->created_at).']',
+                $this->attachedNote($message),
+                $message->body,
+            ], filled(...))))
         )->all();
     }
 
     /**
-     * @param  Collection<int, Message>  $recent
+     * A past message's attachments, named, so "the second one" has something to point at.
      */
-    private function recall(Message $message, Collection $recent): Memory
+    private function attachedNote(Message $message): ?string
+    {
+        $files = $message->files->filter(fn (File $file): bool => $file->pivot->role === FileRole::Attached->value);
+
+        return $files->isEmpty() ? null : '[attached: '.$files
+            ->map(fn (File $file): string => "{$file->name} (file #{$file->id})")
+            ->implode(', ').']';
+    }
+
+    /**
+     * @param  Collection<int, Message>  $recent
+     * @param  Collection<int, AttachedFile>  $attached
+     */
+    private function recall(Message $message, Collection $recent, Collection $attached): Memory
     {
         $embedding = $message->embedding;
 
@@ -116,6 +151,8 @@ class ContextBuilder
 
         $everyone = Person::query()->orderBy('id')->get();
         $mentions = $this->mentions->resolve($message->body, $everyone);
+
+        $filesInPlay = $this->files->inPlay($message);
 
         return new Memory(
             now: CarbonImmutable::now(config('donna.timezone')),
@@ -139,7 +176,70 @@ class ContextBuilder
                 ->orderBy('id')
                 ->get(),
             mentions: $mentions,
+            chunks: $this->relatedChunks($message, $embedding, $attached, $relatedProjectIds, $topics, $everyone, $mentions),
+            files: $filesInPlay,
+            fileCounts: $this->library->counts(),
         );
+    }
+
+    /**
+     * The best-matching parts of kept files: Archive Memory. Parts of a file
+     * whose whole text is already in this prompt are left out; a file that is
+     * merely in play is only a line in memory, so its parts still count. A
+     * file linked to a project, person or topic this message relates to gets
+     * the same fixed boost a project gives its facts.
+     *
+     * @param  list<float>|null  $embedding
+     * @param  Collection<int, AttachedFile>  $attached
+     * @param  Collection<int, int>  $relatedProjectIds
+     * @param  Collection<int, RelatedTopic>  $topics
+     * @param  Collection<int, Person>  $everyone
+     * @return Collection<int, RelatedChunk>
+     */
+    private function relatedChunks(
+        Message $message,
+        ?array $embedding,
+        Collection $attached,
+        Collection $relatedProjectIds,
+        Collection $topics,
+        Collection $everyone,
+        Mentions $mentions,
+    ): Collection {
+        $scores = $this->search->chunks(
+            $message->body,
+            $embedding,
+            exceptFileIds: $attached
+                ->filter(fn (AttachedFile $file): bool => $file->whole)
+                ->map(fn (AttachedFile $file): int => $file->file->id)
+                ->values()
+                ->all(),
+        );
+
+        if ($scores === []) {
+            return new Collection;
+        }
+
+        $topicIds = $topics->map(fn (RelatedTopic $related): int => $related->topic->id);
+
+        $personIds = $everyone
+            ->filter(fn (Person $person): bool => $mentions->people()->contains('id', $person->id)
+                || NameMatcher::mentions($message->body, $person->names()))
+            ->modelKeys();
+
+        $boosted = DB::table('file_chunks')
+            ->join('file_subjects', 'file_subjects.file_id', '=', 'file_chunks.file_id')
+            ->whereIn('file_chunks.id', array_keys($scores))
+            ->where(fn ($query) => $query
+                ->where(fn ($query) => $query->where('subject_type', 'project')->whereIn('subject_id', $relatedProjectIds))
+                ->orWhere(fn ($query) => $query->where('subject_type', 'person')->whereIn('subject_id', $personIds))
+                ->orWhere(fn ($query) => $query->where('subject_type', 'topic')->where(fn ($query) => $query
+                    ->whereIn('subject_id', $topicIds)
+                    ->orWhereIn('subject_id', DB::table('project_topic')->whereIn('project_id', $relatedProjectIds)->select('topic_id')))))
+            ->distinct()
+            ->pluck('file_chunks.id')
+            ->all();
+
+        return $this->recollection->chunks($this->boost($scores, $boosted), config('donna.context.related_chunks'));
     }
 
     /**
@@ -406,25 +506,24 @@ class ContextBuilder
 
     /**
      * Keep the memory block within budget by dropping the lowest-scoring
-     * retrieved exchanges and facts, one at a time.
+     * retrieved exchanges, facts and file chunks, one at a time.
      */
     private function fitToBudget(Memory $memory): Memory
     {
         $budget = config('donna.context.memory_token_budget');
 
         while (Tokens::estimate($this->renderer->render($memory)) > $budget) {
-            $weakestExchange = $memory->exchanges->last();
-            $weakestFact = $memory->facts->last();
+            // The weakest of each kind is last; whichever of those scores lowest goes.
+            $weakest = collect([$memory->exchanges, $memory->facts, $memory->chunks])
+                ->filter(fn (Collection $retrieved): bool => $retrieved->isNotEmpty())
+                ->sortBy(fn (Collection $retrieved): float => $retrieved->last()->score)
+                ->first();
 
-            if ($weakestExchange === null && $weakestFact === null) {
+            if ($weakest === null) {
                 break;
             }
 
-            if ($weakestFact === null || ($weakestExchange !== null && $weakestExchange->score <= $weakestFact->score)) {
-                $memory->exchanges->pop();
-            } else {
-                $memory->facts->pop();
-            }
+            $weakest->pop();
         }
 
         return $memory;
@@ -436,7 +535,7 @@ class ContextBuilder
     private function character(): string
     {
         return CharacterProfile::current()->body
-            ."\n\n".File::get(resource_path('prompts/operating-instructions.md'));
+            ."\n\n".Filesystem::get(resource_path('prompts/operating-instructions.md'));
     }
 
     /**

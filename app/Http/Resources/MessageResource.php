@@ -3,9 +3,12 @@
 namespace App\Http\Resources;
 
 use App\Conversation\Bubbles;
+use App\Enums\FileRole;
+use App\Models\File;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Collection;
 
 /**
  * @mixin Message
@@ -30,10 +33,48 @@ class MessageResource extends JsonResource
             'citations' => $this->meta['citations'] ?? [],
             'sources' => $this->sources(),
             'actions' => $this->meta['actions'] ?? [],
+            'files' => $this->files(),
             // The sending device's own key, so it can tell a send it wasn't sure of did arrive.
             'client_key' => $this->client_key,
             'created_at' => $this->created_at,
         ];
+    }
+
+    /**
+     * One card per file: what Josh attached, and what Donna created, edited
+     * or opened in this reply. Each says whether the file is kept now, so a
+     * keep is visible wherever the file appears.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function files(): array
+    {
+        $this->resource->loadMissing(['files', 'fileVersions' => fn ($query) => $query->select(['id', 'file_id', 'message_id', 'number', 'summary'])->orderBy('number')]);
+
+        return $this->resource->files
+            ->sortBy('id')
+            ->groupBy('id')
+            ->map(function (Collection $rows): array {
+                /** @var File $file */
+                $file = $rows->first();
+                $role = $rows->map(fn (File $row): FileRole => FileRole::from($row->pivot->role))->sortByDesc(fn (FileRole $role): int => $role->weight())->first();
+                $changes = $this->resource->fileVersions->where('file_id', $file->id)->pluck('summary');
+
+                return [
+                    'id' => $file->id,
+                    'name' => $file->name,
+                    'kind' => $file->kind,
+                    'role' => $role,
+                    'kept' => $file->isKept(),
+                    'deleted' => $file->trashed(),
+                    'size_bytes' => $file->size_bytes,
+                    'meta' => (object) FileResource::publicMeta($file),
+                    // What changed, for an edit's card. Written by code when the edit was made.
+                    'note' => $role !== FileRole::Edited || $changes->isEmpty() ? null : ($changes->count() === 1 ? $changes->first() : $changes->count().' changes'),
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     /**

@@ -1,9 +1,11 @@
 <?php
 
+use App\Enums\FileRole;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
 use App\Jobs\GenerateReply;
 use App\Models\Cost;
+use App\Models\File;
 use App\Models\Message;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -23,6 +25,12 @@ it('returns 401 without a token or a session', function (string $method, string 
     'reading a message' => ['GET', '/api/v1/messages/1'],
     'retrying a reply' => ['POST', '/api/v1/messages/1/retry'],
     'reading the account' => ['GET', '/api/v1/me'],
+    'listing files' => ['GET', '/api/v1/files'],
+    'uploading a file' => ['POST', '/api/v1/files'],
+    'reading a file' => ['GET', '/api/v1/files/1'],
+    'reading a file\'s bytes' => ['GET', '/api/v1/files/1/content'],
+    'saving a file' => ['PUT', '/api/v1/files/1'],
+    'keeping a file' => ['PATCH', '/api/v1/files/1'],
     'signing out' => ['POST', '/api/v1/auth/logout'],
     'signing out everywhere' => ['POST', '/api/v1/auth/logout-everywhere'],
 ]);
@@ -82,6 +90,73 @@ describe('store', function () {
         expect(Message::where('author', MessageAuthor::Josh)->count())->toBe(60);
     });
 
+    it('sends uploaded files along with a message, each shown as a card on it', function () {
+        Queue::fake([GenerateReply::class]);
+        actingAs(User::factory()->create());
+        $plan = File::factory()->markdown()->create(['name' => 'launch-plan.md']);
+        $export = File::factory()->csv("Date,Amount\nNov 3,812.40\n")->kept()->create(['name' => 'payouts.csv']);
+
+        postJson('/api/v1/messages', ['body' => 'Anything stand out?', 'source' => 'web', 'file_ids' => [$plan->id, $export->id]])
+            ->assertAccepted()
+            ->assertJsonPath('data.message.files', [
+                ['id' => $plan->id, 'name' => 'launch-plan.md', 'kind' => 'markdown', 'role' => 'attached', 'kept' => false, 'deleted' => false, 'size_bytes' => $plan->size_bytes, 'meta' => [], 'note' => null],
+                ['id' => $export->id, 'name' => 'payouts.csv', 'kind' => 'csv', 'role' => 'attached', 'kept' => true, 'deleted' => false, 'size_bytes' => $export->size_bytes, 'meta' => ['rows' => 1], 'note' => null],
+            ])
+            ->assertJsonPath('data.reply.files', []);
+    });
+
+    it('accepts a message of only files: no text, no bubbles, and Donna still replies', function () {
+        Queue::fake([GenerateReply::class]);
+        actingAs(User::factory()->create());
+        $file = File::factory()->markdown()->create();
+
+        postJson('/api/v1/messages', ['source' => 'web', 'file_ids' => [$file->id]])
+            ->assertAccepted()
+            ->assertJsonPath('data.message.body', '')
+            ->assertJsonPath('data.message.bubbles', [])
+            ->assertJsonPath('data.message.files.0.id', $file->id)
+            ->assertJsonPath('data.reply.status', 'pending');
+
+        Queue::assertPushed(GenerateReply::class);
+    });
+
+    it('returns the original message with its files when a send with files is repeated', function () {
+        Queue::fake([GenerateReply::class]);
+        actingAs(User::factory()->create());
+        $file = File::factory()->markdown()->create();
+        $send = fn () => postJson('/api/v1/messages', ['source' => 'web', 'file_ids' => [$file->id]], [
+            'Idempotency-Key' => '0b9b1d5e-6f0a-4c1e-9a53-2f4e8d7c6b5a',
+        ]);
+
+        $first = $send()->assertAccepted();
+        $again = $send()->assertAccepted();
+
+        expect($again->json('data.message.id'))->toBe($first->json('data.message.id'))
+            ->and($again->json('data.message.files.0.id'))->toBe($file->id)
+            ->and(Message::count())->toBe(2);
+    });
+
+    it('refuses the whole send when a file can\'t go with it, and saves nothing', function (Closure $fileIds) {
+        Queue::fake([GenerateReply::class]);
+        actingAs(User::factory()->create());
+
+        $ids = $fileIds();
+        $before = Message::count();
+
+        postJson('/api/v1/messages', ['body' => 'Here.', 'source' => 'web', 'file_ids' => $ids])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrorFor('file_ids');
+
+        expect(Message::count())->toBe($before);
+        Queue::assertNotPushed(GenerateReply::class);
+    })->with([
+        'a file another message already carries' => [fn () => [File::factory()->markdown()->on(Message::factory()->create())->create()->id]],
+        'a file Donna made' => [fn () => [File::factory()->markdown()->on(Message::factory()->fromDonna()->create(), FileRole::Created)->create()->id]],
+        'a deleted file' => [fn () => [tap(File::factory()->markdown()->create())->delete()->id]],
+        'a file that does not exist' => [fn () => [999_999]],
+        'more than five files' => [fn () => File::factory()->count(6)->markdown()->create()->modelKeys()],
+    ]);
+
     it('returns 422 and saves nothing when the body or source is missing', function () {
         Queue::fake([GenerateReply::class]);
         actingAs(User::factory()->create());
@@ -89,7 +164,7 @@ describe('store', function () {
         postJson('/api/v1/messages', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors([
-                'body' => 'The body field is required.',
+                'body' => 'Write a message or attach a file.',
                 'source' => 'The source field is required.',
             ]);
 
@@ -128,6 +203,7 @@ describe('show', function () {
                     ['type' => 'fact', 'label' => 'The keyboard was ordered Nov 3 · Nov 3'],
                 ],
                 'actions' => [['type' => 'enable_notifications', 'label' => 'Turn on notifications']],
+                'files' => [],
                 'client_key' => null,
                 'created_at' => $reply->created_at->toJSON(),
             ]]);

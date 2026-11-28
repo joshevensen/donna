@@ -5,7 +5,12 @@ namespace App\Providers;
 use Anthropic\Client;
 use App\Extraction\AnthropicBatchClient;
 use App\Extraction\Contracts\BatchClient;
+use App\Files\Pdf\ParserExtractor;
+use App\Files\Pdf\PdfTextExtractor;
+use App\Files\Pdf\PopplerExtractor;
+use App\Files\ReplyAttempt;
 use App\Models\ExtractionRun;
+use App\Models\File;
 use App\Models\Message;
 use App\Models\Person;
 use App\Models\Project;
@@ -27,6 +32,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // PDF text: `pdftotext` when the server has it, the pure-PHP reader when it doesn't.
+        $this->app->bind(PdfTextExtractor::class, fn (): PdfTextExtractor => PopplerExtractor::isInstalled()
+            ? new PopplerExtractor
+            : new ParserExtractor);
+
+        // What a reply has already done to files, kept for the one job writing it.
+        $this->app->scoped(ReplyAttempt::class);
+
         $this->app->bind(BatchClient::class, fn (): BatchClient => new AnthropicBatchClient(
             new Client(apiKey: config('ai.providers.anthropic.key')),
         ));
@@ -46,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
             'project' => Project::class,
             'topic' => Topic::class,
             'message' => Message::class,
+            'file' => File::class,
             'extraction_run' => ExtractionRun::class,
         ]);
 
@@ -75,6 +89,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('sign-in', fn (Request $request): Limit => Limit::perMinute(10)->by("sign-in:{$request->ip()}"));
+
+        RateLimiter::for('files', fn (Request $request): Limit => Limit::perMinute(config('donna.files.uploads_per_minute'))->by('files:'.($request->user()?->id ?? $request->ip())));
 
         RateLimiter::for('messages', fn (Request $request): Limit => Limit::perMinute(60)->by('messages:'.($request->user()?->id ?? $request->ip())));
     }

@@ -260,9 +260,11 @@ Files that belong to Donna, not to individual conversations — so Josh doesn't 
 - Manual editing — switch to edit mode and make changes directly, no Donna involvement needed
 - Simple file operations use algorithms not LLMs — find and replace, rename, append, delete a line. No tokens spent on deterministic operations.
 - LLM only when judgment is required — "rewrite this section to be more concise" needs reasoning, "replace X with Y" does not
-- Files are indexed via Archive Memory — split into chunks at logical boundaries (headings for MD, rows for CSV, top-level keys for JSON), each chunk embedded separately and linked to its parent file
-- Formats: MD first (documents, notes, plans — the Vision doc is the model case), CSV (tabular data, trackers)
-- No delete in the UI — ask Donna to delete
+- Working or kept — every file starts as a working file, there to use and not remembered. Donna works out which are reference material worth keeping (notes, plans, vendor documents, exports) and says so; Josh can tell her either way
+- Kept files are indexed via Archive Memory — split into chunks at logical boundaries (headings for MD, groups of rows for CSV, pages for PDF, paragraphs for other text), each chunk embedded separately and linked to its parent file
+- Formats: MD first (documents, notes, plans — the Vision doc is the model case), and CSV, any other plain text, PDFs and images as context. Only MD is edited; the rest is read, and CSV maths is done by code
+- Every change is a version, so "undo that" works and the original is never lost
+- No delete in the UI — ask Donna to delete; she can bring a file back
 
 ---
 
@@ -436,9 +438,10 @@ Chat is the interface. Dark mode only.
 
 Opened by Donna when Josh asks for a file, or browsed directly when Josh wants to edit by hand.
 
-- Visual mode by default — rendered MD, formatted CSV as table
-- Edit view for MD and CSV — visually distinct from visual mode, tap to switch
-- Metadata expandable at bottom — created, modified, size
+- Visual mode by default — rendered MD, formatted CSV as table, a PDF as the text Donna reads with a way to open the original, an image
+- Edit view for MD — visually distinct from visual mode, tap to switch. CSVs are read, not edited
+- A switch to keep a file or stop keeping it
+- Metadata expandable at bottom — created, modified, size, who edited last, version
 
 ### Voice and Other Inputs
 

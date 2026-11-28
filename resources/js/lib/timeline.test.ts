@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Message } from '../api/types';
+import type { FileItem, Message, MessageFile } from '../api/types';
 import { type BubbleRow, bubbleRadius, buildRows, isCodeOnly, type Row, type TimelineItem } from './timeline';
 
 const options = { timeZone: 'America/Chicago', now: new Date('2026-11-27T18:00:00Z'), typing: false };
@@ -19,11 +19,16 @@ function message(author: 'josh' | 'donna', bubbles: string[], overrides: Partial
             error: null,
             sources: [],
             actions: [],
+            files: [],
             client_key: null,
             created_at: '2026-11-27T15:00:00Z',
             ...overrides,
         },
     };
+}
+
+function attached(overrides: Partial<MessageFile> = {}): MessageFile {
+    return { id: 7, name: 'stripe-payouts-nov.csv', kind: 'csv', role: 'attached', kept: false, deleted: false, size_bytes: 49_152, meta: { rows: 1284 }, note: null, ...overrides };
 }
 
 const bubbles = (rows: Row[]) => rows.filter((row): row is BubbleRow => row.kind === 'bubble');
@@ -95,6 +100,77 @@ describe('buildRows', () => {
         const rows = bubbles(buildRows([message('josh', ['**not bold**']), message('donna', ['**bold**'])], options));
 
         expect(rows.map((row) => row.markdown)).toEqual([false, true]);
+    });
+});
+
+describe('files in the thread', () => {
+    // The API returns no bubbles for a message with no text, which used to draw nothing at all.
+    it('draws a bubble for a message that is only files, holding just its cards', () => {
+        const rows = bubbles(buildRows([message('josh', [], { body: '', files: [attached()] }), message('donna', ['Three payouts are late.'])], options));
+
+        expect(rows.map((row) => [row.who, row.text, row.files.map((file) => file.name)])).toEqual([
+            ['josh', '', ['stripe-payouts-nov.csv']],
+            ['donna', 'Three payouts are late.', []],
+        ]);
+    });
+
+    it('still shows a wordless message while another reply is being revealed a text at a time', () => {
+        const wordless = { ...message('josh', [], { body: '', files: [attached()] }), visibleBubbles: 0 } as TimelineItem;
+
+        expect(bubbles(buildRows([wordless], options))).toHaveLength(1);
+    });
+
+    it('puts what Josh attached on his bubble, with his words', () => {
+        const [row] = bubbles(buildRows([message('josh', ['Which of these are late?'], { files: [attached()] })], options));
+
+        expect(row).toMatchObject({ text: 'Which of these are late?', files: [{ id: 7, role: 'attached' }] });
+    });
+
+    it('holds what Donna created or edited back until the last text of her reply has arrived', () => {
+        const reply = message('donna', ['Done, 14 of them.', 'I kept it as reference too.'], {
+            files: [attached({ name: 'launch-plan.md', kind: 'markdown', role: 'edited', kept: true, note: "Replaced 14 matches of 'Fibermade Co'" })],
+        });
+
+        const partial = bubbles(buildRows([{ ...reply, visibleBubbles: 1 } as TimelineItem], options));
+        const whole = bubbles(buildRows([reply], options));
+
+        expect(partial.map((row) => row.files.length)).toEqual([0]);
+        expect(whole.map((row) => row.files.length)).toEqual([0, 1]);
+        expect(whole[1]!.files[0]).toMatchObject({ role: 'edited', kept: true });
+    });
+
+    it('shows an unsent message with the files it will carry', () => {
+        const item = {
+            key: 'abc',
+            body: '',
+            files: [{ id: 7, name: 'photo.jpg', kind: 'image' as const, size_bytes: 2_000_000, meta: {} }],
+            createdAt: '2026-11-27T16:00:00Z',
+            state: 'sending' as const,
+        };
+
+        const [row] = bubbles(buildRows([{ kind: 'outbox', item }], options));
+
+        expect(row).toMatchObject({ who: 'josh', text: '', files: [{ id: 7, name: 'photo.jpg', role: 'attached', kept: false }] });
+    });
+
+    // Flipping the keep switch, or Donna keeping a file in a later reply, has to show on every card for it.
+    it('lays the latest known keep state and name over every card for a file', () => {
+        const fileStates = new Map([[7, { name: 'payouts.csv', kept: true, deleted: false }]]);
+
+        const [earlier, later] = bubbles(
+            buildRows([message('josh', ['Here.'], { files: [attached()] }), message('donna', ['Kept it.'], { files: [attached({ role: 'opened' })] })], { ...options, fileStates }),
+        );
+
+        expect(earlier!.files[0]).toMatchObject({ name: 'payouts.csv', kept: true });
+        expect(later!.files[0]).toMatchObject({ name: 'payouts.csv', kept: true });
+    });
+
+    it('answers /files with the list as it was, in one of her bubbles', () => {
+        const listed = { ...attached(), mime: 'text/csv', extraction: 'ready', extraction_error: null, version: 1, last_author: 'josh', editable: false, created_at: '2026-11-27T20:03:00Z', updated_at: '2026-11-27T20:03:00Z' } as FileItem;
+
+        const [row] = bubbles(buildRows([{ kind: 'note', note: { id: 'n1', who: 'donna', text: '', files: [listed], createdAt: '2026-11-27T20:05:00Z' } }], options));
+
+        expect(row).toMatchObject({ who: 'donna', listing: [{ id: 7, created_at: '2026-11-27T20:03:00Z' }] });
     });
 });
 

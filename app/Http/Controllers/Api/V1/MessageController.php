@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Costs\CostReport;
 use App\Enums\CostPeriod;
+use App\Enums\FileRole;
 use App\Enums\MessageAuthor;
 use App\Enums\MessageStatus;
 use App\Http\Controllers\Controller;
@@ -11,6 +12,7 @@ use App\Http\Requests\IndexMessagesRequest;
 use App\Http\Requests\StoreMessageRequest;
 use App\Http\Resources\MessageResource;
 use App\Jobs\GenerateReply;
+use App\Models\File;
 use App\Models\Message;
 use App\Push\Presence;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -18,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class MessageController extends Controller
 {
@@ -40,6 +43,7 @@ class MessageController extends Controller
         }
 
         $messages = Message::query()
+            ->with(['files', 'fileVersions' => fn ($query) => $query->select(['id', 'file_id', 'message_id', 'number', 'summary'])->orderBy('number')])
             ->when($newer, fn ($query) => $query->where('id', '>', $request->integer('after'))->oldest('id'))
             ->unless($newer, fn ($query) => $query
                 ->when($request->has('before'), fn ($query) => $query->where('id', '<', $request->integer('before')))
@@ -83,11 +87,13 @@ class MessageController extends Controller
             [$message, $reply] = DB::transaction(function () use ($request, $key): array {
                 $message = Message::create([
                     'author' => MessageAuthor::Josh,
-                    'body' => $request->validated('body'),
+                    'body' => $request->validated('body') ?? '',
                     'source' => $request->validated('source'),
                     'status' => MessageStatus::Complete,
                     'client_key' => $key,
                 ]);
+
+                $this->attach($request->validated('file_ids') ?? [], $message);
 
                 $reply = Message::create([
                     'author' => MessageAuthor::Donna,
@@ -119,6 +125,30 @@ class MessageController extends Controller
         $presence->seen($request->user());
 
         return new MessageResource($message);
+    }
+
+    /**
+     * Send the uploads this message names along with it. Each file goes with
+     * one message only: one that was already sent, or that Donna made, or
+     * that is gone, refuses the whole send.
+     *
+     * @param  list<int>  $fileIds
+     */
+    private function attach(array $fileIds, Message $message): void
+    {
+        if ($fileIds === []) {
+            return;
+        }
+
+        $files = File::query()->whereKey($fileIds)->whereDoesntHave('messages')->lockForUpdate()->get();
+
+        if ($files->count() !== count($fileIds)) {
+            throw ValidationException::withMessages([
+                'file_ids' => ['One of those files can\'t be attached: it was already sent, or it is gone. Remove it and attach it again.'],
+            ]);
+        }
+
+        $message->files()->attach($files->mapWithKeys(fn (File $file): array => [$file->id => ['role' => FileRole::Attached->value]]));
     }
 
     private function alreadySent(string $key): ?Message

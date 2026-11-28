@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // anything decides who is signed in.
         $middleware->api(append: [EndExpiredSessions::class]);
         $middleware->prependToPriorityList(AuthenticatesRequests::class, EndExpiredSessions::class);
+
+        // A file Josh saves by hand is stored exactly as typed, blank lines at the ends included.
+        $savingAFile = fn (Request $request): bool => $request->isMethod('PUT') && $request->is('api/v1/files/*');
+
+        $middleware->trimStrings(except: [$savingAFile]);
+        $middleware->convertEmptyStringsToNull(except: [$savingAFile]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

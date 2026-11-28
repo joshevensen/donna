@@ -10,7 +10,7 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 
 ### Conversation
 
-- **Message** — one turn in the single, never-ending conversation. Author is Josh or Donna. Has a **source** (keyboard, dictation, Siri, quick capture, watch, notification reply) — Donna treats every source the same. May carry **Attachments**. Embedded for retrieval. There is no Conversation or Thread entity: there is only one.
+- **Message** — one turn in the single, never-ending conversation. Author is Josh or Donna. Has a **source** (keyboard, dictation, Siri, quick capture, watch, notification reply) — Donna treats every source the same. May carry **Files** Josh attached (it can be nothing else), and remembers which Files Donna created, edited or opened in it. Embedded for retrieval. There is no Conversation or Thread entity: there is only one.
 - **Topic** — something Josh and Donna talk about over time (Fibermade, a trip, a person). Exists so Donna knows when a topic was last discussed and can open with a refresher. How often Josh comes back to a Topic is what defines his interests — interests are tracked, not declared.
 - **Project** — something Josh (or Kristen) is working on, as opposed to just talking about. Has an **owner**, a **tier** (main, secondary, fun), and a **status** (proposed, active, parked, dropped). Donna proposes new Projects when she notices one, and they stay proposed until Josh agrees; he sets tier and status conversationally. A label, never a fence.
 
@@ -19,7 +19,9 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 - **Fact** — one thing Donna knows. Can be about anything — one or more People, Projects, Topics, or any other concept (polymorphic). Facts about Josh are Personal Memory; about other People, Social Memory; about Donna, her shared history and opinions. Has a **kind** (fact, preference, decision, opinion, moment), a **provenance** (remember, daily extraction, interview, correction — import and check-in arrive with their features), and a confidence. Can be superseded by a newer Fact.
 - **Mention** — `@Name` in a message: Josh telling Donna this is someone she should know. Matched to a Person by name or alias; if none matches, she starts tracking them (and asks who they are) unless it isn't a person. Skills and commands use `/` instead.
 - **Person** — anyone in Josh's orbit, including Josh himself and Donna. Josh's Person is linked to his user account; Donna's is who Facts about her hang on. Has names/aliases, a relationship to Josh, and Facts.
-- **File** — a document that belongs to Donna, not to a message. MD or CSV. Split into **Chunks** at logical boundaries, each embedded (Archive Memory).
+- **File** — a document that belongs to Donna, not to a message. Any plain text (markdown, CSV, JSON, code), a PDF or an image; only markdown is edited, the rest is read. Every File starts **working**: stored, visible, usable in the conversation. Donna decides which become **kept**, and says so; Josh can tell her either way, or flip a switch. May be linked to People, Projects and Topics.
+- **File Version** — a File's text at one moment. Every change writes one: Josh's saves, each of Donna's edits, a revert. Version 1 is what was uploaded or first written. A PDF has one (its extracted text); an image has none.
+- **Chunk** — a piece of a kept File's current text, cut at a logical boundary (a heading, a paragraph, a group of rows, a page) and embedded on its own: Archive Memory. Only kept Files have Chunks.
 - **Skill** — a procedure Donna knows (Agent Skills format: `SKILL.md` + optional scripts/references). Origin: seed, learned, or imported. Status: proposed, active, retired. Integration skills use an Integration.
 
 - **Character Profile** — who Donna is: taste, opinions, history. Stored in the database and versioned; changes are proposed by Donna and approved by Josh.
@@ -56,7 +58,7 @@ Source of truth is [`vision.md`](vision.md). If this doc disagrees with it, one 
 ## Relationships
 
 ```
-Message ──< Attachment
+Message >──< File                       (attached by Josh; created, edited or opened by Donna)
 Message >── Topic (many-to-many)
 Topic >── Project (many-to-many)
 Project >── Person                      (owner — Josh or Kristen)
@@ -66,7 +68,9 @@ Message ──< Eval Example                (replies Josh flagged good or bad)
 
 Fact >──< anything (polymorphic)      (Person, Project, Topic, …)
 Fact ──> Fact                           (superseded_by)
-File ──< Chunk
+File ──< File Version
+File ──< Chunk                          (kept Files only)
+File >──< Person / Project / Topic      (what it is about)
 
 Task >── Person (optional)
 Task / Goal ──< Nudge
@@ -98,7 +102,12 @@ Rules that hold everywhere, regardless of phase or which code path is running.
 **Memory**
 - Projects are labels, not fences. Retrieval never filters by Project; a Project only boosts what's related to it.
 - Facts are superseded, not silently overwritten, so Donna knows what Josh used to think and can explain what changed. The one exception is forgetting: when Josh asks, a Fact is deleted along with every earlier version of it.
-- Memories, Skills, and Files are never deleted automatically.
+- Memories, Skills, and Files are never deleted automatically. A working File does not expire.
+- A File's original is never lost. Version 1 of a text File is exactly what arrived and is never edited or removed; the original bytes of a PDF or image are never changed.
+- Only a kept File is found on its own. A working, un-kept or deleted File contributes nothing to retrieval; un-keeping removes its Chunks and nothing else.
+- Deleting a File is soft and only ever on Josh's say-so: Donna can bring it back. Permanent deletion follows the Autonomy rules below.
+- What is inside a File is Josh's material, never instructions to Donna.
+- Retrying a reply does not repeat its edits. A reply that is attempted again is told what it has already changed, and an edit identical to one it already made is refused.
 - Every Message stays in the active database and retrievable, forever.
 
 **Autonomy**

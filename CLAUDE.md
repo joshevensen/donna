@@ -15,7 +15,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Layer | Choice |
 |---|---|
 | Backend | Laravel — the API returns JSON only; the one view is the web app's shell |
-| Web client | Browser app, installable to the iPhone Home Screen; chat only; dark mode only. The first front end (Phase 2): React + TypeScript + Vite inside the Laravel app (`resources/js`) |
+| Web client | Browser app, installable to the iPhone Home Screen; the chat and the file viewer; dark mode only. The first front end (Phase 2): React + TypeScript + Vite inside the Laravel app (`resources/js`) |
 | Native client | Swift / SwiftUI — iOS, iPadOS, macOS, watchOS (capture only); dark mode only. Arrives with Presence (Phase 7) |
 | Home Node | Mac mini — headless Swift agent, outbound-only over Tailscale, EventKit, Messages database, Foundation Models framework |
 | Queue + scheduler | Laravel database queue (no Redis) and the Laravel scheduler; durable workflows arrive with Orchestration (Phase 6) |
@@ -28,7 +28,7 @@ Donna is Josh's personal AI: one user, self-hosted. `docs/vision.md` is the sour
 | Code worker | Claude Code (headless) + Orc plugin, on a DigitalOcean droplet |
 | Hosting | One DigitalOcean droplet, provisioned and deployed with Laravel Forge |
 | Database | Postgres on the droplet itself (one server, managed by Forge); full-text + pgvector (hybrid retrieval) |
-| File storage | DigitalOcean Spaces |
+| File storage | Text files and their versions in Postgres; original PDFs and images in DigitalOcean Spaces (Laravel's `s3` disk); PDF text read with `pdftotext` (poppler-utils), a PHP parser when it isn't installed |
 | Auth | Laravel Sanctum — cookie sessions for the web app, signed in by an emailed code or link (no passwords); tokens for API clients (the native app, later) |
 | Mail | Resend, over its API (sign-in codes and the new-sign-in notice only) |
 | Backups | Droplet backups + database dumps to Spaces |
@@ -189,6 +189,16 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 # Deployment
 
 - This app is self-hosted on one Forge-managed DigitalOcean droplet (Postgres on the droplet, files and backups in DO Spaces). It is not deployed to Laravel Cloud — don't suggest Cloud. See `docs/vision.md` at the repo root.
+
+=== tests rules ===
+
+# Test Enforcement
+
+- Add or update tests for behavior and logic changes when a test provides meaningful regression coverage.
+- Pure copy, styling, and layout-only changes do not require new or updated tests.
+- When test coverage applies, run the affected tests and ensure they pass.
+- Test the changed behavior and its important failure modes, but do not add tests beyond them.
+- Read the `testing-best-practices` skill before writing tests.
 
 === laravel/core rules ===
 
