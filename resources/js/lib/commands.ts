@@ -3,11 +3,12 @@
  | cost nothing. Anything else that starts with "/" is an ordinary message.
  */
 
-export type Command = { name: 'signout'; everywhere: boolean } | { name: 'notifications' } | { name: 'help' };
+export type Command = { name: 'signout'; everywhere: boolean } | { name: 'notifications' } | { name: 'files' } | { name: 'help' };
 
 export const HELP = [
     'Things you can type here:',
     '',
+    '- `/files` lists your files',
     '- `/signout` signs this device out',
     '- `/signout all` signs every device out',
     '- `/notifications` turns notifications on or off on this device',
@@ -26,6 +27,8 @@ export function parseCommand(text: string): Command | null {
             return { name: 'signout', everywhere: true };
         case '/notifications':
             return { name: 'notifications' };
+        case '/files':
+            return { name: 'files' };
         case '/help':
             return { name: 'help' };
         default:

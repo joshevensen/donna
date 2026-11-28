@@ -1,5 +1,6 @@
-import type { AppAction, Message, Source } from '../api/types';
+import type { AppAction, FileItem, Message, Source } from '../api/types';
 import { dateLabel, dayKey } from './dates';
+import { type CardFile, type FileState, withState } from './files';
 import type { OutboxItem } from './storage';
 
 /*
@@ -8,12 +9,17 @@ import type { OutboxItem } from './storage';
  | dividers, bubbles grouped into runs, the "couldn't reply" line, the dots.
  */
 
-/** Something the app said locally, like the answer to /help. Never sent anywhere. */
+/** Something the app said locally, like the answer to /help or /files. Never sent anywhere. */
 export interface Note {
     id: string;
     text: string;
+    /** The answer to /files: the files as they were when he asked. */
+    files?: FileItem[];
     createdAt: string;
 }
+
+/** A file in the answer to /files, with when it arrived. */
+export type ListedFile = CardFile & { created_at: string };
 
 export type TimelineItem =
     | { kind: 'message'; message: Message; visibleBubbles?: number }
@@ -37,6 +43,13 @@ export interface BubbleRow {
     sources: Source[];
     /** Buttons she offered, drawn under the last bubble of the reply. */
     actions: AppAction[];
+    /**
+     * File cards: what Josh attached, at the top of his bubble; what Donna
+     * created, edited or opened, under the last bubble of her reply.
+     */
+    files: CardFile[];
+    /** The answer to /files, drawn in place of text. */
+    listing: ListedFile[] | null;
     /** The reply these belong to, to remember which buttons were used. */
     messageId: number | null;
     /** Set on a message that hasn't been delivered. */
@@ -53,6 +66,8 @@ interface Options {
     timeZone: string;
     now: Date;
     typing: boolean;
+    /** The latest known name and keep state of each file, laid over every card for it. */
+    fileStates?: ReadonlyMap<number, FileState>;
 }
 
 const RADIUS = '20px';
@@ -77,7 +92,7 @@ export function bubbleRadius(who: Who, position: Position): string {
 
 type Draft = Omit<BubbleRow, 'position'>;
 
-function bubblesOf(item: TimelineItem): Array<Draft | Extract<Row, { kind: 'reply-failed' }>> {
+function bubblesOf(item: TimelineItem, states: Options['fileStates']): Array<Draft | Extract<Row, { kind: 'reply-failed' }>> {
     if (item.kind === 'outbox') {
         return [
             {
@@ -89,6 +104,8 @@ function bubblesOf(item: TimelineItem): Array<Draft | Extract<Row, { kind: 'repl
                 createdAt: item.item.createdAt,
                 sources: [],
                 actions: [],
+                files: (item.item.files ?? []).map((file) => withState({ ...file, role: 'attached' as const, kept: false, deleted: false }, states)),
+                listing: null,
                 messageId: null,
                 outbox: item.item,
             },
@@ -106,6 +123,8 @@ function bubblesOf(item: TimelineItem): Array<Draft | Extract<Row, { kind: 'repl
                 createdAt: item.note.createdAt,
                 sources: [],
                 actions: [],
+                files: [],
+                listing: item.note.files?.map((file) => withState(file, states)) ?? null,
                 messageId: null,
                 outbox: null,
             },
@@ -123,8 +142,17 @@ function bubblesOf(item: TimelineItem): Array<Draft | Extract<Row, { kind: 'repl
         return [];
     }
 
-    const visible = message.bubbles.slice(0, item.visibleBubbles ?? message.bubbles.length);
-    const whole = visible.length === message.bubbles.length;
+    const files = (message.files ?? []).map((file) => withState(file, states));
+
+    // A message of only files has no words, and so no bubbles. It still gets one, to hold its cards.
+    const wordless = message.bubbles.length === 0 && files.length > 0;
+    const texts = wordless ? [''] : message.bubbles;
+
+    const visible = texts.slice(0, wordless ? 1 : (item.visibleBubbles ?? texts.length));
+    const whole = visible.length === texts.length;
+
+    // His files sit at the top of what he said; hers arrive under the end of her reply, with her buttons.
+    const carriesFiles = (index: number): boolean => (message.author === 'josh' ? index === 0 : whole && index === visible.length - 1);
 
     return visible.map((text, index) => ({
         kind: 'bubble',
@@ -135,6 +163,8 @@ function bubblesOf(item: TimelineItem): Array<Draft | Extract<Row, { kind: 'repl
         createdAt: message.created_at,
         sources: message.sources,
         actions: whole && index === visible.length - 1 ? message.actions : [],
+        files: carriesFiles(index) ? files : [],
+        listing: null,
         messageId: message.id,
         outbox: null,
     }));
@@ -149,7 +179,7 @@ export function buildRows(items: TimelineItem[], options: Options): Row[] {
     let day: string | null = null;
 
     for (const item of items) {
-        const entries = bubblesOf(item);
+        const entries = bubblesOf(item, options.fileStates);
 
         if (entries.length === 0) {
             continue;

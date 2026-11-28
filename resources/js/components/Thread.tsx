@@ -2,9 +2,11 @@ import { type MouseEvent, type Ref, useCallback, useImperativeHandle, useLayoutE
 import type { AppAction, Source } from '../api/types';
 import { timeLabel } from '../lib/dates';
 import { splitFences } from '../lib/fences';
+import { arrivalLabel } from '../lib/files';
 import type { PushResult } from '../lib/push';
-import { type BubbleRow, bubbleRadius, isCodeOnly, type Row } from '../lib/timeline';
+import { type BubbleRow, bubbleRadius, isCodeOnly, type ListedFile, type Row } from '../lib/timeline';
 import { ActionButton } from './ActionButton';
+import { FileCard } from './FileCard';
 import { AlertIcon, RetryIcon } from './icons';
 import { CodeBlock, Markdown } from './Markdown';
 
@@ -29,10 +31,11 @@ interface Props {
     onRetrySend: (key: string) => void;
     onRetryReply: (id: number) => void;
     onShowSources: (sources: Source[]) => void;
+    onOpenFile: (id: number) => void;
     runAction: (type: AppAction['type']) => Promise<PushResult>;
 }
 
-export function Thread({ ref, rows, timeZone, hasOlder, loadingOlder, onLoadOlder, onRetrySend, onRetryReply, onShowSources, runAction }: Props) {
+export function Thread({ ref, rows, timeZone, hasOlder, loadingOlder, onLoadOlder, onRetrySend, onRetryReply, onShowSources, onOpenFile, runAction }: Props) {
     const scroller = useRef<HTMLDivElement>(null);
     const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -140,9 +143,11 @@ export function Thread({ ref, rows, timeZone, hasOlder, loadingOlder, onLoadOlde
                                     row={row}
                                     open={openKey === row.key}
                                     time={timeLabel(row.createdAt, timeZone)}
+                                    timeZone={timeZone}
                                     onToggle={() => setOpenKey((current) => (current === row.key ? null : row.key))}
                                     onRetrySend={onRetrySend}
                                     onShowSources={onShowSources}
+                                    onOpenFile={onOpenFile}
                                     runAction={runAction}
                                 />
                             );
@@ -157,15 +162,21 @@ interface BubbleProps {
     row: BubbleRow;
     open: boolean;
     time: string;
+    timeZone: string;
     onToggle: () => void;
     onRetrySend: (key: string) => void;
     onShowSources: (sources: Source[]) => void;
+    onOpenFile: (id: number) => void;
     runAction: (type: AppAction['type']) => Promise<PushResult>;
 }
 
-function Bubble({ row, open, time, onToggle, onRetrySend, onShowSources, runAction }: BubbleProps) {
+function Bubble({ row, open, time, timeZone, onToggle, onRetrySend, onShowSources, onOpenFile, runAction }: BubbleProps) {
     const failed = row.outbox?.state === 'failed';
     const count = row.sources.length;
+
+    // What Josh attached rides at the top of his bubble; what Donna touched sits under her reply.
+    const attached = row.who === 'josh' ? row.files : [];
+    const touched = row.who === 'donna' ? row.files : [];
 
     // A tap on the bubble shows its time. Not when the tap was on a link or the copy button,
     // and not when it was the end of selecting some text.
@@ -184,9 +195,21 @@ function Bubble({ row, open, time, onToggle, onRetrySend, onShowSources, runActi
                 style={{ borderRadius: bubbleRadius(row.who, row.position) }}
                 data-code-only={isCodeOnly(row.text)}
                 data-sending={row.outbox?.state === 'sending'}
+                data-cards={attached.length > 0 || row.listing !== null}
                 onClick={onClick}
             >
-                {row.markdown ? <Markdown text={row.text} /> : <Typed text={row.text} />}
+                {attached.length > 0 && (
+                    <div className="bubble__files">
+                        {attached.map((file) => (
+                            <FileCard key={file.id} file={file} surface="inset" thumbnail onOpen={onOpenFile} />
+                        ))}
+                    </div>
+                )}
+                {row.listing !== null ? (
+                    <FileListing files={row.listing} timeZone={timeZone} onOpenFile={onOpenFile} />
+                ) : (
+                    row.text !== '' && (row.markdown ? <Markdown text={row.text} /> : <Typed text={row.text} />)
+                )}
             </div>
 
             {!failed && (
@@ -218,8 +241,40 @@ function Bubble({ row, open, time, onToggle, onRetrySend, onShowSources, runActi
                 </div>
             )}
 
+            {touched.length > 0 && (
+                <div className="row__files">
+                    {touched.map((file) => (
+                        <FileCard key={file.id} file={file} surface="raised" onOpen={onOpenFile} />
+                    ))}
+                </div>
+            )}
+
             {row.actions.map((action) => (
                 <ActionButton key={action.type} id={`${row.messageId}:${action.type}`} action={action} run={runAction} />
+            ))}
+        </div>
+    );
+}
+
+/**
+ * The answer to /files: the kept files, then the ones only used lately, each
+ * with when it arrived. Which group a file is in follows the keep switch.
+ */
+function FileListing({ files, timeZone, onOpenFile }: { files: ListedFile[]; timeZone: string; onOpenFile: (id: number) => void }) {
+    const groups = [
+        { title: 'Kept', files: files.filter((file) => file.kept) },
+        { title: 'Recent, not kept', files: files.filter((file) => !file.kept) },
+    ].filter((group) => group.files.length > 0);
+
+    return (
+        <div className="file-listing">
+            {groups.map((group) => (
+                <section key={group.title} className="file-listing__group" aria-label={group.title}>
+                    <h3 className="file-listing__title">{group.title}</h3>
+                    {group.files.map((file) => (
+                        <FileCard key={file.id} file={file} surface="inset" line={arrivalLabel(file.created_at, timeZone)} onOpen={onOpenFile} />
+                    ))}
+                </section>
             ))}
         </div>
     );

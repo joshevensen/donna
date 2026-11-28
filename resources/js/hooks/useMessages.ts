@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { api, NetworkError } from '../api/client';
-import type { Costs, Message } from '../api/types';
+import type { Costs, FileItem, Message } from '../api/types';
+import type { AttachedFile } from '../lib/attachments';
+import type { FileState } from '../lib/files';
 import { uuid } from '../lib/platform';
 import { RevealQueue } from '../lib/reveal';
 import { type OutboxItem, storage } from '../lib/storage';
@@ -28,11 +30,16 @@ export interface Conversation {
     ready: boolean;
     loadingOlder: boolean;
     hasOlder: boolean;
-    send: (body: string) => void;
+    /** The latest known name and keep state of every file seen, so each of its cards agrees. */
+    fileStates: ReadonlyMap<number, FileState>;
+    send: (body: string, files?: AttachedFile[]) => void;
     retrySend: (key: string) => void;
     retryReply: (id: number) => void;
     loadOlder: () => void;
-    addNote: (text: string) => void;
+    /** Say something locally, as Donna would: the answer to a slash command. With files, the answer to /files. */
+    addNote: (text: string, files?: FileItem[]) => void;
+    /** Take in a file as the server just described it (the viewer saw it, or changed it). */
+    noteFile: (file: FileState & { id: number }) => void;
 }
 
 function localTime(item: TimelineItem): string {
@@ -69,6 +76,28 @@ export function useMessages(): Conversation {
 
     // When each retried reply was retried: it is old, but she is writing it now.
     const retriedAt = useRef(new Map<number, number>());
+
+    // What each file is called and whether it is kept, as of the last time the server said.
+    // Every message carries its files' state as it was when fetched, so the latest fetch wins.
+    const [fileStates, setFileStates] = useState<ReadonlyMap<number, FileState>>(() => new Map());
+
+    const noteFiles = useCallback((files: Array<FileState & { id: number }>) => {
+        if (files.length === 0) {
+            return;
+        }
+
+        setFileStates((known) => {
+            const next = new Map(known);
+
+            for (const file of files) {
+                next.set(file.id, { name: file.name, kept: file.kept, deleted: file.deleted });
+            }
+
+            return next;
+        });
+    }, []);
+
+    const noteFile = useCallback((file: FileState & { id: number }) => noteFiles([file]), [noteFiles]);
 
     /** Is Donna writing this one right now? */
     const isWaiting = useCallback((message: Message): boolean => {
@@ -117,9 +146,11 @@ export function useMessages(): Conversation {
                 updateOutbox((items) => items.filter((item) => !delivered.has(item.key)));
             }
 
+            noteFiles(incoming.flatMap((message) => message.files ?? []));
+
             render();
         },
-        [isWaiting, updateOutbox],
+        [isWaiting, noteFiles, updateOutbox],
     );
 
     /** Run a request, tracking whether the server can be reached at all. */
@@ -144,7 +175,13 @@ export function useMessages(): Conversation {
             updateOutbox((items) => items.map((other) => (other.key === item.key ? { ...other, state: 'sending' } : other)));
 
             try {
-                const sent = await reach(() => api.send(item.body, item.key));
+                const sent = await reach(() =>
+                    api.send(
+                        item.body,
+                        item.key,
+                        (item.files ?? []).map((file) => file.id),
+                    ),
+                );
 
                 updateOutbox((items) => items.filter((other) => other.key !== item.key));
                 merge(sent.reply === null ? [sent.message] : [sent.message, sent.reply]);
@@ -160,8 +197,8 @@ export function useMessages(): Conversation {
     );
 
     const send = useCallback(
-        (body: string) => {
-            const item: OutboxItem = { key: uuid(), body, createdAt: new Date().toISOString(), state: 'sending' };
+        (body: string, files: AttachedFile[] = []) => {
+            const item: OutboxItem = { key: uuid(), body, ...(files.length > 0 ? { files } : {}), createdAt: new Date().toISOString(), state: 'sending' };
 
             updateOutbox((items) => [...items, item]);
 
@@ -229,9 +266,13 @@ export function useMessages(): Conversation {
             .finally(() => setLoadingOlder(false));
     }, [loadingOlder, merge, nextBefore, reach]);
 
-    const addNote = useCallback((text: string) => {
-        setNotes((existing) => [...existing, { id: uuid(), text, createdAt: new Date().toISOString() }]);
-    }, []);
+    const addNote = useCallback(
+        (text: string, files?: FileItem[]) => {
+            setNotes((existing) => [...existing, { id: uuid(), text, ...(files ? { files } : {}), createdAt: new Date().toISOString() }]);
+            noteFiles(files ?? []);
+        },
+        [noteFiles],
+    );
 
     // The first page, then anything left unsent from last time.
     useEffect(() => {
@@ -393,10 +434,12 @@ export function useMessages(): Conversation {
         ready,
         loadingOlder,
         hasOlder: nextBefore !== null,
+        fileStates,
         send,
         retrySend,
         retryReply,
         loadOlder,
         addNote,
+        noteFile,
     };
 }
