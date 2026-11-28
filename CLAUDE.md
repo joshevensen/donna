@@ -239,3 +239,21 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 </laravel-boost-guidelines>
+
+## Verification
+
+```bash
+vendor/bin/pint --test
+php artisan test --parallel
+npm run typecheck
+npm test
+npm run build
+```
+
+## Focused Verification
+
+```bash
+php artisan test --compact {test file or directory}    # or --filter={name}
+npx vitest run {test file}
+vendor/bin/pint --dirty --format agent
+```
