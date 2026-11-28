@@ -8,6 +8,7 @@ use App\Jobs\GenerateReply;
 use App\Jobs\TagTopics;
 use App\Models\Cost;
 use App\Models\Fact;
+use App\Models\File;
 use App\Models\Message;
 use App\Models\Person;
 use Illuminate\Http\Client\Request;
@@ -219,4 +220,24 @@ it('still replies, from full-text memory, when embeddings are down', function ()
     Donna::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->agent->context->memory->exchanges->first()->message->is($earlier));
     Exceptions::assertReported(RuntimeException::class);
     expect($reply->inReplyTo->embedding)->toBeNull();
+});
+
+it('answers a message of only files without embedding or tagging it: there are no words to embed', function () {
+    Queue::fake([EmbedMessage::class, TagTopics::class]);
+    donnaExists();
+    Embeddings::fake()->preventStrayEmbeddings();
+    Donna::fake(['Got the plan. Six dyers by the 30th is tight.']);
+    $message = Message::factory()->create(['body' => '']);
+    File::factory()->markdown("# Launch plan\n\nSix dyers by the 30th.\n")->on($message)->create();
+    $reply = Message::factory()->pending()->create(['in_reply_to_id' => $message->id]);
+
+    GenerateReply::dispatchSync($reply);
+
+    expect($reply->refresh())
+        ->status->toBe(MessageStatus::Complete)
+        ->body->toBe('Got the plan. Six dyers by the 30th is tight.')
+        ->and($message->refresh()->embedding)->toBeNull();
+
+    Queue::assertPushed(EmbedMessage::class, fn (EmbedMessage $job): bool => $job->message->is($reply));
+    Queue::assertNotPushed(TagTopics::class);
 });

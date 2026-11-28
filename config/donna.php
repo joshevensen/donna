@@ -199,6 +199,77 @@ return [
 
         'recall_limit' => 15,
         'what_i_know_limit' => 50,
+
+        // Files: how far back a file stays "in play", and how many chunks of
+        // kept files a message is given.
+        'files_in_play_messages' => 20,
+        'related_chunks' => 4,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Files
+    |--------------------------------------------------------------------------
+    |
+    | The limits on what Josh can attach (the web app enforces the same two),
+    | how much of a file goes into a prompt, and how kept files are chunked.
+    | Token counts are estimates at four characters each.
+    |
+    */
+
+    'files' => [
+        'max_kilobytes' => 10240,
+        'max_per_message' => 5,
+        'uploads_per_minute' => 30,
+
+        // GET /files: working files newer than this are listed; older ones are found with ?q=.
+        'recent_days' => 30,
+        'list_limit' => 100,
+
+        // The viewer is sent this much of a long file, and this many rows of a CSV.
+        // A markdown file over the limit can't be edited by hand.
+        'viewer_bytes' => 500_000,
+        'viewer_rows' => 200,
+
+        // An attached text file under this goes into the prompt whole; a larger
+        // one goes in as an outline and she reads or queries the rest.
+        'inline_tokens' => 6000,
+        'outline_lines' => 12,
+        'outline_rows' => 5,
+        'read_tokens' => 6000,
+
+        // The diff of Josh's own edits that Donna is shown.
+        'diff_tokens' => 1500,
+        'diff_cells' => 4_000_000,
+
+        // Images are shown to the model as a smaller copy made on upload: no
+        // longer than the model reads them at, and under its size limit.
+        'preview' => [
+            'long_edge' => 1568,
+            'quality' => 82,
+            'skip_under_bytes' => 400_000,
+            'max_pixels' => 60_000_000,
+        ],
+        'model_image_bytes' => 3_500_000,
+
+        // A PDF with fewer letters per page than this is treated as a scan,
+        // and shown to the model as pages when it has no more pages than this.
+        'pdf_text_per_page' => 20,
+        'model_pdf_pages' => 100,
+        'pdftotext_seconds' => 30,
+
+        // view_file: how many times she may look in one reply.
+        'looks_per_reply' => 2,
+
+        // list_files puts at most this many cards under a reply.
+        'cards_per_reply' => 10,
+        'query_rows' => 50,
+        'query_rows_max' => 200,
+
+        // Archive Memory.
+        'chunk_tokens' => 800,
+        'csv_chunk_rows' => 2000,
+        'embed_batch' => 32,
     ],
 
     /*

@@ -86,7 +86,8 @@ class GenerateReply implements ShouldQueue
         $message = $this->reply->inReplyTo;
 
         // If embeddings are down Donna still answers, from full-text memory alone.
-        if ($message->embedding === null) {
+        // A message of only files has no words to embed.
+        if ($message->embedding === null && filled($message->body)) {
             $message->update(['embedding' => $embedder->attempt($message->body, $message)]);
         }
 
@@ -117,7 +118,11 @@ class GenerateReply implements ShouldQueue
         ]);
 
         EmbedMessage::dispatch($this->reply);
-        TagTopics::dispatch($message, $this->reply);
+
+        // Topics are tagged from what Josh said; files alone say nothing to tag.
+        if (filled($message->body)) {
+            TagTopics::dispatch($message, $this->reply);
+        }
 
         $this->notifyUnlessWatching($presence);
     }
