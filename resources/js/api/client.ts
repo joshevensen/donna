@@ -1,4 +1,4 @@
-import type { Me, Message, MessagePage } from './types';
+import type { CostSummary, Me, Message, MessagePage, PersonSummary, ProjectSummary } from './types';
 
 /** The server answered, and the answer was an error. */
 export class ApiError extends Error {
@@ -137,6 +137,12 @@ export const api = {
         }).then((response) => response.data),
 
     retryReply: (id: number) => request<{ data: Message }>('POST', `/messages/${id}/retry`).then((response) => response.data),
+
+    projects: () => request<{ data: ProjectSummary[] }>('GET', '/projects').then((response) => response.data),
+
+    people: () => request<{ data: PersonSummary[] }>('GET', '/people').then((response) => response.data),
+
+    costs: () => request<{ data: CostSummary }>('GET', '/costs').then((response) => response.data),
 
     requestLoginCode: (email: string) => request<null>('POST', '/auth/login-code', { body: { email } }),
 

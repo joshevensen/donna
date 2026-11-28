@@ -522,6 +522,7 @@ a.button {
  */
 
 .composer {
+    position: relative;
     flex-shrink: 0;
     padding: 8px 12px max(4px, calc(env(safe-area-inset-bottom, 0px) - 22px));
     background: var(--donna-canvas);
@@ -580,6 +581,28 @@ a.button {
     white-space: nowrap;
 }
 
+/* The commands button: the same size as send but muted, so send stays the one Accent button. */
+.composer__commands {
+    display: flex;
+    grid-column: 1;
+    justify-self: start;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--donna-hover);
+    color: var(--donna-shirt-65);
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.composer__commands[aria-expanded="true"] {
+    color: var(--donna-shirt);
+}
+
 .composer__send {
     display: flex;
     grid-column: 3;
@@ -595,6 +618,57 @@ a.button {
 
 .composer__send:disabled {
     opacity: 0.35;
+}
+
+/*
+ | The command list, just above the input. Its max-height is set from script,
+ | the space up to the top of the visual viewport, so with the keyboard up it
+ | scrolls inside itself rather than running off the top of the screen.
+ */
+
+.picker {
+    position: absolute;
+    right: 12px;
+    bottom: calc(100% - 2px);
+    left: 12px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+    border-radius: 20px;
+    background: var(--donna-panel);
+    box-shadow: 0 8px 28px rgb(0 0 0 / 50%);
+}
+
+.picker__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    text-align: left;
+}
+
+.picker__item:hover {
+    background: var(--donna-raised);
+}
+
+.picker__name {
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+}
+
+.picker__description {
+    color: var(--donna-shirt-65);
+    font-size: 0.8125rem;
 }
 
 /* The sources sheet */
@@ -675,6 +749,79 @@ a.button {
 .source a {
     color: var(--donna-shirt);
     text-underline-offset: 3px;
+}
+
+/* The Settings drawer: the sheet above, holding a list of settings. */
+
+.settings {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--donna-raised);
+}
+
+.setting__label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.setting__hint {
+    color: var(--donna-shirt-65);
+    font-size: 0.8125rem;
+}
+
+/* An on/off switch: Shirt when on, the knob sliding to the right. */
+.switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 51px;
+    height: 31px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--donna-hover);
+}
+
+.switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 25px;
+    height: 25px;
+    border-radius: 999px;
+    background: var(--donna-shirt-65);
+}
+
+.switch[aria-checked="true"] {
+    background: var(--donna-shirt);
+}
+
+.switch[aria-checked="true"]::after {
+    left: 23px;
+    background: var(--donna-tie);
+}
+
+.settings__note {
+    margin: 0;
+    padding: 0 4px;
+    color: var(--donna-shirt-65);
+    font-size: 0.8125rem;
+}
+
+.settings__note[data-error="true"] {
+    color: var(--donna-error);
 }
 
 /* Signing in, and the two one-button pages that arrive from an email. */

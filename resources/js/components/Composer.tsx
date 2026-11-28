@@ -1,8 +1,10 @@
-import { type KeyboardEvent, type SyntheticEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, type SyntheticEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Costs } from '../api/types';
+import type { CommandInfo } from '../lib/commands';
 import { isTouchFirst } from '../lib/platform';
 import { storage } from '../lib/storage';
 import { composerHeight } from '../lib/viewport';
+import { CommandPicker } from './CommandPicker';
 import { SendIcon } from './icons';
 
 /** Long enough for a tap's click to land before the field collapses under it. */
@@ -11,7 +13,11 @@ const COLLAPSE_DELAY_MS = 80;
 /**
  * The input, pinned to the bottom. Empty and unfocused it is a slim bar;
  * tapped, it opens three lines tall and grows to six, then scrolls. Under the
- * text runs a bar: what Donna has cost in the middle, the send button at the end.
+ * text runs a bar: the `/` button that lists the commands at the start, what
+ * Donna has cost in the middle, the send button at the end.
+ *
+ * Picking a command puts it in the field in place of whatever was there and
+ * stops: it isn't sent, so Josh decides what happens next.
  *
  * There is only ever this one textarea. iOS opens the keyboard only when
  * focus lands inside the tap itself, so the bar you tap has to be the real
@@ -21,7 +27,10 @@ export function Composer({ onSend, costs }: { onSend: (text: string) => void; co
     const [text, setText] = useState(() => storage.draft());
     const [focused, setFocused] = useState(false);
     const [width, setWidth] = useState(0);
+    const [picking, setPicking] = useState(false);
     const input = useRef<HTMLTextAreaElement>(null);
+    const box = useRef<HTMLDivElement>(null);
+    const commands = useRef<HTMLButtonElement>(null);
 
     const open = focused || text.length > 0;
     const empty = text.trim() === '';
@@ -131,11 +140,22 @@ export function Composer({ onSend, costs }: { onSend: (text: string) => void; co
         }
     };
 
-    // Pressing send must not take focus from the field, or the keyboard would drop.
+    // Pressing send or `/` must not take focus from the field, or the keyboard would drop.
     const keepFocus = (event: SyntheticEvent) => event.preventDefault();
 
+    const closePicker = useCallback(() => setPicking(false), []);
+
+    const pick = (command: CommandInfo) => {
+        setText(command.text);
+        setPicking(false);
+
+        // Inside the tap, so iOS opens the keyboard if it wasn't already up.
+        input.current?.focus();
+    };
+
     return (
-        <div className="composer">
+        <div className="composer" ref={box}>
+            {picking && <CommandPicker composer={box} toggle={commands} onPick={pick} onClose={closePicker} />}
             <div className="composer__field" data-open={open}>
                 <label htmlFor="message" className="visually-hidden">
                     Message Donna
@@ -154,6 +174,18 @@ export function Composer({ onSend, costs }: { onSend: (text: string) => void; co
                     onKeyDown={onKeyDown}
                 />
                 <div className="composer__bar">
+                    <button
+                        type="button"
+                        ref={commands}
+                        className="composer__commands"
+                        aria-label="Commands"
+                        aria-expanded={picking}
+                        onPointerDown={keepFocus}
+                        onMouseDown={keepFocus}
+                        onClick={() => setPicking((current) => !current)}
+                    >
+                        /
+                    </button>
                     {costs && (
                         <p className="composer__costs">
                             Today ${costs.today} · Cycle ${costs.cycle}

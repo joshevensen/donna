@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { composerHeight, viewportFrame } from './viewport';
+import { composerHeight, pickerMaxHeight, viewportFrame } from './viewport';
 
 describe('viewportFrame', () => {
     it('pins the chat to the visual viewport while the keyboard is up', () => {
@@ -29,5 +29,17 @@ describe('composerHeight', () => {
         ['more than six scrolls', 216, 150, true],
     ])('%s', (_case, contentHeight, height, scrolls) => {
         expect(composerHeight(contentHeight, metrics)).toEqual({ height, scrolls });
+    });
+});
+
+describe('pickerMaxHeight', () => {
+    it.each([
+        ['fills the space above the input, less a margin', 600, 0, undefined, 588],
+        ['stops at the top of the visible viewport when iOS has scrolled it for the keyboard', 420, 60, undefined, 348],
+        ['takes a margin of its own', 600, 0, 20, 580],
+        ['rounds to whole pixels', 600.6, 59.2, undefined, 529],
+        ['is never negative when the input is near the top', 50, 60, undefined, 0],
+    ])('%s', (_case, composerTop, visibleTop, margin, height) => {
+        expect(pickerMaxHeight(composerTop, visibleTop, margin)).toBe(height);
     });
 });
