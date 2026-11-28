@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.3",
         "anthropic-ai/sdk": "^1.14",
+        "brick/math": "^1.0",
         "laravel-notification-channels/webpush": "^13.0.1",
         "laravel/ai": "^1.4",
         "laravel/framework": "^13.17",

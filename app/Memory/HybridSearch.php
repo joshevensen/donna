@@ -3,6 +3,8 @@
 namespace App\Memory;
 
 use App\Models\Fact;
+use App\Models\File;
+use App\Models\FileChunk;
 use App\Models\Message;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -43,7 +45,26 @@ class HybridSearch
     }
 
     /**
-     * @param  Builder<Message>|Builder<Fact>  $query
+     * Score the chunks of kept files against the text. A file that is
+     * deleted or no longer kept contributes nothing.
+     *
+     * @param  list<float>|null  $embedding
+     * @param  list<int>  $exceptFileIds
+     * @return array<int, float> Scores keyed by chunk ID, best first.
+     */
+    public function chunks(string $text, ?array $embedding, array $exceptFileIds = []): array
+    {
+        return $this->search(
+            FileChunk::query()
+                ->whereIn('file_id', File::query()->kept()->select('id'))
+                ->whereNotIn('file_id', $exceptFileIds),
+            $text,
+            $embedding,
+        );
+    }
+
+    /**
+     * @param  Builder<Message>|Builder<Fact>|Builder<FileChunk>  $query
      * @param  list<float>|null  $embedding
      * @return array<int, float>
      */

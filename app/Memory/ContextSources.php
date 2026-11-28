@@ -3,11 +3,13 @@
 namespace App\Memory;
 
 use App\Memory\Context\Memory;
+use App\Memory\Context\RelatedChunk;
 use App\Memory\Context\RelatedExchange;
 use App\Memory\Context\RelatedFact;
 use App\Memory\Context\RelatedPerson;
 use App\Memory\Context\RelatedTopic;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 /**
@@ -22,7 +24,10 @@ class ContextSources
      * recognise. Facts and past messages are ranked by their retrieval score;
      * people and topics have none, so a couple of places are kept for them.
      *
-     * @return list<array{type: string, label: string}>
+     * A part of a kept file is named "File name › Heading" and carries the
+     * file's ID, so tapping it opens the file.
+     *
+     * @return list<array{type: string, label: string, file_id?: int}>
      */
     public function from(Memory $memory): array
     {
@@ -51,10 +56,16 @@ class ContextSources
                 'label' => 'You, '.$this->date($related->message->created_at, $memory->now)
                     .' — "'.Str::limit(Str::before(trim($related->message->body), "\n"), 100).'"',
             ]),
+            ...$memory->chunks->map(fn (RelatedChunk $related): array => [
+                'score' => $related->score,
+                'type' => 'file',
+                'label' => $related->chunk->file->name.(filled($related->chunk->heading_path) ? " › {$related->chunk->heading_path}" : ''),
+                'file_id' => $related->chunk->file_id,
+            ]),
         ])
             ->sortByDesc('score')
             ->take($limit - min($named->count(), config('donna.context.sources_named')))
-            ->map(fn (array $source): array => ['type' => $source['type'], 'label' => $source['label']]);
+            ->map(fn (array $source): array => Arr::except($source, 'score'));
 
         return [...$scored->values(), ...$named->take($limit - $scored->count())];
     }

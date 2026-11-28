@@ -4,8 +4,11 @@ namespace App\Jobs;
 
 use App\Ai\Agents\Donna;
 use App\Enums\MessageStatus;
+use App\Files\Looks;
+use App\Files\ModelFile;
 use App\Memory\ContextBuilder;
 use App\Memory\Embedder;
+use App\Models\File;
 use App\Models\Message;
 use App\Models\Person;
 use App\Notifications\ReplyReady;
@@ -13,11 +16,14 @@ use App\Push\Presence;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Laravel\Ai\Files\File as Attachment;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Citation;
 use Laravel\Ai\Responses\Data\FinishReason;
 use Laravel\Ai\Responses\Data\Step;
+use Laravel\Ai\Responses\Data\ToolResult;
 use Laravel\Ai\Responses\Data\UrlCitation;
 use RuntimeException;
 use Throwable;
@@ -77,7 +83,7 @@ class GenerateReply implements ShouldQueue
         ];
     }
 
-    public function handle(Embedder $embedder, ContextBuilder $contexts, Presence $presence): void
+    public function handle(Embedder $embedder, ContextBuilder $contexts, Presence $presence, ModelFile $files): void
     {
         if (! $this->reply->isPending()) {
             return;
@@ -92,8 +98,28 @@ class GenerateReply implements ShouldQueue
         }
 
         $context = $contexts->build($message);
+        $looks = new Looks;
 
-        $response = Donna::make(context: $context, message: $message, reply: $this->reply)->prompt($context->prompt);
+        $responses = collect([
+            Donna::make(context: $context, message: $message, reply: $this->reply, looks: $looks)
+                ->prompt($context->prompt, attachments: $context->attachments),
+        ]);
+
+        // A tool can only answer in words. When she asked to look at an image or a scan,
+        // she is shown it in one more call, and that call's answer is the reply.
+        while ($looks->areWaiting()) {
+            $shown = collect($looks->take());
+
+            $responses->push(
+                Donna::make(context: $context, message: $message, reply: $this->reply, looks: $looks)->prompt(
+                    $context->prompt."\n\n".$this->lookNote($shown, $responses),
+                    attachments: [...$context->attachments, ...$shown->map(fn (array $look): Attachment => $files->attachment($look['file']))],
+                ),
+            );
+        }
+
+        /** @var AgentResponse $response */
+        $response = $responses->last();
 
         $declined = $response->steps->last()?->finishReason === FinishReason::ContentFilter;
 
@@ -110,7 +136,7 @@ class GenerateReply implements ShouldQueue
             'meta' => array_filter([
                 'model' => $response->meta->model,
                 'declined' => $declined,
-                'citations' => $this->citations($response),
+                'citations' => $this->citations($responses),
                 'sources' => $context->sources,
                 // Buttons Donna offered with `app_action` while writing this reply.
                 'actions' => $this->reply->meta['actions'] ?? [],
@@ -163,13 +189,39 @@ class GenerateReply implements ShouldQueue
     }
 
     /**
-     * The web sources cited anywhere in the run, in order, once each.
+     * What Donna is told when she is shown a file she asked to look at. The
+     * call that asked is over and its words are dropped, so this carries
+     * what it did: she must not do any of it a second time.
      *
+     * @param  Collection<int, array{file: File, page: int|null}>  $shown
+     * @param  Collection<int, AgentResponse>  $responses  The calls made so far for this reply.
+     */
+    private function lookNote(Collection $shown, Collection $responses): string
+    {
+        $files = $shown
+            ->map(fn (array $look): string => "{$look['file']->name} (file #{$look['file']->id})".($look['page'] !== null ? ", page {$look['page']} in particular" : ''))
+            ->implode('; ');
+
+        $done = $responses
+            ->flatMap(fn (AgentResponse $response) => $response->toolResults)
+            ->reject(fn (ToolResult $result): bool => $result->name === 'view_file')
+            ->map(fn (ToolResult $result): string => "- {$result->name} ".json_encode($result->arguments, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).' → '.$result->text());
+
+        return "[You asked to look at: {$files}. You are being shown it now, attached to this message."
+            .($done->isEmpty() ? '' : "\nEarlier in this same reply you already did the following. It is done: do not do any of it again.\n".$done->implode("\n"))
+            ."\nNow write your reply to Josh.]";
+    }
+
+    /**
+     * The web sources cited anywhere in the reply's calls, in order, once each.
+     *
+     * @param  Collection<int, AgentResponse>  $responses
      * @return list<array{url: string, title: string|null}>
      */
-    private function citations(AgentResponse $response): array
+    private function citations(Collection $responses): array
     {
-        return $response->steps
+        return $responses
+            ->flatMap(fn (AgentResponse $response) => $response->steps)
             ->flatMap(fn (Step $step) => $step->meta->citations)
             ->filter(fn (Citation $citation): bool => $citation instanceof UrlCitation)
             ->unique('url')

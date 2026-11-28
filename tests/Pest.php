@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\Donna;
+use App\Enums\MessageAuthor;
 use App\Extraction\Contracts\BatchClient;
 use App\Files\Pdf\ParserExtractor;
 use App\Files\Pdf\PdfTextExtractor;
@@ -226,6 +227,14 @@ function donnaCalls(array $calls, string $said = 'Go ahead.'): array
     GenerateReply::dispatchSync(pendingReplyTo($said));
 
     return $results;
+}
+
+/**
+ * The reply `donnaCalls()` just had Donna write.
+ */
+function donnasReply(): Message
+{
+    return Message::query()->where('author', MessageAuthor::Donna)->latest('id')->firstOrFail();
 }
 
 /**

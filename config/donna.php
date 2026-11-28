@@ -236,11 +236,12 @@ return [
         'inline_tokens' => 6000,
         'outline_lines' => 12,
         'outline_rows' => 5,
+        'outline_tokens' => 1500,
         'read_tokens' => 6000,
 
         // The diff of Josh's own edits that Donna is shown.
         'diff_tokens' => 1500,
-        'diff_cells' => 4_000_000,
+        'diff_cells' => 250_000,
 
         // Images are shown to the model as a smaller copy made on upload: no
         // longer than the model reads them at, and under its size limit.

@@ -52,6 +52,7 @@ class MessageResource extends JsonResource
         $this->resource->loadMissing(['files', 'fileVersions' => fn ($query) => $query->select(['id', 'file_id', 'message_id', 'number', 'summary'])->orderBy('number')]);
 
         return $this->resource->files
+            ->sortBy('id')
             ->groupBy('id')
             ->map(function (Collection $rows): array {
                 /** @var File $file */

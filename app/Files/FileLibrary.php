@@ -6,6 +6,8 @@ use App\Enums\FileRole;
 use App\Jobs\IndexFile;
 use App\Models\File;
 use App\Models\Message;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -16,6 +18,44 @@ use Illuminate\Support\Facades\DB;
 class FileLibrary
 {
     public function __construct(private FileIndexer $indexer) {}
+
+    /**
+     * What "my files" means: kept files first, then the working files used
+     * lately. With a search, any file whose name contains it, however old.
+     * Files that were uploaded but never sent with a message aren't listed.
+     *
+     * @return Collection<int, File>
+     */
+    public function listing(?string $search = null): Collection
+    {
+        $search = trim((string) $search);
+
+        return File::query()
+            ->inUse()
+            ->with('currentVersion:id,file_id,number,author')
+            ->when($search !== '', fn (Builder $query) => $query->whereLike('name', '%'.addcslashes($search, '%_\\').'%'))
+            ->when($search === '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
+                ->whereNotNull('kept_at')
+                ->orWhere('updated_at', '>=', now()->subDays(config('donna.files.recent_days')))))
+            ->orderByRaw('kept_at is null')
+            ->latest('updated_at')
+            ->latest('id')
+            ->limit(config('donna.files.list_limit'))
+            ->get();
+    }
+
+    /**
+     * How many files there are of each sort, for the line in Donna's memory.
+     *
+     * @return array{kept: int, working: int}
+     */
+    public function counts(): array
+    {
+        return [
+            'kept' => File::query()->kept()->count(),
+            'working' => File::query()->working()->inUse()->count(),
+        ];
+    }
 
     /**
      * Keep the file, so Archive Memory finds it, or stop keeping it. Its

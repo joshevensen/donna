@@ -11,7 +11,6 @@ use App\Http\Requests\StoreFileRequest;
 use App\Http\Requests\UpdateFileRequest;
 use App\Http\Resources\FileResource;
 use App\Models\File;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\ValidationException;
@@ -25,24 +24,9 @@ class FileController extends Controller
      * Kept files first, then the working files used lately. With `q`, any
      * file whose name contains it, however old.
      */
-    public function index(IndexFilesRequest $request): AnonymousResourceCollection
+    public function index(IndexFilesRequest $request, FileLibrary $library): AnonymousResourceCollection
     {
-        $search = trim((string) $request->validated('q'));
-
-        $files = File::query()
-            ->inUse()
-            ->with('currentVersion:id,file_id,number,author')
-            ->when($search !== '', fn (Builder $query) => $query->whereLike('name', '%'.addcslashes($search, '%_\\').'%'))
-            ->when($search === '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
-                ->whereNotNull('kept_at')
-                ->orWhere('updated_at', '>=', now()->subDays(config('donna.files.recent_days')))))
-            ->orderByRaw('kept_at is null')
-            ->latest('updated_at')
-            ->latest('id')
-            ->limit(config('donna.files.list_limit'))
-            ->get();
-
-        return FileResource::collection($files);
+        return FileResource::collection($library->listing($request->validated('q')));
     }
 
     /**
