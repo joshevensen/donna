@@ -26,7 +26,7 @@ Any one of these signs every browser and phone out and turns off all their notif
 
 Then sign in again on the devices you still have, and turn notifications back on ([web-push.md](web-push.md)).
 
-The terminal's tokens are separate and are **not** revoked by any of that. If the lost device held one (a Mac with `DONNA_API_TOKEN` in its `.env`), revoke them all on the server and make new ones ([terminal-on-mac.md](terminal-on-mac.md)):
+API tokens made with `donna:token` are separate and are **not** revoked by any of that. If the lost device held one, revoke them all on the server and make new ones with `donna:token`:
 
 ```bash
 cd /home/forge/donna.joshevensen.com/current && php8.4 artisan tinker --execute 'App\Models\Person::josh()->user->tokens()->delete();'

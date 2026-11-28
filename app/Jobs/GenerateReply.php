@@ -24,7 +24,7 @@ use Throwable;
 
 /**
  * Writes Donna's reply on the server, so it finishes whether or not the
- * terminal that asked is still open.
+ * device that asked is still open.
  */
 class GenerateReply implements ShouldQueue
 {

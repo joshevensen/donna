@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * The web app's cookie sessions: starting one, ending one, ending them all.
- * API tokens (the terminal) are separate and never touched here.
+ * API tokens are separate and never touched here.
  */
 class Sessions
 {

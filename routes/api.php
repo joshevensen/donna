@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\V1\Auth\LoginCodeController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MessageController;
-use App\Http\Controllers\Api\V1\MessageEvaluationController;
 use App\Http\Controllers\Api\V1\MessageRetryController;
 use App\Http\Controllers\Api\V1\PresenceController;
 use App\Http\Controllers\Api\V1\PushSubscriptionController;
@@ -16,8 +15,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     | Signing in to the web app
     |--------------------------------------------------------------------------
     |
-    | Cookie sessions for the web app. The terminal's tokens come from
-    | `donna:token` and never pass through here.
+    | Cookie sessions for the web app. API tokens come from `donna:token`
+    | and never pass through here.
     |
     */
 
@@ -49,9 +48,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('messages/{message}/retry', [MessageRetryController::class, 'store'])
             ->middleware('throttle:messages')
             ->name('messages.retry.store');
-
-        Route::post('messages/{message}/evaluation', [MessageEvaluationController::class, 'store'])
-            ->name('messages.evaluation.store');
 
         // Web Push for the device making the request, and whether the app is open on it.
         Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');

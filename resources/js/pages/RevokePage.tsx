@@ -46,7 +46,7 @@ export function RevokePage() {
 
     return (
         <Gate title="Sign out everywhere?">
-            <p className="gate__text">This signs every phone and browser out of Donna, including this one. The terminal&rsquo;s token is not affected.</p>
+            <p className="gate__text">This signs every phone and browser out of Donna, including this one.</p>
             <button type="button" className="button button--wide" disabled={state === 'busy'} onClick={revoke}>
                 {state === 'busy' ? 'Signing out…' : 'Sign out everywhere'}
             </button>

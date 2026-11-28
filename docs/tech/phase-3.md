@@ -55,7 +55,6 @@ Josh attaches files in the chat as context for Donna: text, CSV, PDF and images.
 - A history screen. Versions are kept and Donna can undo, but there's no UI to browse them.
 - Editing anything but markdown and plain text: CSVs, PDFs and images are read, not changed. Word, Excel and zip files, and OCR as a feature.
 - Sharing files outside Donna, and exporting everything at once. A single file can be downloaded.
-- A file viewer in the terminal. The terminal can't attach.
 - Skills, which are also files but arrive with the skills loader (Phase 4).
 - Deleting forever, and any automatic deletion. See the open questions.
 

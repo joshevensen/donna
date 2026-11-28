@@ -4,6 +4,8 @@ Donna gets a front end: a chat Josh opens from an icon on his iPhone's Home Scre
 
 **Status:** built; awaiting daily use. Where the build had to depart from this doc, the text below has been corrected and the change is listed under [What changed while building](#what-changed-while-building). The keyboard, push and the installed app have not been checked on a real iPhone yet.
 
+**Later:** the terminal client (`donna:chat`, the Mac and Blink setups) and the evaluation endpoint (`POST /messages/{message}/evaluation`, the terminal's `/good` and `/bad`) were removed; the web app is the only client. Flagging a reply happens by telling Donna in chat (`FlagReply`). What follows still describes them as built.
+
 **Mockup:** one interactive screen, [open the artifact](https://claude.ai/artifact/TUsiu8dbpssjDijzWax7q1) (private to Josh). Its source is kept in [`phase-2/mockup.dc.html`](phase-2/mockup.dc.html) so the design survives if the link doesn't. It is the iPhone layout; the Mac layout is the same chat in a centered column and wasn't mocked up.
 
 ---

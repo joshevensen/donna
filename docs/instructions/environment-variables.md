@@ -3,7 +3,6 @@
 Every setting Donna's own configuration reads, and the ones Laravel needs to run her. Defaults are what applies when the variable is unset.
 
 - **Server** means the site's environment file in Forge. Changing it needs a redeploy, because the deploy script caches the configuration ([forge-site.md](forge-site.md)).
-- **Mac** means `.env` in your clone of the repo on your Mac, which only the terminal client needs ([terminal-on-mac.md](terminal-on-mac.md)).
 
 ## Production environment
 
@@ -43,7 +42,7 @@ DONNA_USER_NAME=Josh
 DONNA_USER_EMAIL=you@example.com
 ```
 
-Forge fills in `APP_KEY` and the database username and password. The mail lines come from [mail.md](mail.md) and the `VAPID_` lines from [web-push.md](web-push.md); the site runs without them, but you can then only sign in with `donna:login` and get no notifications. For the [terminal fallback on your phone](blink-iphone.md), also add `DONNA_API_URL` and `DONNA_API_TOKEN`.
+Forge fills in `APP_KEY` and the database username and password. The mail lines come from [mail.md](mail.md) and the `VAPID_` lines from [web-push.md](web-push.md); the site runs without them, but you can then only sign in with `donna:login` and get no notifications.
 
 **A site created before the web chat existed has `SESSION_LIFETIME=120` in its environment**, copied from the old `.env.example`. Change it to `43200`, or the web app signs you out after two hours.
 
@@ -60,8 +59,8 @@ Forge fills in `APP_KEY` and the database username and password. The mail lines 
 | `DB_DATABASE` | Server | | `donna`. |
 | `DB_USERNAME`, `DB_PASSWORD` | Server | | Forge sets these. |
 | `QUEUE_CONNECTION` | Server | `database` | No Redis: one user doesn't need it. |
-| `CACHE_STORE` | Server, Mac | `database` | On the Mac use `file`, so the terminal client needs no database. |
-| `SESSION_DRIVER` | Server, Mac | `database` | Must be `database` on the server: "sign out everywhere" works by deleting the sessions stored there. On the Mac use `array`, so the terminal client needs no database. |
+| `CACHE_STORE` | Server | `database` | No Redis, as with the queue. |
+| `SESSION_DRIVER` | Server | `database` | Must be `database`: "sign out everywhere" works by deleting the sessions stored there. |
 | `SESSION_LIFETIME` | Server | `43200` | Minutes a web sign-in lasts **after it was last used**: 43200 is 30 days. Using the app keeps renewing it, up to `DONNA_SESSION_MAX_DAYS`. |
 | `SESSION_SECURE_COOKIE` | Server | | `true`. The sign-in cookie is then only ever sent over HTTPS. Leave it unset on a Mac running the app over plain `http://localhost`. |
 | `SANCTUM_STATEFUL_DOMAINS` | Server | `localhost` and the host in `APP_URL` | `donna.joshevensen.com`. The one address whose browser requests are trusted to carry the sign-in cookie. If it is wrong, signing in answers "Something went wrong" even with the right code. Never set it to an empty value. |
@@ -133,16 +132,6 @@ Each is one job's model. The pricing table in `config/donna.php` must have the m
 | `DONNA_TAGGING_MODEL` | Server | `claude-haiku-5-5` | Topic tagging. |
 | `DONNA_EXTRACTION_MODEL` | Server | `claude-sonnet-5-5` | The daily memory extraction. |
 | `DONNA_EMBEDDING_MODEL` | Server | `voyage-4` | Memory search. Changing to a model with a different vector length needs a migration ([voyage-api-key.md](voyage-api-key.md)). |
-
-## Terminal client
-
-Used by `donna:chat`, on your Mac and, for phone use, on the server.
-
-| Variable | Where | Default | Secret | Notes |
-|---|---|---|---|---|
-| `DONNA_API_URL` | Mac, Server for phone use | | No | `https://donna.joshevensen.com`. |
-| `DONNA_API_TOKEN` | Mac, Server for phone use | | Yes | Made with `php artisan donna:token`. Use a separate token for each place. |
-| `DONNA_SUBMIT_KEY` | Mac, Server for phone use | `f5` | No | The function key that sends a message, besides Ctrl+D: `f1` to `f12`, or blank for none ([blink-iphone.md](blink-iphone.md)). |
 
 ---
 
